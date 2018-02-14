@@ -1,4 +1,8 @@
-- h1_hesc
-- mycoplasma_pneumoniae
-- wc_analysis
-- wc_lang
+downstream_dependencies:
+  - h1_hesc
+  - mycoplasma_pneumoniae
+  - wc_analysis
+  - wc_lang
+email_notifications:
+  - jonrkarr@gmail.com
+  - balazs.szigeti@mssm.edu
