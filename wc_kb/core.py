@@ -33,6 +33,7 @@ class KnowledgeBase(obj_model.core.Model):
     Related attributes:
         cell (:obj:`Cell`): cell
     """
+
     id = obj_model.core.StringAttribute(primary=True, unique=True)
     name = obj_model.core.StringAttribute()
     version = obj_model.core.StringAttribute()
@@ -41,7 +42,6 @@ class KnowledgeBase(obj_model.core.Model):
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'name', 'version', 'translation_table')
         tabular_orientation = obj_model.core.TabularOrientation.column
-
 
 class Cell(obj_model.core.Model):
     """ Knowledge of a cell
@@ -53,13 +53,13 @@ class Cell(obj_model.core.Model):
     Related attributes:
         chromosomes (:obj:`list` of :obj:`Chromosome`): chromosomes
     """
+
     knowledge_base = obj_model.core.OneToOneAttribute(KnowledgeBase, related_name='cell')
     id = obj_model.core.StringAttribute(primary=True, unique=True)
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'knowledge_base')
         tabular_orientation = obj_model.core.TabularOrientation.column
-
 
 class Chromosome(obj_model.core.Model):
     """ Knowledge of a chromosome
@@ -72,6 +72,7 @@ class Chromosome(obj_model.core.Model):
     Related attributes:
         transcription_units (:obj:`list` of :obj:`TranscriptionUnit`): transcription units
     """
+
     id = obj_model.core.StringAttribute(primary=True, unique=True)
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='chromosomes')
     seq = obj_model.extra_attributes.BioSeqAttribute()
@@ -117,7 +118,6 @@ class Chromosome(obj_model.core.Model):
         else:
             return pos_seq.reverse_complement()
 
-
 class TranscriptionUnit(obj_model.core.Model):
     """ Knowledge of a transcription unit
 
@@ -131,17 +131,20 @@ class TranscriptionUnit(obj_model.core.Model):
         pribnow_start (:obj:`int`): start position of the Pribnow box (promoter) relative to the 5' coordinate
         pribnow_end (:obj:`int`): end position of the Pribnow box (promoter) relative to the 5' coordinate
     """
+
     id = obj_model.core.StringAttribute(primary=True, unique=True)
-    name = obj_model.core.StringAttribute()
     chromosome = obj_model.core.ManyToOneAttribute(Chromosome, related_name='transcription_units')
+
+    name = obj_model.core.StringAttribute()
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
     strand = obj_model.core.EnumAttribute(ChromosomeStrand, default=ChromosomeStrand.positive)
     pribnow_start = obj_model.core.IntegerAttribute()
     pribnow_end = obj_model.core.IntegerAttribute()
+    genes = obj_model.core.StringAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'chromosome', 'start', 'end', 'strand', 'pribnow_start', 'pribnow_end')
+        attribute_order = ('id', 'name', 'chromosome', 'start', 'end', 'strand', 'pribnow_start', 'pribnow_end', 'genes')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -256,3 +259,39 @@ class TranscriptionUnit(obj_model.core.Model):
             return self.chromosome.get_subseq(
                 self.get_5_prime() - self.pribnow_start,
                 self.get_5_prime() - self.pribnow_end).complement()
+
+class Reactions(obj_model.core.Model):
+    """ Knowledge of reactions
+
+    Attributes:
+        id (:obj:`str`): identifier
+        name (:obj:`str`): identifier
+        stoichiometric_equation (:obj:`str`):
+    """
+
+    id = obj_model.core.StringAttribute(primary=True, unique=True)
+    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
+    name = obj_model.core.StringAttribute()
+    stoichiometric_equation  = obj_model.core.FloatAttribute()
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'name', 'cell', 'stoichiometric_equation')
+
+class SpeciesTypes(obj_model.core.Model):
+    """ Knowledge of a molecular species participating in reactions
+
+    Attributes:
+        id (:obj:`str`): identifier
+        name (:obj:`str`): identifier
+        molecular_weight (:obj:`float`): weight
+        category (:obj:`str`): dna/rna/metabolite/pseudospecies
+    """
+
+    id = obj_model.core.StringAttribute(primary=True, unique=True)
+    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='species_types')
+    name = obj_model.core.StringAttribute()
+    molecular_weight = obj_model.core.FloatAttribute()
+    category = obj_model.core.StringAttribute()
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'name', 'cell', 'molecular_weight', 'category')
