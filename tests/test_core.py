@@ -42,14 +42,16 @@ class TestCore(unittest.TestCase):
         cell = core.Cell(chromosomes=chromosomes)
         self.assertEqual(cell.chromosomes, chromosomes)
 
-    def test_Chromosome(self):
+
+class ChromosomeTestCase(unittest.TestCase):
+    def test_constructor(self):
         chr = core.Chromosome(seq=Bio.Seq.Seq('AAA'))
 
-    def test_Chromosome_get_len(self):
+    def test_get_len(self):
         chr = core.Chromosome(seq=Bio.Seq.Seq('AAA'))
         self.assertEqual(chr.get_len(), 3)
 
-    def test_Chromosome_get_subseq(self):
+    def test_get_subseq(self):
         chr = core.Chromosome(seq=Bio.Seq.Seq('AAATGCCC'))
         self.assertEqual(chr.get_subseq(3, 6), 'ATGC')
         self.assertEqual(chr.get_subseq(3, 6, strand=core.ChromosomeStrand.positive), 'ATGC')
@@ -66,8 +68,10 @@ class TestCore(unittest.TestCase):
         self.assertEqual(chr.get_subseq(-2, 18), 'CCCAAATGCCCAAATGCCCAA')
         self.assertEqual(chr.get_subseq(-10, 10), 'CCCAAATGCCCAAATGCCCAA')
 
-    def test_Chromosome_get_subseq_real_genes(self):
-        chr = core.Chromosome(seq=self.chr_seq)
+    def test_get_subseq_real_genes(self):
+        records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
+        chr_seq = next(records).seq
+        chr = core.Chromosome(seq=chr_seq)
 
         # MPN001
         gene_seq = chr.get_subseq(692, 1834)
@@ -81,10 +85,12 @@ class TestCore(unittest.TestCase):
         self.assertEqual(gene_seq[-10:], 'AATTGAGTAA')
         self.assertEqual(gene_seq.transcribe().translate(table=4)[0:10], 'MKFKFLLTPL')
 
-    def test_TranscriptionUnit(self):
+
+class TranscriptionUnitTestCase(unittest.TestCase):
+    def test_constructor(self):
         tu = core.TranscriptionUnit(id='tu_1',
-                                          start=1, end=2, strand=core.ChromosomeStrand.positive,
-                                          pribnow_start=3, pribnow_end=4)
+                                    start=1, end=2, strand=core.ChromosomeStrand.positive,
+                                    pribnow_start=3, pribnow_end=4)
 
         self.assertEqual(tu.id, 'tu_1')
         self.assertEqual(tu.start, 1)
@@ -93,25 +99,25 @@ class TestCore(unittest.TestCase):
         self.assertEqual(tu.pribnow_start, 3)
         self.assertEqual(tu.pribnow_end, 4)
 
-    def test_TranscriptionUnit_get_3_prime(self):
+    def test_get_3_prime(self):
         tu = core.TranscriptionUnit(start=100, end=200, strand=core.ChromosomeStrand.positive)
         self.assertEqual(tu.get_3_prime(), 200)
 
         tu = core.TranscriptionUnit(start=100, end=200, strand=core.ChromosomeStrand.negative)
         self.assertEqual(tu.get_3_prime(), 100)
 
-    def test_TranscriptionUnit_get_5_prime(self):
+    def test_get_5_prime(self):
         tu = core.TranscriptionUnit(start=100, end=200, strand=core.ChromosomeStrand.positive)
         self.assertEqual(tu.get_5_prime(), 100)
 
         tu = core.TranscriptionUnit(start=100, end=200, strand=core.ChromosomeStrand.negative)
         self.assertEqual(tu.get_5_prime(), 200)
 
-    def test_TranscriptionUnit_get_len(self):
+    def test_get_len(self):
         tu = core.TranscriptionUnit(start=100, end=200)
         self.assertEqual(tu.get_len(), 101)
 
-    def test_TranscriptionUnit_get_seq(self):
+    def test_get_seq(self):
         chr = core.Chromosome(seq=Bio.Seq.Seq('AAATGCCC'))
 
         tu = chr.transcription_units.create(start=3, end=6)
@@ -123,7 +129,7 @@ class TestCore(unittest.TestCase):
         tu = chr.transcription_units.create(start=3, end=6, strand=core.ChromosomeStrand.negative)
         self.assertEqual(tu.get_seq(), 'GCAU')
 
-    def test_TranscriptionUnit_get_empirical_formula(self):
+    def test_get_empirical_formula(self):
         chr = core.Chromosome()
 
         tu = core.TranscriptionUnit(chromosome=chr, start=1, end=1)
@@ -146,14 +152,14 @@ class TestCore(unittest.TestCase):
         chr.seq = Bio.Seq.Seq('AA')
         self.assertEqual(tu.get_empirical_formula(), chem.EmpiricalFormula('C20H23N10O13P2'))
 
-    def test_TranscriptionUnit_get_charge(self):
+    def test_get_charge(self):
         tu = core.TranscriptionUnit(start=1, end=1)
         self.assertEqual(tu.get_charge(), -2)
 
         tu = core.TranscriptionUnit(start=1, end=2)
         self.assertEqual(tu.get_charge(), -3)
 
-    def test_TranscriptionUnit_get_molecular_weight(self):
+    def test_get_molecular_weight(self):
         chr = core.Chromosome(seq=Bio.Seq.Seq('AACCGGTT'))
 
         tu = core.TranscriptionUnit(chromosome=chr, start=1, end=1)
@@ -181,11 +187,11 @@ class TestCore(unittest.TestCase):
             tu.get_molecular_weight() + tu.get_charge() * mendeleev.element('H').atomic_weight,
             tu.get_empirical_formula().get_molecular_weight(), places=1)
 
-    def test_TranscriptionUnit_get_pribnow_len(self):
+    def test_get_pribnow_len(self):
         tu = core.TranscriptionUnit(pribnow_start=-40, pribnow_end=-50)
         self.assertEqual(tu.get_pribnow_len(), 11)
 
-    def test_TranscriptionUnit_get_pribnow_seq(self):
+    def test_get_pribnow_seq(self):
         chr = core.Chromosome(seq=Bio.Seq.Seq('ACGTACGTACGTACGT'))
         tu = chr.transcription_units.create(
             start=7, end=8, strand=core.ChromosomeStrand.positive,
@@ -198,7 +204,9 @@ class TestCore(unittest.TestCase):
             pribnow_start=-2, pribnow_end=-4)
         self.assertEqual(tu.get_pribnow_seq(), 'GCA')
 
-        chr = core.Chromosome(seq=self.chr_seq)
+        records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
+        chr_seq = next(records).seq
+        chr = core.Chromosome(seq=chr_seq)
         tu = chr.transcription_units.create(
             start=652, end=1900, strand=core.ChromosomeStrand.positive,
             pribnow_start=-35, pribnow_end=-40)
