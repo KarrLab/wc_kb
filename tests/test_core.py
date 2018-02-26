@@ -43,6 +43,17 @@ class TestCore(unittest.TestCase):
         self.assertEqual(cell.chromosomes, chromosomes)
 
 
+class SpeciesTypeTypeTestCase(unittest.TestCase):
+    def test_SpeciesTypeType(self):
+        type_names = (t.name for t in list(core.SpeciesTypeType))
+        self.assertIn('dna', type_names)
+        self.assertNotIn('undefined', type_names)
+
+
+class SpeciesTypeTestCase(unittest.TestCase):
+    pass
+
+
 class ChromosomeTestCase(unittest.TestCase):
     def test_constructor(self):
         chr = core.Chromosome(seq=Bio.Seq.Seq('AAA'))
@@ -216,3 +227,7 @@ class TranscriptionUnitTestCase(unittest.TestCase):
             start=1252, end=1377, strand=core.ChromosomeStrand.negative,
             pribnow_start=-125, pribnow_end=-130)
         self.assertEqual(tu.get_pribnow_seq(), 'TAAGTT')
+
+
+class ReactionTestCase(unittest.TestCase):
+    pass

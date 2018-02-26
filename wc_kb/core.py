@@ -43,6 +43,7 @@ class KnowledgeBase(obj_model.core.Model):
         attribute_order = ('id', 'name', 'version', 'translation_table')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
+
 class Cell(obj_model.core.Model):
     """ Knowledge of a cell
 
@@ -60,6 +61,36 @@ class Cell(obj_model.core.Model):
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'knowledge_base')
         tabular_orientation = obj_model.core.TabularOrientation.column
+
+
+class SpeciesTypeType(enum.Enum):
+    """ Type of species type """
+    metabolite = 0
+    dna = 1
+    rna = 2
+    protein = 3
+    pseudospecies = 4
+
+
+class SpeciesType(obj_model.core.Model):
+    """ Knowledge of a molecular species
+
+    Attributes:
+        id (:obj:`str`): identifier
+        name (:obj:`str`): name
+        molecular_weight (:obj:`float`): molecular weight
+        type (:obj:`str`): DNA/RNA/metabolite/pseudospecies
+    """
+
+    id = obj_model.core.StringAttribute(primary=True, unique=True)
+    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='species_types')
+    name = obj_model.core.StringAttribute()
+    molecular_weight = obj_model.core.FloatAttribute()
+    type = obj_model.core.EnumAttribute(SpeciesTypeType)
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'name', 'cell', 'molecular_weight', 'type')
+
 
 class Chromosome(obj_model.core.Model):
     """ Knowledge of a chromosome
@@ -117,6 +148,7 @@ class Chromosome(obj_model.core.Model):
             return pos_seq
         else:
             return pos_seq.reverse_complement()
+
 
 class TranscriptionUnit(obj_model.core.Model):
     """ Knowledge of a transcription unit
@@ -260,38 +292,20 @@ class TranscriptionUnit(obj_model.core.Model):
                 self.get_5_prime() - self.pribnow_start,
                 self.get_5_prime() - self.pribnow_end).complement()
 
-class Reactions(obj_model.core.Model):
+
+class Reaction(obj_model.core.Model):
     """ Knowledge of reactions
 
     Attributes:
         id (:obj:`str`): identifier
-        name (:obj:`str`): identifier
-        stoichiometric_equation (:obj:`str`):
+        name (:obj:`str`): name
+        participants (:obj:`list` of :obj:`SpeciesType`): participants
     """
 
     id = obj_model.core.StringAttribute(primary=True, unique=True)
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
     name = obj_model.core.StringAttribute()
-    stoichiometric_equation  = obj_model.core.FloatAttribute()
+    participants = obj_model.core.ManyToManyAttribute(SpeciesType, related_name='reactions')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'cell', 'stoichiometric_equation')
-
-class SpeciesTypes(obj_model.core.Model):
-    """ Knowledge of a molecular species participating in reactions
-
-    Attributes:
-        id (:obj:`str`): identifier
-        name (:obj:`str`): identifier
-        molecular_weight (:obj:`float`): weight
-        category (:obj:`str`): dna/rna/metabolite/pseudospecies
-    """
-
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
-    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='species_types')
-    name = obj_model.core.StringAttribute()
-    molecular_weight = obj_model.core.FloatAttribute()
-    category = obj_model.core.StringAttribute()
-
-    class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'cell', 'molecular_weight', 'category')
+        attribute_order = ('id', 'name', 'cell', 'participants')
