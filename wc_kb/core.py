@@ -71,6 +71,7 @@ class SpeciesTypeType(enum.Enum):
     protein = 3
     pseudospecies = 4
 
+    #todo: turn RNA's 'category' attribute to simillar enum structure
 
 class SpeciesType(obj_model.core.Model):
     """ Knowledge of a molecular species
@@ -149,7 +150,6 @@ class Chromosome(obj_model.core.Model):
         else:
             return pos_seq.reverse_complement()
 
-
 class TranscriptionUnit(obj_model.core.Model):
     """ Knowledge of a transcription unit
 
@@ -173,10 +173,9 @@ class TranscriptionUnit(obj_model.core.Model):
     strand = obj_model.core.EnumAttribute(ChromosomeStrand, default=ChromosomeStrand.positive)
     pribnow_start = obj_model.core.IntegerAttribute()
     pribnow_end = obj_model.core.IntegerAttribute()
-    genes = obj_model.core.StringAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'chromosome', 'start', 'end', 'strand', 'pribnow_start', 'pribnow_end', 'genes')
+        attribute_order = ('id', 'name', 'chromosome', 'start', 'end', 'strand', 'pribnow_start', 'pribnow_end')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -292,7 +291,6 @@ class TranscriptionUnit(obj_model.core.Model):
                 self.get_5_prime() - self.pribnow_start,
                 self.get_5_prime() - self.pribnow_end).complement()
 
-
 class Reaction(obj_model.core.Model):
     """ Knowledge of reactions
 
@@ -307,5 +305,47 @@ class Reaction(obj_model.core.Model):
     name = obj_model.core.StringAttribute()
     participants = obj_model.core.ManyToManyAttribute(SpeciesType, related_name='reactions')
 
+class Meta(obj_model.core.Model.Meta):
+    attribute_order = ('id', 'name', 'cell', 'participants')
+
+class Rna(obj_model.core.Model):
+    """ Knowledge of an RNA molecule
+
+    Attributes:
+        id (:obj:`str`): identifier
+        name (:obj:`str`): identifier
+        molecular_weight (:obj:`float`): weight
+        category (:obj:`str`): dna/rna/metabolite/pseudospecies
+    """
+
+    id = obj_model.core.StringAttribute(primary=True, unique=True)
+    name = obj_model.core.StringAttribute()
+    transcription_unit = obj_model.core.ManyToOneAttribute(TranscriptionUnit, related_name='rna')
+    category = obj_model.core.StringAttribute()
+    copy_number_value = obj_model.core.FloatAttribute()
+    copy_number_unit = obj_model.core.StringAttribute()
+    half_life_value = obj_model.core.FloatAttribute()
+    half_life_unit = obj_model.core.StringAttribute()
+
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'cell', 'participants')
+        attribute_order = ('id', 'name', 'transcription_unit', 'category', 'copy_number_value',
+                            'copy_number_unit', 'half_life_value', 'half_life_unit')
+
+class Gene(obj_model.core.Model):
+    """ Knowledge of an RNA molecule
+
+    Attributes:
+        id (:obj:`str`): identifier
+        name (:obj:`str`): identifier
+        molecular_weight (:obj:`float`): weight
+        category (:obj:`str`): dna/rna/metabolite/pseudospecies
+    """
+
+    id = obj_model.core.StringAttribute(primary=True, unique=True)
+    rna = obj_model.core.ManyToManyAttribute(Rna,related_name='gene')
+    name = obj_model.core.StringAttribute()
+    symbol = obj_model.core.StringAttribute()
+    category = obj_model.core.StringAttribute()
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'rna', 'name', 'symbol', 'category')

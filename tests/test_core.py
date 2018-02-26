@@ -14,9 +14,7 @@ import Bio.SeqIO
 import mendeleev
 import unittest
 
-
 class TestCore(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
@@ -42,17 +40,11 @@ class TestCore(unittest.TestCase):
         cell = core.Cell(chromosomes=chromosomes)
         self.assertEqual(cell.chromosomes, chromosomes)
 
-
 class SpeciesTypeTypeTestCase(unittest.TestCase):
     def test_SpeciesTypeType(self):
         type_names = (t.name for t in list(core.SpeciesTypeType))
         self.assertIn('dna', type_names)
         self.assertNotIn('undefined', type_names)
-
-
-class SpeciesTypeTestCase(unittest.TestCase):
-    pass
-
 
 class ChromosomeTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -95,7 +87,6 @@ class ChromosomeTestCase(unittest.TestCase):
         self.assertEqual(gene_seq[0:10], 'ATGAAATTTA')
         self.assertEqual(gene_seq[-10:], 'AATTGAGTAA')
         self.assertEqual(gene_seq.transcribe().translate(table=4)[0:10], 'MKFKFLLTPL')
-
 
 class TranscriptionUnitTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -228,6 +219,24 @@ class TranscriptionUnitTestCase(unittest.TestCase):
             pribnow_start=-125, pribnow_end=-130)
         self.assertEqual(tu.get_pribnow_seq(), 'TAAGTT')
 
+class RNATestCase(unittest.TestCase):
+    def test_constructor(self):
+        my_rna = core.Rna(id='rna_1', name='rna_1', transcription_unit='TU_1', category='mRNA', copy_number_value=100, copy_number_unit='molecule',
+        half_life_value =5, half_life_unit='mins')
+        self.assertEqual(my_rna.id, 'rna_1')
+        self.assertEqual(my_rna.name, 'rna_1')
+        self.assertEqual(my_rna.transcription_unit, 'TU_1')
+        self.assertEqual(my_rna.category, 'mRNA')
+        self.assertEqual(my_rna.copy_number_value, 100)
+        self.assertEqual(my_rna.copy_number_unit, 'molecule')
+        self.assertEqual(my_rna.half_life_value, 5)
+        self.assertEqual(my_rna.half_life_unit, 'mins')
 
-class ReactionTestCase(unittest.TestCase):
-    pass
+class GeneTestCase(unittest.TestCase):
+    def test_constructor(self):
+        my_protein = core.Gene(id='protein_1', name='protein_1', rna='rna_1', symbol='protein_1', category='mRNA')
+        self.assertEqual(my_protein.id, 'protein_1')
+        self.assertEqual(my_protein.name, 'protein_1')
+        self.assertEqual(my_protein.rna, 'rna_1')
+        self.assertEqual(my_protein.category, 'mRNA')
+        self.assertEqual(my_protein.symbol, 'protein_1')
