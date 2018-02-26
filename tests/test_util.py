@@ -18,8 +18,10 @@ class TestUtil(unittest.TestCase):
         non_inline_models = set([
             core.KnowledgeBase,
             core.Cell,
+            core.SpeciesType,
             core.Chromosome,
-            core.TranscriptionUnit
+            core.TranscriptionUnit,
+            core.Reaction,
         ])
         inline_models = set()
         self.assertEqual(set(util.get_models()), non_inline_models | inline_models)
