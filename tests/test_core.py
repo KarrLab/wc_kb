@@ -14,6 +14,7 @@ import Bio.SeqIO
 import mendeleev
 import unittest
 
+
 class TestCore(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -40,11 +41,13 @@ class TestCore(unittest.TestCase):
         cell = core.Cell(chromosomes=chromosomes)
         self.assertEqual(cell.chromosomes, chromosomes)
 
+
 class SpeciesTypeTypeTestCase(unittest.TestCase):
     def test_SpeciesTypeType(self):
         type_names = (t.name for t in list(core.SpeciesTypeType))
         self.assertIn('dna', type_names)
         self.assertNotIn('undefined', type_names)
+
 
 class ChromosomeTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -87,6 +90,7 @@ class ChromosomeTestCase(unittest.TestCase):
         self.assertEqual(gene_seq[0:10], 'ATGAAATTTA')
         self.assertEqual(gene_seq[-10:], 'AATTGAGTAA')
         self.assertEqual(gene_seq.transcribe().translate(table=4)[0:10], 'MKFKFLLTPL')
+
 
 class TranscriptionUnitTestCase(unittest.TestCase):
     def test_transcription_unit_constructor(self):
@@ -219,31 +223,43 @@ class TranscriptionUnitTestCase(unittest.TestCase):
             pribnow_start=-125, pribnow_end=-130)
         self.assertEqual(tu.get_pribnow_seq(), 'TAAGTT')
 
+
 class RNATestCase(unittest.TestCase):
     def test_rna_constructor(self):
-        my_tu = core.TranscriptionUnit(id='tu_1', start=1, end=2, strand=core.ChromosomeStrand.positive,pribnow_start=3, pribnow_end=4)
-        my_rna = core.Rna(id='rna_1', name='rna_1', transcription_unit=my_tu, category='mRNA', copy_number_value=100, copy_number_unit='molecule',
-        half_life_value =5, half_life_unit='mins')
+        tu = core.TranscriptionUnit(
+            id='tu_1', start=1, end=2,
+            strand=core.ChromosomeStrand.positive,
+            pribnow_start=3, pribnow_end=4)
+        rna = core.Rna(
+            id='rna_1', name='rna_1', transcription_unit=tu, category='mRNA',
+            copy_number_value=100, copy_number_unit='molecule',
+            half_life_value=5, half_life_unit='mins')
 
-        self.assertEqual(my_rna.id, 'rna_1')
-        self.assertEqual(my_rna.name, 'rna_1')
-        self.assertEqual(my_rna.transcription_unit, my_tu)
-        self.assertEqual(my_rna.category, 'mRNA')
-        self.assertEqual(my_rna.copy_number_value, 100)
-        self.assertEqual(my_rna.copy_number_unit, 'molecule')
-        self.assertEqual(my_rna.half_life_value, 5)
-        self.assertEqual(my_rna.half_life_unit, 'mins')
+        self.assertEqual(rna.id, 'rna_1')
+        self.assertEqual(rna.name, 'rna_1')
+        self.assertEqual(rna.transcription_unit, tu)
+        self.assertEqual(rna.category, 'mRNA')
+        self.assertEqual(rna.copy_number_value, 100)
+        self.assertEqual(rna.copy_number_unit, 'molecule')
+        self.assertEqual(rna.half_life_value, 5)
+        self.assertEqual(rna.half_life_unit, 'mins')
+
 
 class GeneTestCase(unittest.TestCase):
     def test_gene_constructor(self):
-        my_tu = core.TranscriptionUnit(id='tu_1', start=1, end=2, strand=core.ChromosomeStrand.positive, pribnow_start=3, pribnow_end=4)
-        my_rna = core.Rna(id='rna_1', name='rna_1', transcription_unit = my_tu, category='mRNA', copy_number_value=100, copy_number_unit='molecule',
-        half_life_value =5, half_life_unit='mins')
-        my_protein = core.Gene(id='protein_1', name='protein_1', rna = my_rna, symbol='protein_1', category='mRNA')
-        #how to make code more efficient by creating tu only once?
+        tu = core.TranscriptionUnit(
+            id='tu_1', start=1, end=2, strand=core.ChromosomeStrand.positive,
+            pribnow_start=3, pribnow_end=4)
+        rna = core.Rna(
+            id='rna_1', name='rna_1', transcription_unit=tu, category='mRNA',
+            copy_number_value=100, copy_number_unit='molecule',
+            half_life_value=5, half_life_unit='mins')
+        protein = core.Gene(
+            id='protein_1', name='protein_1', rna=rna, symbol='protein_1', category='mRNA')
+        # how to make code more efficient by creating tu only once?
 
-        self.assertEqual(my_protein.id, 'protein_1')
-        self.assertEqual(my_protein.name, 'protein_1')
-        self.assertEqual(my_protein.rna, my_rna)
-        self.assertEqual(my_protein.category, 'mRNA')
-        self.assertEqual(my_protein.symbol, 'protein_1')
+        self.assertEqual(protein.id, 'protein_1')
+        self.assertEqual(protein.name, 'protein_1')
+        self.assertEqual(protein.rna, rna)
+        self.assertEqual(protein.category, 'mRNA')
+        self.assertEqual(protein.symbol, 'protein_1')
