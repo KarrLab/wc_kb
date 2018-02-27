@@ -8,14 +8,17 @@
 """
 
 from wc_utils.util import chem
+import abc
 import Bio.Seq
 import Bio.SeqUtils
 import enum
 import math
+import obj_model.abstract
 import obj_model.core
 import obj_model.extra_attributes
+import six
 
-ChromosomeStrand = enum.Enum(value='ChromosomeStrand', names=[
+PolymerStrand = enum.Enum(value='PolymerStrand', names=[
     ('positive', 1),
     ('+', 1),
     ('negative', -1),
@@ -23,12 +26,23 @@ ChromosomeStrand = enum.Enum(value='ChromosomeStrand', names=[
 ])
 
 
-class KnowledgeBase(obj_model.core.Model):
-    """ A knowledge base
+class KnowledgeBaseObject(obj_model.core.Model):
+    """ Knowlege of a biological entity
 
     Attributes:
         id (:obj:`str`): identifier
         name (:obj:`str`): name
+        comments (:obj:`str`): comments
+    """
+    id = obj_model.core.StringAttribute(primary=True, unique=True)
+    name = obj_model.core.StringAttribute()
+    comments = obj_model.core.StringAttribute()
+
+
+class KnowledgeBase(KnowledgeBaseObject):
+    """ A knowledge base
+
+    Attributes:
         version (:obj:`str`): version
         translation_table (:obj:`int`): translation table
 
@@ -36,8 +50,6 @@ class KnowledgeBase(obj_model.core.Model):
         cell (:obj:`Cell`): cell
     """
 
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
-    name = obj_model.core.StringAttribute()
     version = obj_model.core.StringAttribute()
     translation_table = obj_model.core.IntegerAttribute()
 
@@ -46,12 +58,8 @@ class KnowledgeBase(obj_model.core.Model):
         tabular_orientation = obj_model.core.TabularOrientation.column
 
 
-class Cell(obj_model.core.Model):
+class Cell(KnowledgeBaseObject):
     """ Knowledge of a cell
-
-    Attributes:
-        id (:obj:`str`): identifier
-        knowledge_base (:obj:`KnowledgeBase`): knowledge base
 
     Related attributes:
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
@@ -59,81 +67,155 @@ class Cell(obj_model.core.Model):
         reactions (:obj:`list` of :obj:`Reaction`): reactions
     """
 
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
     knowledge_base = obj_model.core.OneToOneAttribute(KnowledgeBase, related_name='cell')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'knowledge_base')
+        attribute_order = ('id', 'knowledge_base', 'name')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
 
-class SpeciesTypeType(enum.Enum):
-    """ Type of species type """
-    metabolite = 0
-    dna = 1
-    rna = 2
-    protein = 3
-    pseudospecies = 4
+class Compartment(KnowledgeBaseObject):
+    """ Knowledge of a subcellular compartment
+
+    Attributes:
+        cell (:obj:`Cell`): cell
+        volume (:obj:`float`): average volume at the begining of the cell cycle (L)
+    """
+    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='species_types')
+    volume = obj_model.core.FloatAttribute(min=0)
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'cell', 'name', 'volume')
 
 
-class SpeciesType(obj_model.core.Model):
+class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
     """ Knowledge of a molecular species
 
     Attributes:
-        id (:obj:`str`): identifier
         cell (:obj:`Cell`): cell
-        name (:obj:`str`): name        
-        type (:obj:`SpeciesTypeType`): type
-        molecular_weight (:obj:`float`): molecular weight
+        concentration (:obj:`float`): concentration (M)
+        half_life  (:obj:`float`): half life (s)
 
     Related attributes:
         reactions (:obj:`Reaction`): reactions
     """
 
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='species_types')
-    name = obj_model.core.StringAttribute()
-    type = obj_model.core.EnumAttribute(SpeciesTypeType)
-    molecular_weight = obj_model.core.FloatAttribute()
+    concentration = obj_model.core.FloatAttribute(min=0)
+    half_life = obj_model.core.FloatAttribute(min=0)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'type', 'molecular_weight')
+        attribute_order = ('id', 'cell', 'name', 'structure', 'concentration', 'half_life')
+
+    @abc.abstractmethod
+    def get_structure(self):
+        """ Get the structure
+
+        Returns:
+            :obj:`str`: structure
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_empirical_formula(self):
+        """ Get the empirical formula
+
+        Returns:
+            :obj:`str`: empirical formula
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_molecular_weight(self):
+        """ Get the molecular weight
+
+        Returns:
+            :obj:`float`: molecular weight
+        """
+        pass
+
+    @abc.abstractmethod
+    def get_charge(self):
+        """ Get the charge
+
+        Returns:
+            :obj:`int`: charge
+        """
+        pass
 
 
-class Chromosome(obj_model.core.Model):
-    """ Knowledge of a chromosome
+class MetaboliteSpeciesType(SpeciesType):
+    """ Knowledge of a metabolite
 
     Attributes:
-        id (:obj:`str`): identifier
-        cell (:obj:`Cell`): cell
-        seq (:obj:`str`): sequence
+        structure (:obj:`str`): InChI-encoded structure
+    """
+    structure = obj_model.core.StringAttribute()
+
+    def get_structure(self):
+        """ Get the structure
+
+        Returns:
+            :obj:`str`: structure
+        """
+        return self.structure
+
+    def get_empirical_formula(self):
+        """ Get the empirical formula
+
+        Returns:
+            :obj:`str`: empirical formula
+        """
+        pass  # todo calculate the empirical formula
+
+    def get_molecular_weight(self):
+        """ Get the molecular weight
+
+        Returns:
+            :obj:`float`: molecular weight
+        """
+        pass  # todo calculate the molecular weight from the structure
+
+    def get_charge(self):
+        """ Get the charge
+
+        Returns:
+            :obj:`int`: charge
+        """
+        pass  # todo calculate the charge from the structure
+
+
+class PolymerSpeciesType(SpeciesType):
+    """ Knowledge of a polymer
+
+    Attributes:        
+        is_circular (:obj:`bool`): is the polymer circular
+        is_double_stranded (:obj:`bool`): is the polymer double stranded
 
     Related attributes:
-        transcription_units (:obj:`list` of :obj:`TranscriptionUnit`): transcription units
+        loci (:obj:`list` of :obj:`PolymerLocus`): loci
     """
-
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
-    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='chromosomes')
-    seq = obj_model.extra_attributes.BioSeqAttribute()
+    is_circular = obj_model.core.BooleanAttribute()
+    is_double_stranded = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'seq')
+        attribute_order = ('id', 'cell', 'name', 'is_circular', 'is_double_stranded')
 
     def get_len(self):
-        """ Get the chromosome length
+        """ Get the polymer length
 
         Returns:
             :obj:`int`: length
         """
         return len(self.seq)
 
-    def get_subseq(self, start, end, strand=ChromosomeStrand.positive):
+    def get_subseq(self, start, end, strand=PolymerStrand.positive):
         """ Get a subsequence
 
         Args:
             start (:obj:`int`): start coordinate (1-indexed)
             end (:obj:`int`): end coordinate (1-indexed)
-            strand (:obj:`ChromosomeStrand`, optional): strand
+            strand (:obj:`PolymerStrand`, optional): strand
 
         Returns:
             :obj:`str`: sequence
@@ -152,79 +234,102 @@ class Chromosome(obj_model.core.Model):
         else:
             pos_seq = self.seq[start:] + str(self.seq) * (int(math.floor(end / seq_len)) - 1) + self.seq[0:end % seq_len]
 
-        if strand == ChromosomeStrand.positive:
+        if strand == PolymerStrand.positive:
             return pos_seq
         else:
             return pos_seq.reverse_complement()
 
 
-class TranscriptionUnit(obj_model.core.Model):
-    """ Knowledge of a transcription unit
+class DnaSpeciesType(PolymerSpeciesType):
+    """ Knowledge of a DNA species 
 
     Attributes:
-        id (:obj:`str`): identifier        
-        chromosome (:obj:`Chromosome`): chromosome
-        name (:obj:`str`): identifier
-        start (:obj:`int`): start position
-        end (:obj:`int`): end position
-        strand (:obj:`ChromosomeStrand`): strand
-        pribnow_start (:obj:`int`): start position of the Pribnow box (promoter) relative to the 5' coordinate
-        pribnow_end (:obj:`int`): end position of the Pribnow box (promoter) relative to the 5' coordinate
+        seq (:obj:`Bio.Seq.Seq`): sequence
+    """
+    seq = obj_model.extra_attributes.BioSeqAttribute()
+
+    def get_structure(self):
+        """ Get the structure
+
+        Returns:
+            :obj:`Bio.Seq.Seq`: structure
+        """
+        return self.seq
+
+    def get_empirical_formula(self):
+        """ Get the empirical formula
+
+        Returns:
+            :obj:`str`: empirical formula
+        """
+        pass  # todo calculate the empirical formula from the sequence
+
+    def get_molecular_weight(self):
+        """ Get the molecular weight
+
+        Returns:
+            :obj:`float`: molecular weight
+        """
+        pass  # todo calculate the molecular weight from the sequence
+
+    def get_charge(self):
+        """ Get the charge
+
+        Returns:
+            :obj:`int`: charge
+        """
+        pass  # todo calculate the charge from the sequence
+
+
+class ChromosomeSpeciesType(DnaSpeciesType):
+    """ Knowledge of a chromosome
 
     Related attributes:
         transcription_units (:obj:`list` of :obj:`TranscriptionUnit`): transcription units
     """
+    pass
 
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
-    chromosome = obj_model.core.ManyToOneAttribute(Chromosome, related_name='transcription_units')
-    name = obj_model.core.StringAttribute()
-    start = obj_model.core.IntegerAttribute()
-    end = obj_model.core.IntegerAttribute()
-    strand = obj_model.core.EnumAttribute(ChromosomeStrand, default=ChromosomeStrand.positive)
-    pribnow_start = obj_model.core.IntegerAttribute()
-    pribnow_end = obj_model.core.IntegerAttribute()
+
+class RnaType(enum.Enum):
+    """ Type of RNA """
+    mRna = 0
+    rRna = 1
+    sRna = 2
+    tRna = 3
+
+
+class RnaSpeciesType(PolymerSpeciesType):
+    """ Knowledge of an RNA species
+
+    Attributes:
+        transcription_unit (:obj:`TranscriptionUnit`): transcription unit
+        type (:obj:`RnaType`): type
+
+    Related attributes:
+        genes (:obj:`list` of :obj:`Gene`): genes
+    """
+    transcription_unit = obj_model.core.ManyToOneAttribute(TranscriptionUnit, related_name='rna')
+    type = obj_model.core.EnumAttribute(RnaType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'chromosome', 'name', 'start', 'end', 'strand', 'pribnow_start', 'pribnow_end')
-
-    def get_3_prime(self):
-        """ Get the 3' coordinate
-
-        Returns:
-            :obj:`int`: 3' coordinate
-        """
-        if self.strand == ChromosomeStrand.positive:
-            return self.end
-        else:
-            return self.start
-
-    def get_5_prime(self):
-        """ Get the 5' coordinate
-
-        Returns:
-            :obj:`int`: 5' coordinate
-        """
-        if self.strand == ChromosomeStrand.positive:
-            return self.start
-        else:
-            return self.end
-
-    def get_len(self):
-        """ Get the transcription unit length
-
-        Returns:
-            :obj:`int`: length
-        """
-        return self.end - self.start + 1
+        attribute_order = ('id', 'transcription_unit', 'name', 'type',
+                           'copy_number', 'half_life')
 
     def get_seq(self):
-        """ Get the transcription unit sequence
+        """ Get the sequence 
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        dna_seq = self.chromosome.get_subseq(self.start, self.end, self.strand)
-        return dna_seq.transcribe()
+        return self.transcription_unit.get_seq()
+
+    def get_structure(self):
+        """ Get the structure
+
+        Returns:
+            :obj:`Bio.Seq.Seq`: structure
+        """
+        return self.get_seq()
 
     def get_empirical_formula(self):
         """ Get the empirical formula for a transcript with
@@ -277,6 +382,143 @@ class TranscriptionUnit(obj_model.core.Model):
         """
         return Bio.SeqUtils.molecular_weight(self.get_seq())
 
+
+class NascentRnaSpeciesType(RnaSpeciesType):
+    pass
+
+
+class MatureRnaSpeciesType(RnaSpeciesType):
+    pass
+
+
+class ProteinSpeciesType(PolymerSpeciesType):
+    """ Knowledge of a protein monomer """
+
+    def get_structure(self):
+        """ Get the structure
+
+        Returns:
+            :obj:`Bio.Seq.Seq`: structure
+        """
+        return self.get_seq()
+
+    def get_empirical_formula(self):
+        """ Get the empirical formula
+
+        Returns:
+            :obj:`str`: empirical formula
+        """
+        pass  # todo calculate the empirical formula from the sequence
+
+    def get_molecular_weight(self):
+        """ Get the molecular weight
+
+        Returns:
+            :obj:`float`: molecular weight
+        """
+        pass  # todo calculate the molecular weight from the sequence
+
+    def get_charge(self):
+        """ Get the charge
+
+        Returns:
+            :obj:`int`: charge
+        """
+        pass  # todo calculate the charge from the sequence
+
+
+class PolymerLocus(KnowledgeBaseObject):
+    """ Represents knowledge about a locus of a polymer
+
+    Attributes:
+        polymer (:obj:`PolymerSpeciesType`): polymer
+        start (:obj:`int`): start position
+        end (:obj:`int`): end position
+        strand (:obj:`PolymerStrand`): strand
+    """
+    polymer = obj_model.core.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
+    start = obj_model.core.IntegerAttribute()
+    end = obj_model.core.IntegerAttribute()
+    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'polymer', 'name', 'start', 'end', 'strand')
+
+
+class TranscriptionUnitLocus(PolymerLocus):
+    """ Knowledge of a transcription unit
+
+    Attributes:
+        pribnow_start (:obj:`int`): start position of the Pribnow box (promoter) relative to the 5' coordinate
+        pribnow_end (:obj:`int`): end position of the Pribnow box (promoter) relative to the 5' coordinate
+
+    Related attributes:
+        rnas (:obj:`list` of :obj:`Rna`): RNAs
+    """
+
+    pribnow_start = obj_model.core.IntegerAttribute()
+    pribnow_end = obj_model.core.IntegerAttribute()
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'polymer', 'name', 'start', 'end', 'strand', 'pribnow_start', 'pribnow_end')
+
+    @property
+    def chromosome(self):
+        """ Get the chromosome
+
+        Returns:
+            :obj:`Chromosome`: chromosome
+        """
+        return self.polymer
+
+    @chromosome.setter
+    def chromosome(self, chromosome):
+        """ Set the chromosome
+
+        Args:
+            chromosome (:obj:`Chromosome`): chromosome
+        """
+        self.polymer = chromosome
+
+    def get_3_prime(self):
+        """ Get the 3' coordinate
+
+        Returns:
+            :obj:`int`: 3' coordinate
+        """
+        if self.strand == PolymerStrand.positive:
+            return self.end
+        else:
+            return self.start
+
+    def get_5_prime(self):
+        """ Get the 5' coordinate
+
+        Returns:
+            :obj:`int`: 5' coordinate
+        """
+        if self.strand == PolymerStrand.positive:
+            return self.start
+        else:
+            return self.end
+
+    def get_len(self):
+        """ Get the transcription unit length
+
+        Returns:
+            :obj:`int`: length
+        """
+        return self.end - self.start + 1
+
+    def get_seq(self):
+        """ Get the transcription unit sequence
+
+        Returns:
+            :obj:`Bio.Seq.Seq`: sequence
+        """
+        dna_seq = self.chromosome.get_subseq(self.start, self.end, self.strand)
+        return dna_seq.transcribe()
+
     def get_pribnow_len(self):
         """ Get the length of the Pribnow box
 
@@ -291,7 +533,7 @@ class TranscriptionUnit(obj_model.core.Model):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        if self.strand == ChromosomeStrand.positive:
+        if self.strand == PolymerStrand.positive:
             return self.chromosome.get_subseq(
                 self.get_5_prime() + self.pribnow_end,
                 self.get_5_prime() + self.pribnow_start,
@@ -302,44 +544,6 @@ class TranscriptionUnit(obj_model.core.Model):
                 self.get_5_prime() - self.pribnow_end).complement()
 
 
-class RnaType(enum.Enum):
-    """ Type of RNA """
-    mRna = 0
-    rRna = 1
-    sRna = 2
-    tRna = 3
-
-
-class Rna(obj_model.core.Model):
-    """ Knowledge of an RNA molecule
-
-    Attributes:
-        id (:obj:`str`): identifier
-        transcription_unit (:obj:`TranscriptionUnit`): transcription unit
-        name (:obj:`str`): name
-        type (:obj:`RnaType`): type
-        copy_number (:obj:`float`): copy number
-        half_life  (:obj:`float`): half life
-
-    Related attributes:
-        genes (:obj:`list` of :obj:`Gene`): genes
-    """
-
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
-    transcription_unit = obj_model.core.ManyToOneAttribute(TranscriptionUnit, related_name='rna')
-    name = obj_model.core.StringAttribute()
-    type = obj_model.core.EnumAttribute(RnaType)
-    copy_number = obj_model.core.FloatAttribute()
-    half_life = obj_model.core.FloatAttribute()
-
-    class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'transcription_unit', 'name', 'type',
-                           'copy_number', 'half_life')
-
-    def get_molecular_weight(self):
-        pass
-
-
 class GeneType(enum.Enum):
     """ Type of gene """
     mRna = 0
@@ -348,20 +552,16 @@ class GeneType(enum.Enum):
     tRna = 3
 
 
-class Gene(obj_model.core.Model):
+class GeneLocus(PolymerLocus):
     """ Knowledge of a gene
 
     Attributes:
-        id (:obj:`str`): identifier
         rna (:obj:`Rna`): RNA
-        name (:obj:`str`): name
         symbol (:obj:`str`): symbol
         type (:obj:`GeneType`): type
     """
 
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
     rnas = obj_model.core.ManyToManyAttribute(Rna, related_name='genes')
-    name = obj_model.core.StringAttribute()
     symbol = obj_model.core.StringAttribute()
     type = obj_model.core.EnumAttribute(GeneType)
 
@@ -369,20 +569,34 @@ class Gene(obj_model.core.Model):
         attribute_order = ('id', 'rnas', 'name', 'symbol', 'type')
 
 
-class Reaction(obj_model.core.Model):
+class ReactionParticipant(obj_model.core.Model):
+    """ Knowledge of a participant in a reaction
+
+    Attributes:
+        species_type (:obj:`SpeciesType`): species type
+        compartment (:obj:`Compartment): compartment
+        coefficient (:obj:`float`): coefficient
+
+    Related attributes:
+        reactions (:obj:`list` of :obj:`Reaction`): reactions
+    """
+    species_type = obj_model.core.ManyToManyAttribute(SpeciesType, related_name='reaction_participants')
+    compartment = obj_model.core.ManyToManyAttribute(Compartment, related_name='reaction_participants')
+    coefficient = obj_model.core.FloatAttribute()
+
+
+class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
 
     Attributes:
         id (:obj:`str`): identifier
         cell (:obj:`Cell`): cell
         name (:obj:`str`): name
-        species_types (:obj:`list` of :obj:`SpeciesType`): species_types
+        participants (:obj:`list` of :obj:`ReactionParticipant`): participants
     """
 
-    id = obj_model.core.StringAttribute(primary=True, unique=True)
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
-    name = obj_model.core.StringAttribute()
-    species_types = obj_model.core.ManyToManyAttribute(SpeciesType, related_name='reactions')
+    participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'species_types')
+        attribute_order = ('id', 'cell', 'name', 'participants')
