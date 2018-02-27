@@ -15,14 +15,8 @@ class TestUtil(unittest.TestCase):
     """ Test utilities """
 
     def test_get_models(self):
-        non_inline_models = set([
-            core.KnowledgeBase,
-            core.Cell,
-            core.SpeciesType,
-            core.Chromosome,
-            core.TranscriptionUnit,
-            core.Reaction,
-        ])
-        inline_models = set()
-        self.assertEqual(set(util.get_models()), non_inline_models | inline_models)
-        self.assertEqual(set(util.get_models(inline=False)), non_inline_models)
+        self.assertIn(core.KnowledgeBase, util.get_models())
+        self.assertIn(core.Cell, util.get_models())
+
+        self.assertIn(core.KnowledgeBase, util.get_models(inline=False))
+        self.assertIn(core.Cell, util.get_models(inline=False))
