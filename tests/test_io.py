@@ -25,20 +25,21 @@ class TestIO(unittest.TestCase):
         cell = kb.cell = core.Cell(id='genus_species_cell')
 
         for i_chr in range(5):
-            chr = cell.chromosomes.create(id='chr_{}'.format(i_chr + 1))
+            dna = core.DnaSpeciesType(id='chr_{}'.format(i_chr + 1))
+            cell.species_types.append(dna)
 
             seq_len = random.randint(100, 200)
             bases = 'ACGT'
             seq = ''
             for i_nt in range(seq_len):
                 seq += bases[random.randint(0, 3)]
-            chr.seq = Bio.Seq.Seq(seq)
+            dna.seq = Bio.Seq.Seq(seq)
 
             for i_trn in range(5):
-                trn = chr.transcription_units.create(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
+                trn = dna.rnas.create(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1), type=core.RnaType.mRna)
                 trn.start = random.randint(100, 200)
                 trn.end = ((trn.start + random.randint(1, 200) - 1) % seq_len) + 1
-                trn.strand = core.ChromosomeStrand.positive
+                trn.strand = core.PolymerStrand.positive
 
         self.dir = tempfile.mkdtemp()
 

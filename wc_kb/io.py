@@ -24,7 +24,9 @@ class Writer(object):
     """ Write knowledge base to file(s) """
 
     model_order = (
-        core.KnowledgeBase, core.Cell, core.Chromosome, core.TranscriptionUnit,
+        core.KnowledgeBase, core.Cell,
+        core.DnaSpeciesType, core.RnaSpeciesType, core.ProteinSpeciesType,
+        core.GeneLocus, core.PromoterLocus, core.OpenReadingFrameLocus,
     )
 
     def run(self, knowledge_base, core_path, seq_path):
@@ -37,12 +39,13 @@ class Writer(object):
         """
         cell = knowledge_base.cell
 
-        # gather chromosome sequences
-        chr_seqs = []
+        # gather DNA sequences
+        dna_seqs = []
         if cell:
-            for chr in cell.chromosomes:
-                chr_seqs.append(Bio.SeqRecord.SeqRecord(chr.seq, id=chr.id))
-                chr.seq = None
+            dna_species_types = cell.get_dna_species_types()
+            for species_type in dna_species_types:
+                dna_seqs.append(Bio.SeqRecord.SeqRecord(species_type.seq, species_type.id))
+                species_type.seq = None
 
         # export core
         kwargs = {
@@ -59,12 +62,12 @@ class Writer(object):
         # export sequences
         with open(seq_path, 'w') as file:
             writer = Bio.SeqIO.FastaIO.FastaWriter(file, wrap=70, record2title=lambda record: record.id)
-            writer.write_file(chr_seqs)
+            writer.write_file(dna_seqs)
 
-        # restore chromosome sequences
+        # restore DNA sequences
         if cell:
-            for chr, seq in zip(knowledge_base.cell.chromosomes, chr_seqs):
-                chr.seq = seq.seq
+            for species_type, seq in zip(dna_species_types, dna_seqs):
+                species_type.seq = seq.seq
 
 
 class Reader(object):
@@ -93,8 +96,8 @@ class Reader(object):
 
         kb = objects[core.KnowledgeBase].pop()
 
-        for chr in Bio.SeqIO.parse(seq_path, "fasta"):
-            kb.cell.chromosomes.get_one(id=chr.id).seq = chr.seq
+        for dna in Bio.SeqIO.parse(seq_path, "fasta"):
+            kb.cell.species_types.get_one(id=dna.id).seq = dna.seq
 
         return kb
 
