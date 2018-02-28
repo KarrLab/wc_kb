@@ -42,7 +42,7 @@ class Writer(object):
         # gather DNA sequences
         dna_seqs = []
         if cell:
-            dna_species_types = cell.get_dna_species_types()
+            dna_species_types = list(cell.get_dna_species_types())
             for species_type in dna_species_types:
                 dna_seqs.append(Bio.SeqRecord.SeqRecord(species_type.seq, species_type.id))
                 species_type.seq = None
