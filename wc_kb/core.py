@@ -26,7 +26,6 @@ PolymerStrand = enum.Enum(value='PolymerStrand', names=[
     ('-', -1),
 ])
 
-
 class KnowledgeBaseObject(obj_model.core.Model):
     """ Knowlege of a biological entity
 
@@ -57,7 +56,6 @@ class KnowledgeBase(KnowledgeBaseObject):
         attribute_order = ('id', 'name', 'version', 'translation_table')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
-
 class Cell(KnowledgeBaseObject):
     """ Knowledge of a cell
 
@@ -83,7 +81,6 @@ class Cell(KnowledgeBaseObject):
         """
         return filter(lambda species_type: isinstance(species_type, DnaSpeciesType), self.species_types)
 
-
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
 
@@ -99,7 +96,6 @@ class Compartment(KnowledgeBaseObject):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'volume')
-
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
     """ Knowledge of a molecular species
@@ -154,7 +150,6 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
             :obj:`float`: molecular weight
         """
         pass
-
 
 class MetaboliteSpeciesType(SpeciesType):
     """ Knowledge of a metabolite
@@ -295,19 +290,16 @@ class PolymerSpeciesType(SpeciesType):
         else:
             return pos_seq.reverse_complement()
 
-
 class DnaSpeciesType(PolymerSpeciesType):
-    """ Knowledge of a DNA species 
+    """ Knowledge of a DNA species
 
     Attributes:
-        seq (:obj:`Bio.Seq.Seq`): sequence        
+        seq (:obj:`Bio.Seq.Seq`): sequence
     """
     seq = obj_model.extra_attributes.BioSeqAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name',
-                           'seq', 'circular', 'double_stranded',
-                           'concentration', 'half_life')
+        attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life')
 
     def get_seq(self):
         """ Get the sequence
@@ -403,18 +395,17 @@ class RnaType(enum.Enum):
     tRna = 3
     mixed = 4
 
-
 class RnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of an RNA species
 
-    Attributes:        
+    Attributes:
         dna (:obj:`DnaSpeciesType`): polymer
         start (:obj:`int`): start position
         end (:obj:`int`): end position
         strand (:obj:`PolymerStrand`): strand
         type (:obj:`RnaType`): type
 
-    Related attributes:        
+    Related attributes:
         genes (:obj:`list` of :obj:`GeneLocus`): genes
         promoters (:obj:`list` of :obj:`PromoterLocus`): promoters
     """
@@ -518,9 +509,8 @@ class RnaSpeciesType(PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
-
 class ProteinSpeciesType(PolymerSpeciesType):
-    """ Knowledge of a protein monomer 
+    """ Knowledge of a protein monomer
 
     Related attributes:
         orfs (:obj:`list` of :obj:`OpenReadingFrameLocus`): open reading frames
@@ -541,7 +531,57 @@ class ProteinSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-        pass  # todo calculate the empirical formula from the sequence
+
+        seq = self.get_seq()
+        l = len(seq)
+
+        n_a = seq.count('A') #Ala: Alanine (C3 H7 N O2)
+        n_r = seq.count('R') #Arg: Arginine (C6 H14 N4 O2)
+        n_n = seq.count('N') #Asn: Asparagine (C4 H8 N2 O3)
+        n_d = seq.count('D') #Asp: Aspartic acid (C4 H7 N O4)
+        n_c = seq.count('C') #Cys: Cysteine (C3 H7 N O2 S)
+
+        n_q = seq.count('Q') #Gln: Glutamine (C5 H10 N2 O3)
+        n_e = seq.count('E') #Glu: Glutamic acid (C5 H9 N O4)
+        n_g = seq.count('G') #Gly: Glycine (C2 H5 N O2)
+        n_h = seq.count('H') #His: Histidine (C6 H9 N3 O2)
+        n_i = seq.count('I') #Ile: Isoleucine (C6 H13 N O2)
+
+        n_l = seq.count('L') #Leu: Leucine (C6 H13 N O2)
+        n_k = seq.count('K') #Lys: Lysine (C6 H14 N2 O2)
+        n_m = seq.count('M') #Met: Methionine (C5 H11 N O2 S)
+        n_f = seq.count('F') #Phe: Phenylalanine (C9 H11 N O2)
+        n_p = seq.count('P') #Pro: Proline (C5 H9 N O2)
+
+        n_s = seq.count('S') #Ser: Serine (C3 H7 N O3)
+        n_t = seq.count('T') #Thr: Threonine (C4 H9 N O3)
+        n_w = seq.count('W') #Trp: Tryptophan (C11 H12 N2 O2)
+        n_y = seq.count('Y') #Tyr: Tyrosine (C9 H11 N O3)
+        n_v = seq.count('V') #Val: Valine (C5 H11 N O2)
+
+        formula = chem.EmpiricalFormula()
+
+        formula.C = 03 * n_a + 06 * n_r + 04 * n_n + 04 * n_d + 03 * n_c +
+                    05 * n_q + 05 * n_e + 02 * n_g + 06 * n_h + 06 * n_i +
+                    06 * n_l + 06 * n_k + 05 * n_m + 09 * n_f + 05 * n_p +
+                    03 * n_s + 04 * n_t + 11 * n_w + 09 * n_y + 05 * n_v
+
+        formula.H = 07 * n_a + 14 * n_r + 08 * n_n + 07 * n_d + 07 * n_c +
+                    10 * n_q + 09 * n_e + 05 * n_g + 09 * n_h + 13 * n_i +
+                    13 * n_l + 14 * n_k + 11 * n_m + 11 * n_f + 09 * n_p +
+                    07 * n_s + 09 * n_t + 12 * n_w + 11 * n_y + 11 * n_v
+
+        formula.N = 01 * n_a + 04 * n_r + 02 * n_n + 01 * n_d + 01 * n_c +
+                    02 * n_q + 01 * n_e + 01 * n_g + 03 * n_h + 01 * n_i +
+                    01 * n_l + 02 * n_k + 01 * n_m + 01 * n_f + 01 * n_p +
+                    01 * n_s + 01 * n_t + 02 * n_w + 01 * n_y + 01 * n_v
+
+        formula.O = 02 * n_a + 02 * n_r + 03 * n_n + 04 * n_d + 02 * n_c +
+                    03 * n_q + 04 * n_e + 02 * n_g + 02 * n_h + 02 * n_i +
+                    02 * n_l + 02 * n_k + 02 * n_m + 02 * n_f + 02 * n_p +
+                    03 * n_s + 03 * n_t + 02 * n_w + 03 * n_y + 02 * n_v
+
+        formula.S = 01 * n_c + 01 * n_m
 
     def get_charge(self):
         """ Get the charge
@@ -551,6 +591,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
         """
         pass  # todo calculate the charge from the sequence
 
+
     def get_mol_wt(self):
         """ Get the molecular weight
 
@@ -558,7 +599,6 @@ class ProteinSpeciesType(PolymerSpeciesType):
             :obj:`float`: molecular weight
         """
         return self.get_empirical_formula().get_molecular_weight()
-
 
 class PolymerLocus(KnowledgeBaseObject):
     """ Knowledge about a locus of a polymer
@@ -593,14 +633,12 @@ class PolymerLocus(KnowledgeBaseObject):
         """
         return self.start - self.end + 1
 
-
 class GeneType(enum.Enum):
     """ Type of gene """
     mRna = 0
     rRna = 1
     sRna = 2
     tRna = 3
-
 
 class GeneLocus(PolymerLocus):
     """ Knowledge of a gene
@@ -616,7 +654,6 @@ class GeneLocus(PolymerLocus):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'polymer', 'rnas', 'name', 'symbol', 'start', 'end', 'strand', 'type')
-
 
 class PromoterLocus(PolymerLocus):
     """ Knowledge of a promoter for a transcription unit
@@ -654,7 +691,7 @@ class PromoterLocus(PolymerLocus):
 
 
 class OpenReadingFrameLocus(PolymerLocus):
-    """ Knowledge about an open reading frame 
+    """ Knowledge about an open reading frame
 
     Attributes:
         protein (:obj:`ProteinSpeciesType`): protein
