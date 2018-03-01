@@ -392,7 +392,11 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def test_get_empirical_formula(self):
         # test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         # H-CNYYSNSYSFWLASLNPER-OH
-        pass
+
+        prot = wc_kb.core.ProteinSpeciesType(seq='CNYYSNSYSFWLASLNPER')
+        self.assertEqual(prot.get_empirical_formula(), 'C105H144N26O32S')
+
+        #Todo: add mroe test cases
 
     @unittest.skip('todo')
     def test_get_charge(self):
@@ -400,8 +404,8 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     @unittest.skip('todo')
     def test_get_mol_wt(self):
-        pass
-
+        prot = wc_kb.core.ProteinSpeciesType(seq='CNYYSNSYSFWLASLNPER')
+        self.assertEqual(prot.get_mol_wt(), 2314.517) # Double check units match, ref from DB is in g/mol
 
 class PolymerLocusTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -424,8 +428,6 @@ class GeneLocusTestCase(unittest.TestCase):
         self.assertEqual(gene.rnas, [rna])
         self.assertEqual(gene.type.name, 'mRna')
         self.assertEqual(gene.symbol, 'gene_1')
-
-
     def test_transcription_unit_constructor(self):
         locus = core.PromoterLocus(id='tu_1', start=3, end=4, strand=core.PolymerStrand.positive)
 

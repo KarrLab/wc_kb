@@ -294,6 +294,7 @@ class PolymerSpeciesType(SpeciesType):
         else:
             return pos_seq.reverse_complement()
 
+
 class DnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of a DNA species
 
@@ -398,6 +399,7 @@ class RnaType(enum.Enum):
     sRna = 2
     tRna = 3
     mixed = 4
+
 
 class RnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of an RNA species
@@ -513,13 +515,18 @@ class RnaSpeciesType(PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
+
 class ProteinSpeciesType(PolymerSpeciesType):
     """ Knowledge of a protein monomer
+    Attributes:
+     seq (:obj:`str`): sequence of amino acids
 
     Related attributes:
         orfs (:obj:`list` of :obj:`OpenReadingFrameLocus`): open reading frames
     """
+
     # allocate attribute to amino acid seuqnce directly?
+    seq = obj_model.core.StringAttribute() # is there sth like obj_model.core.obj_model.core.BioSeqAttribute() ?
 
     def get_seq(self):
         """ Get the sequence
@@ -527,8 +534,13 @@ class ProteinSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        orf = self.orfs[0]
-        return orf.get_seq().translate(orf.polymer.dna.cell.knowledge_base.translation_table)
+        if self.seq == '':
+            orf = self.orfs[0]
+            return orf.get_seq().translate(orf.polymer.dna.cell.knowledge_base.translation_table)
+        else:
+            return self.seq
+
+        #Todo: implement some mechanism that computes the AA sequence and comapres it with seq attribute (if both assigned) and throw warning if not equal
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -564,6 +576,8 @@ class ProteinSpeciesType(PolymerSpeciesType):
         n_y = seq.count('Y') #Tyr: Tyrosine (C9 H11 N O3)
         n_v = seq.count('V') #Val: Valine (C5 H11 N O2)
 
+        #H-CNYYSNSYSFWLASLNPER-OH
+
         formula = chem.EmpiricalFormula()
 
         formula.C =  3 * n_a +  6 * n_r +  4 * n_n +  4 * n_d +  3 * n_c + \
@@ -586,7 +600,9 @@ class ProteinSpeciesType(PolymerSpeciesType):
                      2 * n_l +  2 * n_k +  2 * n_m +  2 * n_f +  2 * n_p + \
                      3 * n_s +  3 * n_t +  2 * n_w +  3 * n_y +  2 * n_v
 
-        formula.S = n_c + n_m
+        formula.S = 1 * n_c + 1 * n_m
+
+        return formula
 
     def get_charge(self):
         """ Get the charge
@@ -638,6 +654,7 @@ class PolymerLocus(KnowledgeBaseObject):
         """
         return self.start - self.end + 1
 
+
 class GeneType(enum.Enum):
     """ Type of gene """
     mRna = 0
@@ -659,6 +676,7 @@ class GeneLocus(PolymerLocus):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'polymer', 'rnas', 'name', 'symbol', 'start', 'end', 'strand', 'type')
+
 
 class PromoterLocus(PolymerLocus):
     """ Knowledge of a promoter for a transcription unit
