@@ -27,6 +27,19 @@ class TestCore(unittest.TestCase):
         self.assertEqual(core.PolymerStrand.negative.value, -1)
         self.assertEqual(core.PolymerStrand.positive.value, 1)
 
+    def test_RnaType(self):
+        self.assertEqual(core.RnaType.mRna.value, 0)
+        self.assertEqual(core.RnaType.rRna.value, 1)
+        self.assertEqual(core.RnaType.sRna.value, 2)
+        self.assertEqual(core.RnaType.tRna.value, 3)
+        self.assertEqual(core.RnaType.mixed.value, 4)
+
+    def test_GeneType(self):
+        self.assertEqual(core.GeneType.mRna.value, 0)
+        self.assertEqual(core.GeneType.rRna.value, 1)
+        self.assertEqual(core.GeneType.sRna.value, 2)
+        self.assertEqual(core.GeneType.tRna.value, 3)
+
 
 class KnowledgeBaseTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -45,6 +58,7 @@ class CellTestCase(unittest.TestCase):
             core.DnaSpeciesType(id='chr1', seq='AAA'),
             core.DnaSpeciesType(id='chr2', seq='CCC'),
         ]
+
         cell = core.Cell(species_types=dna)
         self.assertEqual(cell.species_types, dna)
 
@@ -149,6 +163,7 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
 
 
 class DnaSpeciesTypeTestCase(unittest.TestCase):
+
     def test(self):
         L = 8
         dna = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
@@ -331,7 +346,16 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
-        pass
+        protein = core.ProteinSpeciesType(id='prot1', name='protein_1', concentration = 1., half_life =5.)
+        self.assertEqual(protein.id, 'prot1')
+        self.assertEqual(protein.name, 'protein_1')
+        self.assertEqual(protein.reaction_participants, [])
+        self.assertEqual(protein.concentration, 1.)
+        self.assertEqual(protein.half_life, 5.)
+        self.assertEqual(protein.circular, False)
+        self.assertEqual(protein.cell, None)
+        self.assertEqual(protein.orfs, [])
+        self.assertEqual(protein.loci, [])
 
     def test_get_seq(self):
         records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
@@ -366,6 +390,8 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     @unittest.skip('todo')
     def test_get_empirical_formula(self):
+        # test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
+        # H-CNYYSNSYSFWLASLNPER-OH
         pass
 
     @unittest.skip('todo')
@@ -400,10 +426,8 @@ class GeneLocusTestCase(unittest.TestCase):
         self.assertEqual(gene.symbol, 'gene_1')
 
 
-class PromoterLocusTestCase(unittest.TestCase):
     def test_transcription_unit_constructor(self):
-        locus = core.PromoterLocus(id='tu_1',
-                                   start=3, end=4, strand=core.PolymerStrand.positive)
+        locus = core.PromoterLocus(id='tu_1', start=3, end=4, strand=core.PolymerStrand.positive)
 
         self.assertEqual(locus.start, 3)
         self.assertEqual(locus.end, 4)

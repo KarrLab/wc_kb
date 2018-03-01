@@ -56,6 +56,7 @@ class KnowledgeBase(KnowledgeBaseObject):
         attribute_order = ('id', 'name', 'version', 'translation_table')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
+
 class Cell(KnowledgeBaseObject):
     """ Knowledge of a cell
 
@@ -81,6 +82,7 @@ class Cell(KnowledgeBaseObject):
         """
         return filter(lambda species_type: isinstance(species_type, DnaSpeciesType), self.species_types)
 
+
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
 
@@ -96,6 +98,7 @@ class Compartment(KnowledgeBaseObject):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'volume')
+
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
     """ Knowledge of a molecular species
@@ -150,6 +153,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
             :obj:`float`: molecular weight
         """
         pass
+
 
 class MetaboliteSpeciesType(SpeciesType):
     """ Knowledge of a metabolite
@@ -515,6 +519,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
     Related attributes:
         orfs (:obj:`list` of :obj:`OpenReadingFrameLocus`): open reading frames
     """
+    # allocate attribute to amino acid seuqnce directly?
 
     def get_seq(self):
         """ Get the sequence
