@@ -561,27 +561,27 @@ class ProteinSpeciesType(PolymerSpeciesType):
 
         formula = chem.EmpiricalFormula()
 
-        formula.C = 03 * n_a + 06 * n_r + 04 * n_n + 04 * n_d + 03 * n_c +
-                    05 * n_q + 05 * n_e + 02 * n_g + 06 * n_h + 06 * n_i +
-                    06 * n_l + 06 * n_k + 05 * n_m + 09 * n_f + 05 * n_p +
-                    03 * n_s + 04 * n_t + 11 * n_w + 09 * n_y + 05 * n_v
+        formula.C =  3 * n_a +  6 * n_r +  4 * n_n +  4 * n_d +  3 * n_c + \
+                     5 * n_q +  5 * n_e +  2 * n_g +  6 * n_h +  6 * n_i + \
+                     6 * n_l +  6 * n_k +  5 * n_m +  9 * n_f +  5 * n_p + \
+                     3 * n_s +  4 * n_t + 11 * n_w +  9 * n_y +  5 * n_v
 
-        formula.H = 07 * n_a + 14 * n_r + 08 * n_n + 07 * n_d + 07 * n_c +
-                    10 * n_q + 09 * n_e + 05 * n_g + 09 * n_h + 13 * n_i +
-                    13 * n_l + 14 * n_k + 11 * n_m + 11 * n_f + 09 * n_p +
-                    07 * n_s + 09 * n_t + 12 * n_w + 11 * n_y + 11 * n_v
+        formula.H =  7 * n_a + 14 * n_r +  8 * n_n +  7 * n_d +  7 * n_c + \
+                    10 * n_q +  9 * n_e +  5 * n_g +  9 * n_h + 13 * n_i + \
+                    13 * n_l + 14 * n_k + 11 * n_m + 11 * n_f +  9 * n_p + \
+                     7 * n_s +  9 * n_t + 12 * n_w + 11 * n_y + 11 * n_v
 
-        formula.N = 01 * n_a + 04 * n_r + 02 * n_n + 01 * n_d + 01 * n_c +
-                    02 * n_q + 01 * n_e + 01 * n_g + 03 * n_h + 01 * n_i +
-                    01 * n_l + 02 * n_k + 01 * n_m + 01 * n_f + 01 * n_p +
-                    01 * n_s + 01 * n_t + 02 * n_w + 01 * n_y + 01 * n_v
+        formula.N =  1 * n_a +  4 * n_r +  2 * n_n +  1 * n_d +  1 * n_c + \
+                     2 * n_q +  1 * n_e +  1 * n_g +  3 * n_h +  1 * n_i + \
+                     1 * n_l +  2 * n_k +  1 * n_m +  1 * n_f +  1 * n_p + \
+                     1 * n_s +  1 * n_t +  2 * n_w +  1 * n_y +  1 * n_v
 
-        formula.O = 02 * n_a + 02 * n_r + 03 * n_n + 04 * n_d + 02 * n_c +
-                    03 * n_q + 04 * n_e + 02 * n_g + 02 * n_h + 02 * n_i +
-                    02 * n_l + 02 * n_k + 02 * n_m + 02 * n_f + 02 * n_p +
-                    03 * n_s + 03 * n_t + 02 * n_w + 03 * n_y + 02 * n_v
+        formula.O =  2 * n_a +  2 * n_r +  3 * n_n +  4 * n_d +  2 * n_c + \
+                     3 * n_q +  4 * n_e +  2 * n_g +  2 * n_h +  2 * n_i + \
+                     2 * n_l +  2 * n_k +  2 * n_m +  2 * n_f +  2 * n_p + \
+                     3 * n_s +  3 * n_t +  2 * n_w +  3 * n_y +  2 * n_v
 
-        formula.S = 01 * n_c + 01 * n_m
+        formula.S = n_c + n_m
 
     def get_charge(self):
         """ Get the charge
