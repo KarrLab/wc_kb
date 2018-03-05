@@ -1,8 +1,8 @@
 # formats: htmlzip, pdf, epub
 python:
   version: 3
-  setup_py_install: false
-  pip_install: false
+  setup_py_install: true
+  #pip_install: false
   extra_requirements:
     - all
 requirements_file: docs/requirements.txt
