@@ -8,9 +8,15 @@ dependencies:
   - sphinx
   #- openbabel
   - pip:
+    - biopython
+    - enum34
+    - git+https://github.com/KarrLab/obj_model.git#egg=obj_model
+    - setuptools
+    - git+https://github.com/KarrLab/wc_utils.git#egg=wc_utils
+
     - configparser
-    - sphinx_rtd_theme
     - robpol86_sphinxcontrib_googleanalytics
+    - six
+    - sphinx_rtd_theme
     - sphinxcontrib_bibtex
     - sphinxcontrib_spelling
-    - git+https://github.com/KarrLab/wc_utils.git
