@@ -1,7 +1,6 @@
 name: docs
 channels:
   - conda-forge
-  #- openbabel
   - defaults
 dependencies:
   - pip
@@ -14,3 +13,4 @@ dependencies:
     - robpol86_sphinxcontrib_googleanalytics
     - sphinxcontrib_bibtex
     - sphinxcontrib_spelling
+    - git+https://github.com/KarrLab/wc_utils.git
