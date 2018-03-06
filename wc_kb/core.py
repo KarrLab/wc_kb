@@ -18,6 +18,7 @@ import obj_model.core
 import obj_model.extra_attributes
 import openbabel
 import six
+import warnings
 
 PolymerStrand = enum.Enum(value='PolymerStrand', names=[
     ('positive', 1),
@@ -416,6 +417,7 @@ class RnaSpeciesType(PolymerSpeciesType):
         promoters (:obj:`list` of :obj:`PromoterLocus`): promoters
     """
     dna = obj_model.core.ManyToOneAttribute(DnaSpeciesType, related_name='rnas')
+
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
     strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
@@ -518,15 +520,12 @@ class RnaSpeciesType(PolymerSpeciesType):
 
 class ProteinSpeciesType(PolymerSpeciesType):
     """ Knowledge of a protein monomer
-    Attributes:
-     seq (:obj:`str`): sequence of amino acids
 
     Related attributes:
         orfs (:obj:`list` of :obj:`OpenReadingFrameLocus`): open reading frames
     """
 
-    # allocate attribute to amino acid seuqnce directly?
-    seq = obj_model.core.StringAttribute() # is there sth like obj_model.core.obj_model.core.BioSeqAttribute() ?
+    rna = obj_model.core.ManyToOneAttribute(RnaSpeciesType, related_name='proteins') #Many To One?
 
     def get_seq(self):
         """ Get the sequence
@@ -534,13 +533,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        if self.seq == '':
-            orf = self.orfs[0]
-            return orf.get_seq().translate(orf.polymer.dna.cell.knowledge_base.translation_table)
-        else:
-            return self.seq
-
-        #Todo: implement some mechanism that computes the AA sequence and comapres it with seq attribute (if both assigned) and throw warning if not equal
+        return self.rna.dna.get_seq().transcribe().translate()
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -576,8 +569,6 @@ class ProteinSpeciesType(PolymerSpeciesType):
         n_y = seq.count('Y') #Tyr: Tyrosine (C9 H11 N O3)
         n_v = seq.count('V') #Val: Valine (C5 H11 N O2)
 
-        #H-CNYYSNSYSFWLASLNPER-OH
-
         formula = chem.EmpiricalFormula()
 
         formula.C =  3 * n_a +  6 * n_r +  4 * n_n +  4 * n_d +  3 * n_c + \
@@ -588,7 +579,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
         formula.H =  7 * n_a + 14 * n_r +  8 * n_n +  7 * n_d +  7 * n_c + \
                     10 * n_q +  9 * n_e +  5 * n_g +  9 * n_h + 13 * n_i + \
                     13 * n_l + 14 * n_k + 11 * n_m + 11 * n_f +  9 * n_p + \
-                     7 * n_s +  9 * n_t + 12 * n_w + 11 * n_y + 11 * n_v
+                     7 * n_s +  9 * n_t + 12 * n_w + 11 * n_y + 11 * n_v - 2*(l-1)
 
         formula.N =  1 * n_a +  4 * n_r +  2 * n_n +  1 * n_d +  1 * n_c + \
                      2 * n_q +  1 * n_e +  1 * n_g +  3 * n_h +  1 * n_i + \
@@ -598,10 +589,9 @@ class ProteinSpeciesType(PolymerSpeciesType):
         formula.O =  2 * n_a +  2 * n_r +  3 * n_n +  4 * n_d +  2 * n_c + \
                      3 * n_q +  4 * n_e +  2 * n_g +  2 * n_h +  2 * n_i + \
                      2 * n_l +  2 * n_k +  2 * n_m +  2 * n_f +  2 * n_p + \
-                     3 * n_s +  3 * n_t +  2 * n_w +  3 * n_y +  2 * n_v
+                     3 * n_s +  3 * n_t +  2 * n_w +  3 * n_y +  2 * n_v - (l-1)
 
-        formula.S = 1 * n_c + 1 * n_m
-
+        formula.S = n_c + n_m
         return formula
 
     def get_charge(self):
@@ -612,7 +602,6 @@ class ProteinSpeciesType(PolymerSpeciesType):
         """
         pass  # todo calculate the charge from the sequence
 
-
     def get_mol_wt(self):
         """ Get the molecular weight
 
@@ -620,6 +609,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
             :obj:`float`: molecular weight
         """
         return self.get_empirical_formula().get_molecular_weight()
+
 
 class PolymerLocus(KnowledgeBaseObject):
     """ Knowledge about a locus of a polymer
@@ -661,6 +651,7 @@ class GeneType(enum.Enum):
     rRna = 1
     sRna = 2
     tRna = 3
+
 
 class GeneLocus(PolymerLocus):
     """ Knowledge of a gene

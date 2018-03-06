@@ -390,22 +390,36 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     @unittest.skip('todo')
     def test_get_empirical_formula(self):
-        # test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        # H-CNYYSNSYSFWLASLNPER-OH
+        # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        rna1 = core.RnaSpeciesType(dna=dna1)
+        prot1 = core.ProteinSpeciesType(rna=rna1)
+        self.assertEqual(prot1.get_empirical_formula(),chem.EmpiricalFormula('C105H144N26O32S'))
 
-        prot = wc_kb.core.ProteinSpeciesType(seq='CNYYSNSYSFWLASLNPER')
-        self.assertEqual(prot.get_empirical_formula(), 'C105H144N26O32S')
+        # Test is based on Histone 7 (https://pubchem.ncbi.nlm.nih.gov/compound/22461943)
+        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TCGCCGCAAAGCTTCTGGTCCT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        rna2 = core.RnaSpeciesType(dna=dna2)
+        prot2 = core.ProteinSpeciesType(rna=rna2)
+        self.assertEqual(prot2.get_empirical_formula(),chem.EmpiricalFormula('C31H58N14O9'))
 
-        #Todo: add mroe test cases
+    @unittest.skip('todo')
+    def test_get_mol_wt(self):
+        # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        rna1 = core.RnaSpeciesType(dna=dna1)
+        prot1 = core.ProteinSpeciesType(rna=rna1)
+        self.assertAlmostEqual(prot1.get_mol_wt(),2314.517) # Double check units match, ref from DB is in g/mol
+
+        # Test is based on Histone 7 (https://pubchem.ncbi.nlm.nih.gov/compound/22461943)
+        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TCGCCGCAAAGCTTCTGGTCCT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        rna2 = core.RnaSpeciesType(dna=dna2)
+        prot2 = core.ProteinSpeciesType(rna=rna2)
+        self.assertAlmostEqual(prot2.get_mol_wt(),770.894)
 
     @unittest.skip('todo')
     def test_get_charge(self):
         pass
 
-    @unittest.skip('todo')
-    def test_get_mol_wt(self):
-        prot = wc_kb.core.ProteinSpeciesType(seq='CNYYSNSYSFWLASLNPER')
-        self.assertEqual(prot.get_mol_wt(), 2314.517) # Double check units match, ref from DB is in g/mol
 
 class PolymerLocusTestCase(unittest.TestCase):
     def test_constructor(self):
