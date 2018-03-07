@@ -388,38 +388,63 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         prot = core.ProteinSpeciesType(orfs=[orf])
         self.assertEqual(prot.get_seq()[0:10], 'MKFKFLLTPL')
 
-    @unittest.skip('todo')
     def test_get_empirical_formula(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        rna1 = core.RnaSpeciesType(dna=dna1)
-        prot1 = core.ProteinSpeciesType(rna=rna1)
+        cell = dna1.cell = core.Cell()
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
+        prot1 = core.ProteinSpeciesType(orfs=[orf1])
         self.assertEqual(prot1.get_empirical_formula(),chem.EmpiricalFormula('C105H144N26O32S'))
 
-        # Test is based on Histone 7 (https://pubchem.ncbi.nlm.nih.gov/compound/22461943)
-        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TCGCCGCAAAGCTTCTGGTCCT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        rna2 = core.RnaSpeciesType(dna=dna2)
-        prot2 = core.ProteinSpeciesType(rna=rna2)
-        self.assertEqual(prot2.get_empirical_formula(),chem.EmpiricalFormula('C31H58N14O9'))
+        # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
+        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell = dna2.cell = core.Cell()
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
+        orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
+        prot2 = core.ProteinSpeciesType(orfs=[orf2])
+        self.assertEqual(prot2.get_empirical_formula(),chem.EmpiricalFormula('C21H40N8O6S0'))
+        # S0 should not bed needed, but test fails without it
 
-    @unittest.skip('todo')
     def test_get_mol_wt(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        rna1 = core.RnaSpeciesType(dna=dna1)
-        prot1 = core.ProteinSpeciesType(rna=rna1)
-        self.assertAlmostEqual(prot1.get_mol_wt(),2314.517) # Double check units match, ref from DB is in g/mol
+        cell = dna1.cell = core.Cell()
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
+        prot1 = core.ProteinSpeciesType(orfs=[orf1])
+        self.assertAlmostEqual(prot1.get_mol_wt(),2314.517)
 
-        # Test is based on Histone 7 (https://pubchem.ncbi.nlm.nih.gov/compound/22461943)
-        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TCGCCGCAAAGCTTCTGGTCCT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        rna2 = core.RnaSpeciesType(dna=dna2)
-        prot2 = core.ProteinSpeciesType(rna=rna2)
-        self.assertAlmostEqual(prot2.get_mol_wt(),770.894)
+        # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
+        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell = dna2.cell = core.Cell()
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
+        orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
+        prot2 = core.ProteinSpeciesType(orfs=[orf2])
+        self.assertAlmostEqual(prot2.get_mol_wt(),500.601)
 
-    @unittest.skip('todo')
     def test_get_charge(self):
-        pass
+        # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell = dna1.cell = core.Cell()
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
+        prot1 = core.ProteinSpeciesType(orfs=[orf1])
+        self.assertEqual(prot1.get_charge(),0)
 
+	    # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
+        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell = dna2.cell = core.Cell()
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
+        orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
+        prot2 = core.ProteinSpeciesType(orfs=[orf2])
+        self.assertEqual(prot2.get_charge(),2)
 
 class PolymerLocusTestCase(unittest.TestCase):
     def test_constructor(self):

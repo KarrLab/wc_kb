@@ -525,15 +525,15 @@ class ProteinSpeciesType(PolymerSpeciesType):
         orfs (:obj:`list` of :obj:`OpenReadingFrameLocus`): open reading frames
     """
 
-    rna = obj_model.core.ManyToOneAttribute(RnaSpeciesType, related_name='proteins') #Many To One?
-
     def get_seq(self):
         """ Get the sequence
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        return self.rna.dna.get_seq().transcribe().translate()
+        orf = self.orfs[0]
+        return orf.get_seq().translate(orf.polymer.dna.cell.knowledge_base.translation_table)
+        #return self.rna.dna.get_seq().transcribe().translate()
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -595,12 +595,20 @@ class ProteinSpeciesType(PolymerSpeciesType):
         return formula
 
     def get_charge(self):
-        """ Get the charge
+        """ Get the charge at pH = 7.4
 
         Returns:
             :obj:`int`: charge
         """
-        pass  # todo calculate the charge from the sequence
+        seq = self.get_seq()
+
+        n_r = seq.count('R')
+        n_h = seq.count('H')
+        n_k = seq.count('K')
+        n_d = seq.count('D')
+        n_e = seq.count('E')
+
+        return (n_r+n_h+n_k)-(n_d+n_e)
 
     def get_mol_wt(self):
         """ Get the molecular weight
