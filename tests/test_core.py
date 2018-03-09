@@ -406,7 +406,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
         self.assertEqual(prot2.get_empirical_formula(),chem.EmpiricalFormula('C21H40N8O6S0'))
-        # S0 should not bed needed, but test fails without it
+        # todo: 'S0' should not be needed at the end of formula, but test fails without it
 
     def test_get_mol_wt(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
@@ -446,6 +446,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
         self.assertEqual(prot2.get_charge(),2)
 
+
 class PolymerLocusTestCase(unittest.TestCase):
     def test_constructor(self):
         dna = core.DnaSpeciesType()
@@ -467,6 +468,7 @@ class GeneLocusTestCase(unittest.TestCase):
         self.assertEqual(gene.rnas, [rna])
         self.assertEqual(gene.type.name, 'mRna')
         self.assertEqual(gene.symbol, 'gene_1')
+
     def test_transcription_unit_constructor(self):
         locus = core.PromoterLocus(id='tu_1', start=3, end=4, strand=core.PolymerStrand.positive)
 
@@ -510,6 +512,67 @@ class OpenReadingFrameLocusTestCase(unittest.TestCase):
         prot = core.ProteinSpeciesType(orfs=[orf])
 
 
-@unittest.skip('todo')
+class ReactionParticipantTestCase(unittest.TestCase):
+    def test_constructor(self):
+        with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
+            core.SpeciesType()
+
+        class ConcreteSpeciesType(core.SpeciesType):
+            def get_structure(self):
+                pass
+            def get_empirical_formula(self):
+                pass
+            def get_charge(self):
+                pass
+            def get_mol_wt(self):
+                pass
+
+        cell1 = core.Cell()
+        compartment1 = core.Compartment(cell = cell1)
+        species1 = ConcreteSpeciesType(id ='1')
+        species2 = ConcreteSpeciesType(id ='2')
+
+        participant1 = core.ReactionParticipant(species_type = [species1, species2], compartment = [compartment1], coefficient = 5)
+
+        self.assertEqual(participant1.species_type, [species1, species2])
+        self.assertEqual(participant1.compartment, [compartment1])
+        self.assertEqual(participant1.coefficient, 5)
+
 class ReactionTestCase(unittest.TestCase):
-    pass
+        def test_constructor(self):
+            with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
+                core.SpeciesType()
+
+            class ConcreteSpeciesType(core.SpeciesType):
+                def get_structure(self):
+                    pass
+                def get_empirical_formula(self):
+                    pass
+                def get_charge(self):
+                    pass
+                def get_mol_wt(self):
+                    pass
+
+            cell1 = core.Cell()
+            compartment1 = core.Compartment(cell = cell1)
+            species1 = ConcreteSpeciesType(id ='1')
+            species2 = ConcreteSpeciesType(id ='2')
+            participant1 = core.ReactionParticipant(species_type = [species1], compartment = [compartment1], coefficient = 1)
+            participant2 = core.ReactionParticipant(species_type = [species2], compartment = [compartment1], coefficient = 1)
+
+            reaction1 = core.Reaction(
+                                id ='reaction1',
+                                name = 'test_reaction',
+                                cell = cell1,
+                                participants =[participant1, participant2],
+                                k_m = 0.1,
+                                v_max = 0.5,
+                                reversible=0)
+
+            self.assertEqual(reaction1.id,'reaction1')
+            self.assertEqual(reaction1.name,'test_reaction')
+            self.assertEqual(reaction1.cell,cell1)
+            self.assertEqual(reaction1.participants, [participant1, participant2])
+            self.assertEqual(reaction1.k_m, 0.1)
+            self.assertEqual(reaction1.v_max, 0.5)
+            self.assertEqual(reaction1.reversible, 0)

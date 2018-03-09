@@ -726,10 +726,9 @@ class OpenReadingFrameLocus(PolymerLocus):
 
 class ReactionParticipant(obj_model.core.Model):
     """ Knowledge of a participant in a reaction
-
     Attributes:
         species_type (:obj:`SpeciesType`): species type
-        compartment (:obj:`Compartment): compartment
+        compartment (:obj:`Compartment`): compartment
         coefficient (:obj:`float`): coefficient
 
     Related attributes:
@@ -737,6 +736,7 @@ class ReactionParticipant(obj_model.core.Model):
     """
     species_type = obj_model.core.ManyToManyAttribute(SpeciesType, related_name='reaction_participants')
     compartment = obj_model.core.ManyToManyAttribute(Compartment, related_name='reaction_participants')
+
     coefficient = obj_model.core.FloatAttribute()
 
     class Meta(obj_model.core.Model.Meta):
@@ -795,12 +795,21 @@ class Reaction(KnowledgeBaseObject):
 
     Attributes:
         id (:obj:`str`): identifier
+        name (:obj:`str`): name of the reaction
+        comments (:obj:`str`): comments
         cell (:obj:`Cell`): cell
-        name (:obj:`str`): name
         participants (:obj:`list` of :obj:`ReactionParticipant`): participants
+        k_m (:obj:`float`): K_m value of reaction (unit:)
+        v_max (:obj:`float`):V_max value of reaction (unit: )
+        reversible (:obj:`boolean`): denotes whether reaction is reversible
+
+        Handle submodel here or during model generation?
     """
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
     participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
+    k_m = obj_model.core.FloatAttribute()
+    v_max = obj_model.core.FloatAttribute()
+    reversible = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'participants')
+        attribute_order = ('id', 'cell', 'name', 'participants', 'k_m', 'v_max', 'reversible')
