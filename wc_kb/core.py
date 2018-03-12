@@ -800,8 +800,6 @@ class Reaction(KnowledgeBaseObject):
         k_m (:obj:`float`): K_m value of reaction (unit: umol/L)
         v_max (:obj:`float`):V_max value of reaction (unit: umol/min)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
-
-        Handle submodel here or during model generation?
     """
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
     participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
