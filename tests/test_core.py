@@ -346,7 +346,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
-        protein = core.ProteinSpeciesType(id='prot1', name='protein_1', concentration = 1., half_life =5.)
+        protein = core.ProteinSpeciesType(id='prot1', name='protein_1', concentration=1., half_life=5.)
         self.assertEqual(protein.id, 'prot1')
         self.assertEqual(protein.name, 'protein_1')
         self.assertEqual(protein.reaction_participants, [])
@@ -390,61 +390,65 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     def test_get_empirical_formula(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
+            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
         rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
         prot1 = core.ProteinSpeciesType(orfs=[orf1])
-        self.assertEqual(prot1.get_empirical_formula(),chem.EmpiricalFormula('C105H144N26O32S'))
+        self.assertEqual(prot1.get_empirical_formula(), chem.EmpiricalFormula('C105H144N26O32S'))
 
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
         rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
         orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
-        self.assertEqual(prot2.get_empirical_formula(),chem.EmpiricalFormula('C21H40N8O6S0'))
+        self.assertEqual(prot2.get_empirical_formula(), chem.EmpiricalFormula('C21H40N8O6'))
+        # todo: fix chem.EmpiricalFormula or report issue
         # todo: 'S0' should not be needed at the end of formula, but test fails without it
 
     def test_get_mol_wt(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
+            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
         rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
         prot1 = core.ProteinSpeciesType(orfs=[orf1])
-        self.assertAlmostEqual(prot1.get_mol_wt(),2314.517)
+        self.assertAlmostEqual(prot1.get_mol_wt(), 2314.517)
 
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
         rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
         orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
-        self.assertAlmostEqual(prot2.get_mol_wt(),500.601)
+        self.assertAlmostEqual(prot2.get_mol_wt(), 500.601)
 
     def test_get_charge(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
+            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
         rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
         prot1 = core.ProteinSpeciesType(orfs=[orf1])
-        self.assertEqual(prot1.get_charge(),0)
+        self.assertEqual(prot1.get_charge(), 0)
 
-	    # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
+        # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
         rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
         orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
-        self.assertEqual(prot2.get_charge(),2)
+        self.assertEqual(prot2.get_charge(), 2)
 
 
 class PolymerLocusTestCase(unittest.TestCase):
@@ -514,65 +518,76 @@ class OpenReadingFrameLocusTestCase(unittest.TestCase):
 
 class ReactionParticipantTestCase(unittest.TestCase):
     def test_constructor(self):
+        # todo: remove because this is redundant with other tests
         with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
             core.SpeciesType()
 
+        # todo: simplify because you can use MetaboliteSpeciesType instead
         class ConcreteSpeciesType(core.SpeciesType):
             def get_structure(self):
                 pass
+
             def get_empirical_formula(self):
                 pass
+
             def get_charge(self):
                 pass
+
             def get_mol_wt(self):
                 pass
 
         cell1 = core.Cell()
-        compartment1 = core.Compartment(cell = cell1)
-        species1 = ConcreteSpeciesType(id ='1')
-        species2 = ConcreteSpeciesType(id ='2')
+        compartment1 = core.Compartment(cell=cell1)
+        species1 = ConcreteSpeciesType(id='1')
+        species2 = ConcreteSpeciesType(id='2')
 
-        participant1 = core.ReactionParticipant(species_type = [species1, species2], compartment = [compartment1], coefficient = 5)
+        participant1 = core.ReactionParticipant(species_type=[species1, species2], compartment=[compartment1], coefficient=5)
 
         self.assertEqual(participant1.species_type, [species1, species2])
         self.assertEqual(participant1.compartment, [compartment1])
         self.assertEqual(participant1.coefficient, 5)
 
+
 class ReactionTestCase(unittest.TestCase):
-        def test_constructor(self):
-            with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
-                core.SpeciesType()
+    def test_constructor(self):
+        # todo: remove because this is redundant with other tests
+        with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
+            core.SpeciesType()
 
-            class ConcreteSpeciesType(core.SpeciesType):
-                def get_structure(self):
-                    pass
-                def get_empirical_formula(self):
-                    pass
-                def get_charge(self):
-                    pass
-                def get_mol_wt(self):
-                    pass
+        # todo: simplify because you can use MetaboliteSpeciesType instead
+        class ConcreteSpeciesType(core.SpeciesType):
+            def get_structure(self):
+                pass
 
-            cell1 = core.Cell()
-            compartment1 = core.Compartment(cell = cell1)
-            species1 = ConcreteSpeciesType(id ='1')
-            species2 = ConcreteSpeciesType(id ='2')
-            participant1 = core.ReactionParticipant(species_type = [species1], compartment = [compartment1], coefficient = 1)
-            participant2 = core.ReactionParticipant(species_type = [species2], compartment = [compartment1], coefficient = 1)
+            def get_empirical_formula(self):
+                pass
 
-            reaction1 = core.Reaction(
-                                id ='reaction1',
-                                name = 'test_reaction',
-                                cell = cell1,
-                                participants =[participant1, participant2],
-                                k_m = 0.1,
-                                v_max = 0.5,
-                                reversible=0)
+            def get_charge(self):
+                pass
 
-            self.assertEqual(reaction1.id,'reaction1')
-            self.assertEqual(reaction1.name,'test_reaction')
-            self.assertEqual(reaction1.cell,cell1)
-            self.assertEqual(reaction1.participants, [participant1, participant2])
-            self.assertEqual(reaction1.k_m, 0.1)
-            self.assertEqual(reaction1.v_max, 0.5)
-            self.assertEqual(reaction1.reversible, 0)
+            def get_mol_wt(self):
+                pass
+
+        cell1 = core.Cell()
+        compartment1 = core.Compartment(cell=cell1)
+        species1 = ConcreteSpeciesType(id='1')
+        species2 = ConcreteSpeciesType(id='2')
+        participant1 = core.ReactionParticipant(species_type=[species1], compartment=[compartment1], coefficient=1)
+        participant2 = core.ReactionParticipant(species_type=[species2], compartment=[compartment1], coefficient=1)
+
+        reaction1 = core.Reaction(
+            id='reaction1',
+            name='test_reaction',
+            cell=cell1,
+            participants=[participant1, participant2],
+            k_m=0.1,
+            v_max=0.5,
+            reversible=0)
+
+        self.assertEqual(reaction1.id, 'reaction1')
+        self.assertEqual(reaction1.name, 'test_reaction')
+        self.assertEqual(reaction1.cell, cell1)
+        self.assertEqual(reaction1.participants, [participant1, participant2])
+        self.assertEqual(reaction1.k_m, 0.1)
+        self.assertEqual(reaction1.v_max, 0.5)
+        self.assertEqual(reaction1.reversible, 0)
