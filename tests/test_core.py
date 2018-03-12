@@ -518,28 +518,10 @@ class OpenReadingFrameLocusTestCase(unittest.TestCase):
 
 class ReactionParticipantTestCase(unittest.TestCase):
     def test_constructor(self):
-        # todo: remove because this is redundant with other tests
-        with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
-            core.SpeciesType()
-
-        # todo: simplify because you can use MetaboliteSpeciesType instead
-        class ConcreteSpeciesType(core.SpeciesType):
-            def get_structure(self):
-                pass
-
-            def get_empirical_formula(self):
-                pass
-
-            def get_charge(self):
-                pass
-
-            def get_mol_wt(self):
-                pass
-
         cell1 = core.Cell()
-        compartment1 = core.Compartment(cell=cell1)
-        species1 = ConcreteSpeciesType(id='1')
-        species2 = ConcreteSpeciesType(id='2')
+        compartment1 = core.Compartment(cell = cell1)
+        species1 = core.MetaboliteSpeciesType(id ='1')
+        species2 = core.MetaboliteSpeciesType(id ='2')
 
         participant1 = core.ReactionParticipant(species_type=[species1, species2], compartment=[compartment1], coefficient=5)
 
@@ -549,45 +531,52 @@ class ReactionParticipantTestCase(unittest.TestCase):
 
 
 class ReactionTestCase(unittest.TestCase):
-    def test_constructor(self):
-        # todo: remove because this is redundant with other tests
-        with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
-            core.SpeciesType()
+        def test_constructor(self):
+            cell1 = core.Cell()
+            compartment1 = core.Compartment(cell = cell1)
+            species1 = core.MetaboliteSpeciesType(id ='1')
+            species2 = core.MetaboliteSpeciesType(id ='2')
+            participant1 = core.ReactionParticipant(species_type = [species1], compartment = [compartment1], coefficient = 1)
+            participant2 = core.ReactionParticipant(species_type = [species2], compartment = [compartment1], coefficient = 1)
 
-        # todo: simplify because you can use MetaboliteSpeciesType instead
-        class ConcreteSpeciesType(core.SpeciesType):
-            def get_structure(self):
-                pass
+            reaction1 = core.Reaction(
+                                id ='reaction1',
+                                name = 'test_reaction',
+                                cell = cell1,
+                                participants =[participant1, participant2],
+                                k_m = 0.1,
+                                v_max = 0.5,
+                                reversible=0)
 
-            def get_empirical_formula(self):
-                pass
+            self.assertEqual(reaction1.id,'reaction1')
+            self.assertEqual(reaction1.name,'test_reaction')
+            self.assertEqual(reaction1.cell,cell1)
+            self.assertEqual(reaction1.participants, [participant1, participant2])
+            self.assertEqual(reaction1.k_m, 0.1)
+            self.assertEqual(reaction1.v_max, 0.5)
+            self.assertEqual(reaction1.reversible, 0)
 
-            def get_charge(self):
-                pass
+        def test_constructor(self):
+            cell1 = core.Cell()
+            compartment1 = core.Compartment(cell=cell1)
+            species1 = core.MetaboliteSpeciesType(id='1')
+            species2 = core.MetaboliteSpeciesType(id='2')
+            participant1 = core.ReactionParticipant(species_type=[species1], compartment=[compartment1], coefficient=1)
+            participant2 = core.ReactionParticipant(species_type=[species2], compartment=[compartment1], coefficient=1)
 
-            def get_mol_wt(self):
-                pass
+            reaction1 = core.Reaction(
+                id='reaction1',
+                name='test_reaction',
+                cell=cell1,
+                participants=[participant1, participant2],
+                k_m=0.1,
+                v_max=0.5,
+                reversible=0)
 
-        cell1 = core.Cell()
-        compartment1 = core.Compartment(cell=cell1)
-        species1 = ConcreteSpeciesType(id='1')
-        species2 = ConcreteSpeciesType(id='2')
-        participant1 = core.ReactionParticipant(species_type=[species1], compartment=[compartment1], coefficient=1)
-        participant2 = core.ReactionParticipant(species_type=[species2], compartment=[compartment1], coefficient=1)
-
-        reaction1 = core.Reaction(
-            id='reaction1',
-            name='test_reaction',
-            cell=cell1,
-            participants=[participant1, participant2],
-            k_m=0.1,
-            v_max=0.5,
-            reversible=0)
-
-        self.assertEqual(reaction1.id, 'reaction1')
-        self.assertEqual(reaction1.name, 'test_reaction')
-        self.assertEqual(reaction1.cell, cell1)
-        self.assertEqual(reaction1.participants, [participant1, participant2])
-        self.assertEqual(reaction1.k_m, 0.1)
-        self.assertEqual(reaction1.v_max, 0.5)
-        self.assertEqual(reaction1.reversible, 0)
+            self.assertEqual(reaction1.id, 'reaction1')
+            self.assertEqual(reaction1.name, 'test_reaction')
+            self.assertEqual(reaction1.cell, cell1)
+            self.assertEqual(reaction1.participants, [participant1, participant2])
+            self.assertEqual(reaction1.k_m, 0.1)
+            self.assertEqual(reaction1.v_max, 0.5)
+            self.assertEqual(reaction1.reversible, 0)
