@@ -26,6 +26,7 @@ PolymerStrand = enum.Enum(value='PolymerStrand', names=[
     ('-', -1),
 ])
 
+
 class KnowledgeBaseObject(obj_model.core.Model):
     """ Knowlege of a biological entity
 
@@ -416,7 +417,6 @@ class RnaSpeciesType(PolymerSpeciesType):
         promoters (:obj:`list` of :obj:`PromoterLocus`): promoters
     """
     dna = obj_model.core.ManyToOneAttribute(DnaSpeciesType, related_name='rnas')
-
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
     strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
@@ -543,57 +543,57 @@ class ProteinSpeciesType(PolymerSpeciesType):
         seq = self.get_seq()
         l = len(seq)
 
-        n_a = seq.count('A') #Ala: Alanine (C3 H7 N O2)
-        n_r = seq.count('R') #Arg: Arginine (C6 H14 N4 O2)
-        n_n = seq.count('N') #Asn: Asparagine (C4 H8 N2 O3)
-        n_d = seq.count('D') #Asp: Aspartic acid (C4 H7 N O4)
-        n_c = seq.count('C') #Cys: Cysteine (C3 H7 N O2 S)
+        n_a = seq.count('A')  # Ala: Alanine (C3 H7 N O2)
+        n_r = seq.count('R')  # Arg: Arginine (C6 H14 N4 O2)
+        n_n = seq.count('N')  # Asn: Asparagine (C4 H8 N2 O3)
+        n_d = seq.count('D')  # Asp: Aspartic acid (C4 H7 N O4)
+        n_c = seq.count('C')  # Cys: Cysteine (C3 H7 N O2 S)
 
-        n_q = seq.count('Q') #Gln: Glutamine (C5 H10 N2 O3)
-        n_e = seq.count('E') #Glu: Glutamic acid (C5 H9 N O4)
-        n_g = seq.count('G') #Gly: Glycine (C2 H5 N O2)
-        n_h = seq.count('H') #His: Histidine (C6 H9 N3 O2)
-        n_i = seq.count('I') #Ile: Isoleucine (C6 H13 N O2)
+        n_q = seq.count('Q')  # Gln: Glutamine (C5 H10 N2 O3)
+        n_e = seq.count('E')  # Glu: Glutamic acid (C5 H9 N O4)
+        n_g = seq.count('G')  # Gly: Glycine (C2 H5 N O2)
+        n_h = seq.count('H')  # His: Histidine (C6 H9 N3 O2)
+        n_i = seq.count('I')  # Ile: Isoleucine (C6 H13 N O2)
 
-        n_l = seq.count('L') #Leu: Leucine (C6 H13 N O2)
-        n_k = seq.count('K') #Lys: Lysine (C6 H14 N2 O2)
-        n_m = seq.count('M') #Met: Methionine (C5 H11 N O2 S)
-        n_f = seq.count('F') #Phe: Phenylalanine (C9 H11 N O2)
-        n_p = seq.count('P') #Pro: Proline (C5 H9 N O2)
+        n_l = seq.count('L')  # Leu: Leucine (C6 H13 N O2)
+        n_k = seq.count('K')  # Lys: Lysine (C6 H14 N2 O2)
+        n_m = seq.count('M')  # Met: Methionine (C5 H11 N O2 S)
+        n_f = seq.count('F')  # Phe: Phenylalanine (C9 H11 N O2)
+        n_p = seq.count('P')  # Pro: Proline (C5 H9 N O2)
 
-        n_s = seq.count('S') #Ser: Serine (C3 H7 N O3)
-        n_t = seq.count('T') #Thr: Threonine (C4 H9 N O3)
-        n_w = seq.count('W') #Trp: Tryptophan (C11 H12 N2 O2)
-        n_y = seq.count('Y') #Tyr: Tyrosine (C9 H11 N O3)
-        n_v = seq.count('V') #Val: Valine (C5 H11 N O2)
+        n_s = seq.count('S')  # Ser: Serine (C3 H7 N O3)
+        n_t = seq.count('T')  # Thr: Threonine (C4 H9 N O3)
+        n_w = seq.count('W')  # Trp: Tryptophan (C11 H12 N2 O2)
+        n_y = seq.count('Y')  # Tyr: Tyrosine (C9 H11 N O3)
+        n_v = seq.count('V')  # Val: Valine (C5 H11 N O2)
 
         formula = chem.EmpiricalFormula()
 
-        formula.C =  3 * n_a +  6 * n_r +  4 * n_n +  4 * n_d +  3 * n_c + \
-                     5 * n_q +  5 * n_e +  2 * n_g +  6 * n_h +  6 * n_i + \
-                     6 * n_l +  6 * n_k +  5 * n_m +  9 * n_f +  5 * n_p + \
-                     3 * n_s +  4 * n_t + 11 * n_w +  9 * n_y +  5 * n_v
+        formula.C = 3 * n_a + 6 * n_r + 4 * n_n + 4 * n_d + 3 * n_c + \
+            5 * n_q + 5 * n_e + 2 * n_g + 6 * n_h + 6 * n_i + \
+            6 * n_l + 6 * n_k + 5 * n_m + 9 * n_f + 5 * n_p + \
+            3 * n_s + 4 * n_t + 11 * n_w + 9 * n_y + 5 * n_v
 
-        formula.H =  7 * n_a + 14 * n_r +  8 * n_n +  7 * n_d +  7 * n_c + \
-                    10 * n_q +  9 * n_e +  5 * n_g +  9 * n_h + 13 * n_i + \
-                    13 * n_l + 14 * n_k + 11 * n_m + 11 * n_f +  9 * n_p + \
-                     7 * n_s +  9 * n_t + 12 * n_w + 11 * n_y + 11 * n_v - 2*(l-1)
+        formula.H = 7 * n_a + 14 * n_r + 8 * n_n + 7 * n_d + 7 * n_c + \
+            10 * n_q + 9 * n_e + 5 * n_g + 9 * n_h + 13 * n_i + \
+            13 * n_l + 14 * n_k + 11 * n_m + 11 * n_f + 9 * n_p + \
+            7 * n_s + 9 * n_t + 12 * n_w + 11 * n_y + 11 * n_v - 2 * (l - 1)
 
-        formula.N =  1 * n_a +  4 * n_r +  2 * n_n +  1 * n_d +  1 * n_c + \
-                     2 * n_q +  1 * n_e +  1 * n_g +  3 * n_h +  1 * n_i + \
-                     1 * n_l +  2 * n_k +  1 * n_m +  1 * n_f +  1 * n_p + \
-                     1 * n_s +  1 * n_t +  2 * n_w +  1 * n_y +  1 * n_v
+        formula.N = 1 * n_a + 4 * n_r + 2 * n_n + 1 * n_d + 1 * n_c + \
+            2 * n_q + 1 * n_e + 1 * n_g + 3 * n_h + 1 * n_i + \
+            1 * n_l + 2 * n_k + 1 * n_m + 1 * n_f + 1 * n_p + \
+            1 * n_s + 1 * n_t + 2 * n_w + 1 * n_y + 1 * n_v
 
-        formula.O =  2 * n_a +  2 * n_r +  3 * n_n +  4 * n_d +  2 * n_c + \
-                     3 * n_q +  4 * n_e +  2 * n_g +  2 * n_h +  2 * n_i + \
-                     2 * n_l +  2 * n_k +  2 * n_m +  2 * n_f +  2 * n_p + \
-                     3 * n_s +  3 * n_t +  2 * n_w +  3 * n_y +  2 * n_v - (l-1)
+        formula.O = 2 * n_a + 2 * n_r + 3 * n_n + 4 * n_d + 2 * n_c + \
+            3 * n_q + 4 * n_e + 2 * n_g + 2 * n_h + 2 * n_i + \
+            2 * n_l + 2 * n_k + 2 * n_m + 2 * n_f + 2 * n_p + \
+            3 * n_s + 3 * n_t + 2 * n_w + 3 * n_y + 2 * n_v - (l - 1)
 
         formula.S = n_c + n_m
         return formula
 
     def get_charge(self):
-        """ Get the charge at pH = 7.4
+        """ Get the charge at physiological pH
 
         Returns:
             :obj:`int`: charge
@@ -606,7 +606,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
         n_d = seq.count('D')
         n_e = seq.count('E')
 
-        return (n_r+n_h+n_k)-(n_d+n_e)
+        return (n_r + n_h + n_k) - (n_d + n_e)
 
     def get_mol_wt(self):
         """ Get the molecular weight
@@ -724,6 +724,7 @@ class OpenReadingFrameLocus(PolymerLocus):
 
 class ReactionParticipant(KnowledgeBaseObject):
     """ Knowledge of a participant in a reaction
+
     Attributes:
         species_type (:obj:`SpeciesType`): species type
         compartment (:obj:`Compartment`): compartment
@@ -732,9 +733,8 @@ class ReactionParticipant(KnowledgeBaseObject):
     Related attributes:
         reactions (:obj:`list` of :obj:`Reaction`): reactions
     """
-
-    compartment = obj_model.core.ManyToManyAttribute(Compartment, related_name='reaction_participants')
     species_type = obj_model.core.ManyToManyAttribute(SpeciesType, related_name='reaction_participants')
+    compartment = obj_model.core.ManyToManyAttribute(Compartment, related_name='reaction_participants')
     coefficient = obj_model.core.FloatAttribute()
 
     class Meta(obj_model.core.Model.Meta):
@@ -792,11 +792,9 @@ class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
 
     Attributes:
-        id (:obj:`str`): identifier
-        name (:obj:`str`): name of the reaction
-        comments (:obj:`str`): comments
         cell (:obj:`Cell`): cell
         participants (:obj:`list` of :obj:`ReactionParticipant`): participants
+<<<<<<< HEAD
         k_m (:obj:`float`): K_m value of reaction (unit: umol/L)
         v_max (:obj:`float`):V_max value of reaction (unit: umol/min)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
@@ -805,6 +803,18 @@ class Reaction(KnowledgeBaseObject):
     participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
     k_m = obj_model.core.FloatAttribute(min=0)
     v_max = obj_model.core.FloatAttribute(min=0)
+=======
+        k_m (:obj:`float`): K_m value of reaction (unit: todo)
+        v_max (:obj:`float`):V_max value of reaction (unit: todo)
+        reversible (:obj:`boolean`): denotes whether reaction is reversible
+
+        todo: Handle submodel here or during model generation?
+    """
+    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
+    participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
+    k_m = obj_model.core.FloatAttribute()  # todo: validate that value is non-negative
+    v_max = obj_model.core.FloatAttribute()  # todo: validate that value is non-negative
+>>>>>>> bc5f247e1745c44e86e3b8c2cfe65c8726bbdfd2
     reversible = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
