@@ -787,34 +787,21 @@ class ReactionParticipant(KnowledgeBaseObject):
             'No species type and compartment with primary attribute values "{}" and "{}"'.format(
                 species_type_id, compartment_id)]))
 
-
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
-
     Attributes:
         cell (:obj:`Cell`): cell
         participants (:obj:`list` of :obj:`ReactionParticipant`): participants
-<<<<<<< HEAD
-        k_m (:obj:`float`): K_m value of reaction (unit: umol/L)
-        v_max (:obj:`float`):V_max value of reaction (unit: umol/min)
+        k_m (:obj:`float`): K_m value of reaction (unit: mol/L)
+        v_max (:obj:`float`):V_max value of reaction (unit: mol/L/min)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
+        todo: Handle submodel here or during model generation?
     """
+
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
     participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
     k_m = obj_model.core.FloatAttribute(min=0)
     v_max = obj_model.core.FloatAttribute(min=0)
-=======
-        k_m (:obj:`float`): K_m value of reaction (unit: todo)
-        v_max (:obj:`float`):V_max value of reaction (unit: todo)
-        reversible (:obj:`boolean`): denotes whether reaction is reversible
-
-        todo: Handle submodel here or during model generation?
-    """
-    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
-    participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
-    k_m = obj_model.core.FloatAttribute()  # todo: validate that value is non-negative
-    v_max = obj_model.core.FloatAttribute()  # todo: validate that value is non-negative
->>>>>>> bc5f247e1745c44e86e3b8c2cfe65c8726bbdfd2
     reversible = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
