@@ -514,23 +514,10 @@ class OpenReadingFrameLocusTestCase(unittest.TestCase):
 
 class ReactionParticipantTestCase(unittest.TestCase):
     def test_constructor(self):
-        with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
-            core.SpeciesType()
-
-        class ConcreteSpeciesType(core.SpeciesType):
-            def get_structure(self):
-                pass
-            def get_empirical_formula(self):
-                pass
-            def get_charge(self):
-                pass
-            def get_mol_wt(self):
-                pass
-
         cell1 = core.Cell()
         compartment1 = core.Compartment(cell = cell1)
-        species1 = ConcreteSpeciesType(id ='1')
-        species2 = ConcreteSpeciesType(id ='2')
+        species1 = core.MetaboliteSpeciesType(id ='1')
+        species2 = core.MetaboliteSpeciesType(id ='2')
 
         participant1 = core.ReactionParticipant(species_type = [species1, species2], compartment = [compartment1], coefficient = 5)
 
@@ -538,25 +525,13 @@ class ReactionParticipantTestCase(unittest.TestCase):
         self.assertEqual(participant1.compartment, [compartment1])
         self.assertEqual(participant1.coefficient, 5)
 
+
 class ReactionTestCase(unittest.TestCase):
         def test_constructor(self):
-            with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
-                core.SpeciesType()
-
-            class ConcreteSpeciesType(core.SpeciesType):
-                def get_structure(self):
-                    pass
-                def get_empirical_formula(self):
-                    pass
-                def get_charge(self):
-                    pass
-                def get_mol_wt(self):
-                    pass
-
             cell1 = core.Cell()
             compartment1 = core.Compartment(cell = cell1)
-            species1 = ConcreteSpeciesType(id ='1')
-            species2 = ConcreteSpeciesType(id ='2')
+            species1 = core.MetaboliteSpeciesType(id ='1')
+            species2 = core.MetaboliteSpeciesType(id ='2')
             participant1 = core.ReactionParticipant(species_type = [species1], compartment = [compartment1], coefficient = 1)
             participant2 = core.ReactionParticipant(species_type = [species2], compartment = [compartment1], coefficient = 1)
 

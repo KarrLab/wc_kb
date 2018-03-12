@@ -18,7 +18,6 @@ import obj_model.core
 import obj_model.extra_attributes
 import openbabel
 import six
-import warnings
 
 PolymerStrand = enum.Enum(value='PolymerStrand', names=[
     ('positive', 1),
@@ -533,7 +532,6 @@ class ProteinSpeciesType(PolymerSpeciesType):
         """
         orf = self.orfs[0]
         return orf.get_seq().translate(orf.polymer.dna.cell.knowledge_base.translation_table)
-        #return self.rna.dna.get_seq().transcribe().translate()
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -724,7 +722,7 @@ class OpenReadingFrameLocus(PolymerLocus):
         attribute_order = ('id', 'polymer', 'protein', 'name', 'start', 'end', 'strand')
 
 
-class ReactionParticipant(obj_model.core.Model):
+class ReactionParticipant(KnowledgeBaseObject):
     """ Knowledge of a participant in a reaction
     Attributes:
         species_type (:obj:`SpeciesType`): species type
@@ -734,9 +732,9 @@ class ReactionParticipant(obj_model.core.Model):
     Related attributes:
         reactions (:obj:`list` of :obj:`Reaction`): reactions
     """
-    species_type = obj_model.core.ManyToManyAttribute(SpeciesType, related_name='reaction_participants')
-    compartment = obj_model.core.ManyToManyAttribute(Compartment, related_name='reaction_participants')
 
+    compartment = obj_model.core.ManyToManyAttribute(Compartment, related_name='reaction_participants')
+    species_type = obj_model.core.ManyToManyAttribute(SpeciesType, related_name='reaction_participants')
     coefficient = obj_model.core.FloatAttribute()
 
     class Meta(obj_model.core.Model.Meta):
@@ -799,16 +797,16 @@ class Reaction(KnowledgeBaseObject):
         comments (:obj:`str`): comments
         cell (:obj:`Cell`): cell
         participants (:obj:`list` of :obj:`ReactionParticipant`): participants
-        k_m (:obj:`float`): K_m value of reaction (unit:)
-        v_max (:obj:`float`):V_max value of reaction (unit: )
+        k_m (:obj:`float`): K_m value of reaction (unit: umol/L)
+        v_max (:obj:`float`):V_max value of reaction (unit: umol/min)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
 
         Handle submodel here or during model generation?
     """
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
     participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
-    k_m = obj_model.core.FloatAttribute()
-    v_max = obj_model.core.FloatAttribute()
+    k_m = obj_model.core.FloatAttribute(min=0)
+    v_max = obj_model.core.FloatAttribute(min=0)
     reversible = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
