@@ -362,7 +362,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         dna_seq = next(records).seq
         dna = core.DnaSpeciesType(seq=dna_seq)
         cell = dna.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)
+        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
 
         # MPN001
         rna = core.RnaSpeciesType(dna=dna, start=692, end=1834, strand=core.PolymerStrand.positive)
@@ -390,10 +390,9 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     def test_get_empirical_formula(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
+        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
         rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
         prot1 = core.ProteinSpeciesType(orfs=[orf1])
@@ -402,20 +401,18 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
+        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
         rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
         orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
         self.assertEqual(prot2.get_empirical_formula(), chem.EmpiricalFormula('C21H40N8O6'))
-        # todo: fix chem.EmpiricalFormula or report issue
-        # todo: 'S0' should not be needed at the end of formula, but test fails without it
 
     def test_get_mol_wt(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
+        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
         rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
         prot1 = core.ProteinSpeciesType(orfs=[orf1])
@@ -424,7 +421,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
+        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
         rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
         orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
@@ -435,7 +432,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
+        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
         rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
         prot1 = core.ProteinSpeciesType(orfs=[orf1])
@@ -444,7 +441,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=4)  # todo: correct translation table
+        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
         rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
         orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
         prot2 = core.ProteinSpeciesType(orfs=[orf2])

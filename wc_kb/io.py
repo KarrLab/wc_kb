@@ -24,9 +24,17 @@ class Writer(object):
     """ Write knowledge base to file(s) """
 
     model_order = (
-        core.KnowledgeBase, core.Cell,
-        core.DnaSpeciesType, core.RnaSpeciesType, core.ProteinSpeciesType,
-        core.GeneLocus, core.PromoterLocus, core.OpenReadingFrameLocus,
+        core.KnowledgeBase,
+        core.Cell,
+        core.Compartment,
+        core.DnaSpeciesType,
+        core.PromoterLocus,
+        core.RnaSpeciesType,
+        core.OpenReadingFrameLocus,
+        core.ProteinSpeciesType,
+        core.GeneLocus,
+        core.MetaboliteSpeciesType,
+        core.Reaction
     )
 
     def run(self, knowledge_base, core_path, seq_path):

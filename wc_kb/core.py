@@ -423,8 +423,8 @@ class RnaSpeciesType(PolymerSpeciesType):
     type = obj_model.core.EnumAttribute(RnaType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'dna', 'name', 'start', 'end', 'strand',
-                           'type', 'concentration', 'half_life')
+        attribute_order = ('id', 'name', 'cell', 'dna', 'strand', 'start', 'end',
+                           'type', 'concentration', 'half_life', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -688,8 +688,7 @@ class PromoterLocus(PolymerLocus):
     pribnow_end = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'polymer', 'rnas', 'name', 'start', 'end', 'strand',
-                           'pribnow_start', 'pribnow_end')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'rnas', 'start', 'end','pribnow_start', 'pribnow_end')
 
     def get_pribnow_seq(self):
         """ Get the Pribnow sequence
@@ -786,6 +785,7 @@ class ReactionParticipant(KnowledgeBaseObject):
         return (None, InvalidAttribute(attr, [
             'No species type and compartment with primary attribute values "{}" and "{}"'.format(
                 species_type_id, compartment_id)]))
+
 
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
