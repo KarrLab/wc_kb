@@ -417,14 +417,17 @@ class RnaSpeciesType(PolymerSpeciesType):
         promoters (:obj:`list` of :obj:`PromoterLocus`): promoters
     """
     dna = obj_model.core.ManyToOneAttribute(DnaSpeciesType, related_name='rnas')
+    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
-    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
     type = obj_model.core.EnumAttribute(RnaType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'cell', 'dna', 'strand', 'start', 'end',
-                           'type', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'cell', 'dna', 'strand', 'start', 'end', 'type',
+        'concentration', 'half_life', 'circular', 'double_stranded', 'comments')
+
+        #attribute_order = ('id', 'name', cell', 'dna', 'strand', 'start', 'end',
+        #                   'type', 'concentration', 'half_life', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -523,6 +526,9 @@ class ProteinSpeciesType(PolymerSpeciesType):
     Related attributes:
         orfs (:obj:`list` of :obj:`OpenReadingFrameLocus`): open reading frames
     """
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'name', 'concentration', 'half_life', 'circular', 'double_stranded', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -632,7 +638,7 @@ class PolymerLocus(KnowledgeBaseObject):
     strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'start', 'end', 'strand')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end')
 
     def get_seq(self):
         """ Get the sequence
@@ -672,7 +678,7 @@ class GeneLocus(PolymerLocus):
     type = obj_model.core.EnumAttribute(GeneType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'polymer', 'rnas', 'name', 'symbol', 'start', 'end', 'strand', 'type')
+        attribute_order = ('id', 'name', 'symbol', 'polymer', 'strand', 'start', 'end', 'rnas', 'type')
 
 
 class PromoterLocus(PolymerLocus):
@@ -688,7 +694,7 @@ class PromoterLocus(PolymerLocus):
     pribnow_end = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'rnas', 'start', 'end','pribnow_start', 'pribnow_end')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'rnas', 'start', 'end', 'pribnow_start', 'pribnow_end')
 
     def get_pribnow_seq(self):
         """ Get the Pribnow sequence
@@ -718,7 +724,7 @@ class OpenReadingFrameLocus(PolymerLocus):
     protein = obj_model.core.ManyToOneAttribute(ProteinSpeciesType, related_name='orfs')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'polymer', 'protein', 'name', 'start', 'end', 'strand')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'protein')
 
 
 class ReactionParticipant(KnowledgeBaseObject):
