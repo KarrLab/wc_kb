@@ -306,6 +306,7 @@ class DnaSpeciesType(PolymerSpeciesType):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life')
+        verbose_name = 'DNA species type'
 
     def get_seq(self):
         """ Get the sequence
@@ -428,6 +429,7 @@ class RnaSpeciesType(PolymerSpeciesType):
 
         #attribute_order = ('id', 'name', cell', 'dna', 'strand', 'start', 'end',
         #                   'type', 'concentration', 'half_life', 'comments')
+        verbose_name = 'RNA species type'
 
     def get_3_prime(self):
         """ Get the 3' coordinate
