@@ -75,13 +75,20 @@ class Cell(KnowledgeBaseObject):
         attribute_order = ('id', 'knowledge_base', 'name', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
-    def get_dna_species_types(self):
+    def get_species_types(self, cls=None):
         """ Get the DNA species types
 
+        Args:
+            cls (:obj:`type` or :obj:`tuple` of :obj:`type`, optional): type(s) of species types;
+                if :obj:`None`, every species type will be returned
+
         Returns:
-            :obj:`list` of :obj:`DnaSpeciesType`: DNA species types
+            :obj:`list` of :obj:`SpeciesType`: species types
         """
-        return filter(lambda species_type: isinstance(species_type, DnaSpeciesType), self.species_types)
+        if cls is None:
+            return self.species_types
+        else:
+            return filter(lambda species_type: isinstance(species_type, cls), self.species_types)
 
 
 class Compartment(KnowledgeBaseObject):

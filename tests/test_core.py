@@ -52,7 +52,7 @@ class CellTestCase(unittest.TestCase):
         cell = core.Cell()
         self.assertEqual(cell.knowledge_base, None)
         self.assertEqual(cell.species_types, [])
-        self.assertEqual(list(cell.get_dna_species_types()), [])
+        self.assertEqual(list(cell.get_species_types(core.DnaSpeciesType)), [])
 
         dna = [
             core.DnaSpeciesType(id='chr1', seq='AAA'),
