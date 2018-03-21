@@ -27,13 +27,13 @@ class Writer(object):
         core.KnowledgeBase,
         core.Cell,
         core.Compartment,
+        core.MetaboliteSpeciesType,
         core.DnaSpeciesType,
         core.PromoterLocus,
         core.RnaSpeciesType,
+        core.GeneLocus,
         core.OpenReadingFrameLocus,
         core.ProteinSpeciesType,
-        core.GeneLocus,
-        core.MetaboliteSpeciesType,
         core.Reaction
     )
 

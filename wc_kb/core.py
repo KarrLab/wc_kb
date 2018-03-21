@@ -54,7 +54,7 @@ class KnowledgeBase(KnowledgeBaseObject):
     translation_table = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'version', 'translation_table')
+        attribute_order = ('id', 'name', 'version', 'translation_table', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
 
@@ -72,7 +72,7 @@ class Cell(KnowledgeBaseObject):
     knowledge_base = obj_model.core.OneToOneAttribute(KnowledgeBase, related_name='cell')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'knowledge_base', 'name')
+        attribute_order = ('id', 'knowledge_base', 'name', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
     def get_dna_species_types(self):
@@ -98,7 +98,7 @@ class Compartment(KnowledgeBaseObject):
     volume = obj_model.core.FloatAttribute(min=0)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'volume')
+        attribute_order = ('id', 'cell', 'name', 'volume', 'comments')
 
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
@@ -117,7 +117,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     half_life = obj_model.core.FloatAttribute(min=0)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'concentration', 'half_life')
+        attribute_order = ('id', 'cell', 'name', 'concentration', 'half_life', 'comments')
 
     @abc.abstractmethod
     def get_structure(self):
@@ -165,7 +165,7 @@ class MetaboliteSpeciesType(SpeciesType):
     structure = obj_model.core.StringAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'structure', 'concentration', 'half_life')
+        attribute_order = ('id', 'cell', 'name', 'structure', 'concentration', 'half_life', 'comments')
 
     def get_structure(self):
         """ Get the structure
@@ -229,7 +229,7 @@ class PolymerSpeciesType(SpeciesType):
     double_stranded = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'circular', 'double_stranded', 'concentration', 'half_life')
+        attribute_order = ('id', 'cell', 'name', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
 
     def get_structure(self):
         """ Get the polymer sequence
@@ -302,10 +302,10 @@ class DnaSpeciesType(PolymerSpeciesType):
     Attributes:
         seq (:obj:`Bio.Seq.Seq`): sequence
     """
-    seq = obj_model.extra_attributes.BioSeqAttribute()
+    seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life')
+        attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
         verbose_name = 'DNA species type'
 
     def get_seq(self):
@@ -417,18 +417,15 @@ class RnaSpeciesType(PolymerSpeciesType):
         genes (:obj:`list` of :obj:`GeneLocus`): genes
         promoters (:obj:`list` of :obj:`PromoterLocus`): promoters
     """
-    dna = obj_model.core.ManyToOneAttribute(DnaSpeciesType, related_name='rnas')
+    dna = obj_model.core.ManyToOneAttribute(DnaSpeciesType, related_name='rnas', verbose_name='DNA', verbose_related_name='RNAs')
     strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
     type = obj_model.core.EnumAttribute(RnaType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'cell', 'dna', 'strand', 'start', 'end', 'type',
-        'concentration', 'half_life', 'circular', 'double_stranded', 'comments')
-
-        #attribute_order = ('id', 'name', cell', 'dna', 'strand', 'start', 'end',
-        #                   'type', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'cell', 'dna', 'name', 'strand', 'start', 'end', 'type',
+                           'concentration', 'half_life', 'circular', 'double_stranded', 'comments')
         verbose_name = 'RNA species type'
 
     def get_3_prime(self):
@@ -530,7 +527,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
     """
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'concentration', 'half_life', 'circular', 'double_stranded', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'concentration', 'half_life', 'circular', 'double_stranded', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -640,7 +637,7 @@ class PolymerLocus(KnowledgeBaseObject):
     strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -675,12 +672,12 @@ class GeneLocus(PolymerLocus):
         symbol (:obj:`str`): symbol
         type (:obj:`GeneType`): type
     """
-    rnas = obj_model.core.ManyToManyAttribute(RnaSpeciesType, related_name='genes')
+    rnas = obj_model.core.ManyToManyAttribute(RnaSpeciesType, related_name='genes', verbose_name='RNAs')
     symbol = obj_model.core.StringAttribute()
     type = obj_model.core.EnumAttribute(GeneType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'symbol', 'polymer', 'strand', 'start', 'end', 'rnas', 'type')
+        attribute_order = ('id', 'name', 'symbol', 'polymer', 'strand', 'start', 'end', 'rnas', 'type', 'comments')
 
 
 class PromoterLocus(PolymerLocus):
@@ -691,12 +688,12 @@ class PromoterLocus(PolymerLocus):
         pribnow_start (:obj:`int`): Pribnow box start coordinate, relative to the start site of the RNA (TSS)
         pribnow_end (:obj:`int`): Pribnow box end coordinate, relative to the start site of the RNA (TSS)
     """
-    rnas = obj_model.core.OneToManyAttribute(RnaSpeciesType, related_name='promoters')
+    rnas = obj_model.core.OneToManyAttribute(RnaSpeciesType, related_name='promoters', verbose_name='RNAs')
     pribnow_start = obj_model.core.IntegerAttribute()
     pribnow_end = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'rnas', 'start', 'end', 'pribnow_start', 'pribnow_end')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'rnas', 'start', 'end', 'pribnow_start', 'pribnow_end', 'comments')
 
     def get_pribnow_seq(self):
         """ Get the Pribnow sequence
@@ -726,7 +723,7 @@ class OpenReadingFrameLocus(PolymerLocus):
     protein = obj_model.core.ManyToOneAttribute(ProteinSpeciesType, related_name='orfs')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'protein')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'protein', 'comments')
 
 
 class ReactionParticipant(KnowledgeBaseObject):
@@ -797,20 +794,21 @@ class ReactionParticipant(KnowledgeBaseObject):
 
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
+
     Attributes:
         cell (:obj:`Cell`): cell
-        participants (:obj:`list` of :obj:`ReactionParticipant`): participants
-        k_m (:obj:`float`): K_m value of reaction (unit: mol/L)
+        participants (:obj:`list` of :obj:`ReactionParticipant`): participants        
         v_max (:obj:`float`):V_max value of reaction (unit: mol/L/min)
+        k_m (:obj:`float`): K_m value of reaction (unit: mol/L)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
         todo: Handle submodel here or during model generation?
     """
 
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
     participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
-    k_m = obj_model.core.FloatAttribute(min=0)
-    v_max = obj_model.core.FloatAttribute(min=0)
+    v_max = obj_model.core.FloatAttribute(min=0, verbose_name='Vmax')
+    k_m = obj_model.core.FloatAttribute(min=0, verbose_name='Km')    
     reversible = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'participants', 'k_m', 'v_max', 'reversible')
+        attribute_order = ('id', 'cell', 'name', 'participants', 'v_max', 'k_m', 'reversible', 'comments')
