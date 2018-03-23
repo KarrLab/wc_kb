@@ -32,7 +32,7 @@ class Writer(object):
         core.PromoterLocus,
         core.RnaSpeciesType,
         core.GeneLocus,
-        core.OpenReadingFrameLocus,
+        core.TranscriptionUnitLocus,
         core.ProteinSpeciesType,
         core.Reaction
     )

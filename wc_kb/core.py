@@ -67,6 +67,7 @@ class Cell(KnowledgeBaseObject):
     Related attributes:
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
+        loci (:obj:`list` of :obj:`PolymerLocus`): locus
         reactions (:obj:`list` of :obj:`Reaction`): reactions
     """
     knowledge_base = obj_model.core.OneToOneAttribute(KnowledgeBase, related_name='cell')
@@ -119,6 +120,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """
+
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='species_types')
     concentration = obj_model.core.FloatAttribute(min=0)
     half_life = obj_model.core.FloatAttribute(min=0)
@@ -308,11 +310,15 @@ class DnaSpeciesType(PolymerSpeciesType):
 
     Attributes:
         seq (:obj:`Bio.Seq.Seq`): sequence
+
+    Related attributes:
+        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`): TUs
     """
+
     seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'comments')
         verbose_name = 'DNA species type'
 
     def get_seq(self):
@@ -414,48 +420,19 @@ class RnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of an RNA species
 
     Attributes:
-        dna (:obj:`DnaSpeciesType`): polymer
-        start (:obj:`int`): start position
-        end (:obj:`int`): end position
-        strand (:obj:`PolymerStrand`): strand
+        transcription_unit (:obj:`TranscriptionUnitLocus`): transcription unit
         type (:obj:`RnaType`): type
 
     Related attributes:
-        genes (:obj:`list` of :obj:`GeneLocus`): genes
-        promoters (:obj:`list` of :obj:`PromoterLocus`): promoters
+        protein (:obj:`list` of :obj:`ProteinSpeciesType`): protein(s)
     """
-    dna = obj_model.core.ManyToOneAttribute(DnaSpeciesType, related_name='rnas', verbose_name='DNA', verbose_related_name='RNAs')
-    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
-    start = obj_model.core.IntegerAttribute()
-    end = obj_model.core.IntegerAttribute()
+
+    transcription_unit = obj_model.core.ManyToManyAttribute('TranscriptionUnitLocus', related_name='rna')
     type = obj_model.core.EnumAttribute(RnaType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'dna', 'name', 'strand', 'start', 'end', 'type',
-                           'concentration', 'half_life', 'circular', 'double_stranded', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'type', 'transcription_unit', 'concentration', 'half_life', 'comments')
         verbose_name = 'RNA species type'
-
-    def get_3_prime(self):
-        """ Get the 3' coordinate
-
-        Returns:
-            :obj:`int`: 3' coordinate
-        """
-        if self.strand == PolymerStrand.positive:
-            return self.end
-        else:
-            return self.start
-
-    def get_5_prime(self):
-        """ Get the 5' coordinate
-
-        Returns:
-            :obj:`int`: 5' coordinate
-        """
-        if self.strand == PolymerStrand.positive:
-            return self.start
-        else:
-            return self.end
 
     def get_len(self):
         """ Get the length
@@ -529,12 +506,16 @@ class RnaSpeciesType(PolymerSpeciesType):
 class ProteinSpeciesType(PolymerSpeciesType):
     """ Knowledge of a protein monomer
 
-    Related attributes:
-        orfs (:obj:`list` of :obj:`OpenReadingFrameLocus`): open reading frames
+    Attributes:
+        gene (:obj:`GeneLocus`): gene
+        rna (:obj:`RnaSpeciesType`): rna
     """
 
+    gene = obj_model.core.ManyToOneAttribute('GeneLocus', related_name='protein')
+    rna = obj_model.core.ManyToOneAttribute('RnaSpeciesType', related_name='protein')
+
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'concentration', 'half_life', 'circular', 'double_stranded', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'gene', 'rna', 'concentration', 'half_life', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -638,13 +619,15 @@ class PolymerLocus(KnowledgeBaseObject):
         end (:obj:`int`): end position
         strand (:obj:`PolymerStrand`): strand
     """
+
     polymer = obj_model.core.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
+    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='loci')
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
     strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'polymer', 'strand', 'start', 'end', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -675,32 +658,34 @@ class GeneLocus(PolymerLocus):
     """ Knowledge of a gene
 
     Attributes:
-        rnas (:obj:`Rna`): RNA
         symbol (:obj:`str`): symbol
-        type (:obj:`GeneType`): type
+
+    Related attributes:
+        protein (:obj:`list` of :obj:`ProteinSpeciesType`): protein
     """
-    rnas = obj_model.core.ManyToManyAttribute(RnaSpeciesType, related_name='genes', verbose_name='RNAs')
+
     symbol = obj_model.core.StringAttribute()
-    type = obj_model.core.EnumAttribute(GeneType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'symbol', 'polymer', 'strand', 'start', 'end', 'rnas', 'type', 'comments')
+        attribute_order = ('id', 'name', 'symbol', 'start', 'end', 'comments')
 
 
 class PromoterLocus(PolymerLocus):
     """ Knowledge of a promoter for a transcription unit
 
     Attributes:
-        rnas (:obj:`list` of :obj:`Rna`): RNAs produced from the promoter
-        pribnow_start (:obj:`int`): Pribnow box start coordinate, relative to the start site of the RNA (TSS)
-        pribnow_end (:obj:`int`): Pribnow box end coordinate, relative to the start site of the RNA (TSS)
+        pribnow_start (:obj:`int`): Pribnow box start coordinate
+        pribnow_end (:obj:`int`): Pribnow box end coordinate
+
+    Related attributes:
+        transcription_unit (:obj:`list` of :obj:`TranscriptionUnitLocus`)
+
     """
-    rnas = obj_model.core.OneToManyAttribute(RnaSpeciesType, related_name='promoters', verbose_name='RNAs')
     pribnow_start = obj_model.core.IntegerAttribute()
     pribnow_end = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'rnas', 'start', 'end', 'pribnow_start', 'pribnow_end', 'comments')
+        attribute_order = ('id', 'name', 'pribnow_start', 'pribnow_end', 'comments')
 
     def get_pribnow_seq(self):
         """ Get the Pribnow sequence
@@ -721,16 +706,43 @@ class PromoterLocus(PolymerLocus):
                 five_prime - self.pribnow_end).complement()
 
 
-class OpenReadingFrameLocus(PolymerLocus):
+class TranscriptionUnitLocus(PolymerLocus):
     """ Knowledge about an open reading frame
 
     Attributes:
-        protein (:obj:`ProteinSpeciesType`): protein
+        dna (:obj:`DnaSpeciesType`): DNA
+        promoter (:obj:`PromoterLocus`): promoter controlling the TU
+        gene (:obj:`GeneLocus`): genes
     """
-    protein = obj_model.core.ManyToOneAttribute(ProteinSpeciesType, related_name='orfs')
+
+    dna = obj_model.core.ManyToOneAttribute('DnaSpeciesType', related_name='transcription_unit')
+    promoter = obj_model.core.ManyToOneAttribute('PromoterLocus', related_name='transcription_unit')
+    gene = obj_model.core.ManyToManyAttribute('GeneLocus', related_name='transcription_unit')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'protein', 'comments')
+        attribute_order = ('id', 'name', 'dna', 'strand', 'promoter', 'start', 'end', 'gene', 'comments')
+
+    def get_3_prime(self):
+        """ Get the 3' coordinate
+
+        Returns:
+            :obj:`int`: 3' coordinate
+        """
+        if self.strand == PolymerStrand.positive:
+            return self.end
+        else:
+            return self.start
+
+    def get_5_prime(self):
+        """ Get the 5' coordinate
+
+        Returns:
+            :obj:`int`: 5' coordinate
+        """
+        if self.strand == PolymerStrand.positive:
+            return self.start
+        else:
+            return self.end
 
 
 class ReactionParticipant(KnowledgeBaseObject):
@@ -804,7 +816,7 @@ class Reaction(KnowledgeBaseObject):
 
     Attributes:
         cell (:obj:`Cell`): cell
-        participants (:obj:`list` of :obj:`ReactionParticipant`): participants        
+        participants (:obj:`list` of :obj:`ReactionParticipant`): participants
         v_max (:obj:`float`):V_max value of reaction (unit: mol/L/min)
         k_m (:obj:`float`): K_m value of reaction (unit: mol/L)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
@@ -814,7 +826,7 @@ class Reaction(KnowledgeBaseObject):
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
     participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
     v_max = obj_model.core.FloatAttribute(min=0, verbose_name='Vmax')
-    k_m = obj_model.core.FloatAttribute(min=0, verbose_name='Km')    
+    k_m = obj_model.core.FloatAttribute(min=0, verbose_name='Km')
     reversible = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):

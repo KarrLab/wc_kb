@@ -9,7 +9,7 @@ from .core import (PolymerStrand,
                    KnowledgeBaseObject, KnowledgeBase, Cell, Compartment,
                    SpeciesType, MetaboliteSpeciesType, PolymerSpeciesType,
                    DnaSpeciesType, RnaType, RnaSpeciesType, ProteinSpeciesType,
-                   PolymerLocus, GeneType, GeneLocus, PromoterLocus, OpenReadingFrameLocus,
+                   PolymerLocus, GeneType, GeneLocus, PromoterLocus, TranscriptionUnitLocus,
                    ReactionParticipant, Reaction)
 from . import io
 from . import util
