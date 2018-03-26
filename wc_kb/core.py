@@ -19,14 +19,8 @@ import obj_model.extra_attributes
 import openbabel
 import six
 
-PolymerStrand = enum.Enum(value='PolymerStrand', names=[
-    ('positive', 1),
-    ('+', 1),
-    ('negative', -1),
-    ('-', -1),
-])
 
-
+""" Base classes and enumeration classes """
 class KnowledgeBaseObject(obj_model.core.Model):
     """ Knowlege of a biological entity
 
@@ -56,6 +50,30 @@ class KnowledgeBase(KnowledgeBaseObject):
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'name', 'version', 'translation_table', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
+
+
+PolymerStrand = enum.Enum(value='PolymerStrand', names=[
+    ('positive', 1),
+    ('+', 1),
+    ('negative', -1),
+    ('-', -1),])
+
+
+class RnaType(enum.Enum):
+    """ Type of RNA """
+    mRna = 0
+    rRna = 1
+    sRna = 2
+    tRna = 3
+    mixed = 4
+
+
+class GeneType(enum.Enum):
+    """ Type of gene """
+    mRna = 0
+    rRna = 1
+    sRna = 2
+    tRna = 3
 
 
 class Cell(KnowledgeBaseObject):
@@ -129,15 +147,6 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
         attribute_order = ('id', 'cell', 'name', 'concentration', 'half_life', 'comments')
 
     @abc.abstractmethod
-    def get_structure(self):
-        """ Get the structure
-
-        Returns:
-            :obj:`str`: structure
-        """
-        pass
-
-    @abc.abstractmethod
     def get_empirical_formula(self):
         """ Get the empirical formula
 
@@ -163,65 +172,6 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
             :obj:`float`: molecular weight
         """
         pass
-
-
-class MetaboliteSpeciesType(SpeciesType):
-    """ Knowledge of a metabolite
-
-    Attributes:
-        structure (:obj:`str`): InChI-encoded structure
-    """
-    structure = obj_model.core.StringAttribute()
-
-    class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'structure', 'concentration', 'half_life', 'comments')
-
-    def get_structure(self):
-        """ Get the structure
-
-        Returns:
-            :obj:`str`: structure
-        """
-        return self.structure
-
-    def to_openbabel_mol(self):
-        """ Convert species type to an Open Babel molecule
-
-        Returns:
-            :obj:`openbabel.OBMol`: Open Babel molecule
-        """
-        mol = openbabel.OBMol()
-        obConversion = openbabel.OBConversion()
-        obConversion.SetInFormat('inchi')
-        obConversion.ReadString(mol, self.structure)
-        return mol
-
-    def get_empirical_formula(self):
-        """ Get the empirical formula
-
-        Returns:
-            :obj:`chem.EmpiricalFormula`: empirical formula
-        """
-        mol = self.to_openbabel_mol()
-        return chem.EmpiricalFormula(mol.GetFormula().rstrip('-'))
-
-    def get_charge(self):
-        """ Get the charge
-
-        Returns:
-            :obj:`int`: charge
-        """
-        mol = self.to_openbabel_mol()
-        return mol.GetTotalCharge()
-
-    def get_mol_wt(self):
-        """ Get the molecular weight
-
-        Returns:
-            :obj:`float`: molecular weight
-        """
-        mol = self.to_openbabel_mol()
-        return mol.GetMolWt()
 
 
 class PolymerSpeciesType(SpeciesType):
@@ -239,14 +189,6 @@ class PolymerSpeciesType(SpeciesType):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
-
-    def get_structure(self):
-        """ Get the polymer sequence
-
-        Returns:
-            :obj:`Bio.Seq.Seq`: sequence
-        """
-        self.get_seq()
 
     @abc.abstractmethod
     def get_seq(self):
@@ -305,6 +247,43 @@ class PolymerSpeciesType(SpeciesType):
             return pos_seq.reverse_complement()
 
 
+class PolymerLocus(KnowledgeBaseObject):
+    """ Knowledge about a locus of a polymer
+
+    Attributes:
+        polymer (:obj:`PolymerSpeciesType`): polymer
+        start (:obj:`int`): start position
+        end (:obj:`int`): end position
+        strand (:obj:`PolymerStrand`): strand
+    """
+
+    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='loci')
+    polymer = obj_model.core.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
+    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
+    start = obj_model.core.IntegerAttribute()
+    end = obj_model.core.IntegerAttribute()
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'cell', 'name', 'polymer', 'strand', 'start', 'end', 'comments')
+
+    def get_seq(self):
+        """ Get the sequence
+
+        Returns:
+            :obj:`Bio.Seq.Seq`: sequence
+        """
+        return self.polymer.get_subseq(self.start, self.end, strand=self.strand)
+
+    def get_len(self):
+        """ Get the length
+
+        Returns:
+            :obj:`int`: length
+        """
+        return abs(self.start - self.end) + 1
+
+
+""" Species types"""
 class DnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of a DNA species
 
@@ -321,13 +300,17 @@ class DnaSpeciesType(PolymerSpeciesType):
         attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'comments')
         verbose_name = 'DNA species type'
 
-    def get_seq(self):
+    def get_seq(self, start=None, end=None):
         """ Get the sequence
 
         Returns:
             :obj:`Bio.Seq.Seq`: structure
         """
-        return self.seq
+
+        start = start or 0
+        end = end or len(self.seq)
+
+        return self.seq[start:end]
 
     def get_empirical_formula(self):
         """ Get the empirical formula for a DNA molecule with
@@ -407,15 +390,6 @@ class DnaSpeciesType(PolymerSpeciesType):
         return self.get_empirical_formula().get_molecular_weight()
 
 
-class RnaType(enum.Enum):
-    """ Type of RNA """
-    mRna = 0
-    rRna = 1
-    sRna = 2
-    tRna = 3
-    mixed = 4
-
-
 class RnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of an RNA species
 
@@ -432,15 +406,6 @@ class RnaSpeciesType(PolymerSpeciesType):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'type', 'transcription_unit', 'concentration', 'half_life', 'comments')
-        verbose_name = 'RNA species type'
-
-    def get_len(self):
-        """ Get the length
-
-        Returns:
-            :obj:`int`: length
-        """
-        return self.end - self.start + 1
 
     def get_seq(self):
         """ Get the sequence
@@ -448,7 +413,9 @@ class RnaSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        dna_seq = self.dna.get_subseq(self.start, self.end, self.strand)
+        tu_start = self.transcription_unit[0].start
+        tu_end = self.transcription_unit[0].end
+        dna_seq = self.transcription_unit[0].polymer.get_subseq(start = tu_start, end = tu_end)
         return dna_seq.transcribe()
 
     def get_empirical_formula(self):
@@ -610,66 +577,66 @@ class ProteinSpeciesType(PolymerSpeciesType):
         return self.get_empirical_formula().get_molecular_weight()
 
 
-class PolymerLocus(KnowledgeBaseObject):
-    """ Knowledge about a locus of a polymer
+class MetaboliteSpeciesType(SpeciesType):
+    """ Knowledge of a metabolite
 
     Attributes:
-        polymer (:obj:`PolymerSpeciesType`): polymer
-        start (:obj:`int`): start position
-        end (:obj:`int`): end position
-        strand (:obj:`PolymerStrand`): strand
+        structure (:obj:`str`): InChI-encoded structure
     """
-
-    polymer = obj_model.core.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
-    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='loci')
-    start = obj_model.core.IntegerAttribute()
-    end = obj_model.core.IntegerAttribute()
-    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
+    structure = obj_model.core.StringAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'polymer', 'strand', 'start', 'end', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'structure', 'concentration', 'half_life', 'comments')
 
-    def get_seq(self):
-        """ Get the sequence
-
-        Returns:
-            :obj:`Bio.Seq.Seq`: sequence
-        """
-        return self.polymer.get_subseq(self.start, self.end, strand=self.strand)
-
-    def get_len(self):
-        """ Get the length
+    def get_structure(self):
+        """ Get the structure
 
         Returns:
-            :obj:`int`: length
+            :obj:`str`: structure
         """
-        return self.start - self.end + 1
+        return self.structure
+
+    def to_openbabel_mol(self):
+        """ Convert species type to an Open Babel molecule
+
+        Returns:
+            :obj:`openbabel.OBMol`: Open Babel molecule
+        """
+        mol = openbabel.OBMol()
+        obConversion = openbabel.OBConversion()
+        obConversion.SetInFormat('inchi')
+        obConversion.ReadString(mol, self.structure)
+        return mol
+
+    def get_empirical_formula(self):
+        """ Get the empirical formula
+
+        Returns:
+            :obj:`chem.EmpiricalFormula`: empirical formula
+        """
+        mol = self.to_openbabel_mol()
+        return chem.EmpiricalFormula(mol.GetFormula().rstrip('-'))
+
+    def get_charge(self):
+        """ Get the charge
+
+        Returns:
+            :obj:`int`: charge
+        """
+        mol = self.to_openbabel_mol()
+        return mol.GetTotalCharge()
+
+    def get_mol_wt(self):
+        """ Get the molecular weight
+
+        Returns:
+            :obj:`float`: molecular weight
+        """
+        mol = self.to_openbabel_mol()
+        return mol.GetMolWt()
 
 
-class GeneType(enum.Enum):
-    """ Type of gene """
-    mRna = 0
-    rRna = 1
-    sRna = 2
-    tRna = 3
-
-
-class GeneLocus(PolymerLocus):
-    """ Knowledge of a gene
-
-    Attributes:
-        symbol (:obj:`str`): symbol
-
-    Related attributes:
-        protein (:obj:`list` of :obj:`ProteinSpeciesType`): protein
-    """
-
-    symbol = obj_model.core.StringAttribute()
-
-    class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'symbol', 'start', 'end', 'comments')
-
-
+""" Locus types """
 class PromoterLocus(PolymerLocus):
     """ Knowledge of a promoter for a transcription unit
 
@@ -685,42 +652,22 @@ class PromoterLocus(PolymerLocus):
     pribnow_end = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'pribnow_start', 'pribnow_end', 'comments')
-
-    def get_pribnow_seq(self):
-        """ Get the Pribnow sequence
-
-        Returns:
-            :obj:`Bio.Seq.Seq`: sequence
-        """
-        rna = self.rnas[0]
-        five_prime = rna.get_5_prime()
-
-        if rna.strand == PolymerStrand.positive:
-            return self.polymer.get_subseq(
-                five_prime + self.pribnow_end,
-                five_prime + self.pribnow_start)[::-1]
-        else:
-            return self.polymer.get_subseq(
-                five_prime - self.pribnow_start,
-                five_prime - self.pribnow_end).complement()
+        attribute_order = ('id', 'cell', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 'comments')
 
 
 class TranscriptionUnitLocus(PolymerLocus):
     """ Knowledge about an open reading frame
 
     Attributes:
-        dna (:obj:`DnaSpeciesType`): DNA
         promoter (:obj:`PromoterLocus`): promoter controlling the TU
         gene (:obj:`GeneLocus`): genes
     """
 
-    dna = obj_model.core.ManyToOneAttribute('DnaSpeciesType', related_name='transcription_unit')
     promoter = obj_model.core.ManyToOneAttribute('PromoterLocus', related_name='transcription_unit')
     gene = obj_model.core.ManyToManyAttribute('GeneLocus', related_name='transcription_unit')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'dna', 'strand', 'promoter', 'start', 'end', 'gene', 'comments')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'promoter', 'start', 'end', 'gene', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -745,6 +692,23 @@ class TranscriptionUnitLocus(PolymerLocus):
             return self.end
 
 
+class GeneLocus(PolymerLocus):
+    """ Knowledge of a gene
+
+    Attributes:
+        symbol (:obj:`str`): symbol
+
+    Related attributes:
+        protein (:obj:`list` of :obj:`ProteinSpeciesType`): protein
+    """
+
+    symbol = obj_model.core.StringAttribute()
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'cell', 'polymer', 'name', 'symbol', 'start', 'end', 'comments')
+
+
+""" Reaction classes """
 class ReactionParticipant(KnowledgeBaseObject):
     """ Knowledge of a participant in a reaction
 

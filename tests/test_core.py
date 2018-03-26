@@ -75,101 +75,79 @@ class SpeciesTypeTestCase(unittest.TestCase):
             core.SpeciesType()
 
         class ConcreteSpeciesType(core.SpeciesType):
-            def get_structure(self): pass
-
             def get_empirical_formula(self): pass
-
             def get_charge(self): pass
-
             def get_mol_wt(self): pass
 
-        species_type = ConcreteSpeciesType(concentration=2., half_life=3.)
+        species_type = ConcreteSpeciesType(id='species1', name = 'species1', concentration=2., half_life=3.)
+        self.assertEqual(species_type.id, 'species1')
+        self.assertEqual(species_type.name, 'species1')
         self.assertEqual(species_type.concentration, 2.)
         self.assertEqual(species_type.half_life, 3.)
 
 
-class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
-    def test_constructor(self):
-        met = core.MetaboliteSpeciesType(structure=(
-            'InChI=1S'
-            '/C10H14N5O7P'
-            '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
-            '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
-            '/p-2/t4-,6-,7-,10-'
-            '/m1'
-            '/s1'
-        ))
-        self.assertEqual(met.get_structure(), met.structure)
-        self.assertEqual(met.get_empirical_formula(), chem.EmpiricalFormula('C10H12N5O7P'))
-        self.assertEqual(met.get_charge(), -2)
-        self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
-
-
 class PolymerSpeciesTypeTestCase(unittest.TestCase):
-    def setUp(self):
+    def test_constructor(self):
+        with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
+            core.PolymerSpeciesType()
+
         class ConcretePolymerSpeciesType(core.PolymerSpeciesType):
+            def get_empirical_formula(self): pass
+            def get_charge(self): pass
+            def get_mol_wt(self): pass
             def get_seq(self): return Bio.Seq.Seq('AAATGCCC', alphabet=Bio.Alphabet.DNAAlphabet())
 
-            def get_empirical_formula(self): pass
+            # Methods from PolymerSpeciesType
+            #def get_subseq(self): pass
+            #def get_len(self): pass
 
-            def get_charge(self): pass
+        pst1 = ConcretePolymerSpeciesType(id='pst1', name = 'pst1', concentration=1, half_life=2)
 
-            def get_mol_wt(self): pass
-        self.ConcretePolymerSpeciesType = ConcretePolymerSpeciesType
+        #Test constructor
+        self.assertEqual(pst1.id, 'pst1')
+        self.assertEqual(pst1.name, 'pst1')
+        self.assertEqual(pst1.concentration, 1)
+        self.assertEqual(pst1.half_life, 2)
 
-    def test_constructor(self):
-        species_type = self.ConcretePolymerSpeciesType()
-        species_type.circular = True
-        species_type.double_stranded = True
+        # Test methods: linear, single stranded case
+        pst1.circular = False
+        pst1.double_stranded = False
 
-    def test_get_len(self):
-        species_type = self.ConcretePolymerSpeciesType()
-        self.assertEqual(species_type.get_len(), 8)
+        self.assertEqual(pst1.get_len(), 8)
+        self.assertEqual(pst1.get_subseq(1, 3), 'AAA')
+        self.assertEqual(pst1.get_subseq(2, 4), 'AAT')
 
-    def test_get_subseq_linear(self):
-        species_type = self.ConcretePolymerSpeciesType()
-        species_type.circular = False
+        # Test methods: circular, single stranded case
+        pst1.circular = True
+        pst1.double_stranded = False
 
-        self.assertEqual(species_type.get_subseq(1, 2), 'AA')
-        self.assertEqual(species_type.get_subseq(2, 4), 'AAT')
+        self.assertEqual(pst1.get_subseq(2, 4), 'AAT')
+        self.assertEqual(pst1.get_subseq(0, 1), 'CA')
+        self.assertEqual(pst1.get_subseq(-3, 1), 'GCCCA')
+        self.assertEqual(pst1.get_subseq(6, 10), 'CCCAA')
+        self.assertEqual(pst1.get_subseq(-10, 10), 'CCCAAATGCCCAAATGCCCAA')
 
-        with self.assertRaisesRegexp(ValueError, 'Start and end coordinates for linear polymers must be'):
-            species_type.get_subseq(0, 2)
+        # Test methods: circular, double stranded case
+        pst1.circular = True
+        pst1.double_stranded = True
 
-        with self.assertRaisesRegexp(ValueError, 'Start and end coordinates for linear polymers must be'):
-            species_type.get_subseq(1, 9)
-
-    def test_get_subseq_circular(self):
-        species_type = self.ConcretePolymerSpeciesType()
-        species_type.circular = True
-
-        self.assertEqual(species_type.get_subseq(1, 2), 'AA')
-        self.assertEqual(species_type.get_subseq(2, 4), 'AAT')
-
-        self.assertEqual(species_type.get_subseq(3, 6), 'ATGC')
-        self.assertEqual(species_type.get_subseq(3, 6, strand=core.PolymerStrand.positive), 'ATGC')
-        self.assertEqual(species_type.get_subseq(3, 6, strand=core.PolymerStrand.negative), 'GCAT')
-
-        self.assertEqual(species_type.get_subseq(0, 1), 'CA')
-        self.assertEqual(species_type.get_subseq(-1, 1), 'CCA')
-        self.assertEqual(species_type.get_subseq(-3, 1), 'GCCCA')
-
-        self.assertEqual(species_type.get_subseq(6, 10), 'CCCAA')
-        self.assertEqual(species_type.get_subseq(6, 10, strand=core.PolymerStrand.negative), 'TTGGG')
-
-        self.assertEqual(species_type.get_subseq(6, 26), 'CCCAAATGCCCAAATGCCCAA')
-        self.assertEqual(species_type.get_subseq(-2, 18), 'CCCAAATGCCCAAATGCCCAA')
-        self.assertEqual(species_type.get_subseq(-10, 10), 'CCCAAATGCCCAAATGCCCAA')
+        self.assertEqual(pst1.get_subseq(3,  6, strand=core.PolymerStrand.positive), 'ATGC')
+        self.assertEqual(pst1.get_subseq(3,  6, strand=core.PolymerStrand.negative), 'GCAT')
+        self.assertEqual(pst1.get_subseq(6, 26, strand=core.PolymerStrand.positive), 'CCCAAATGCCCAAATGCCCAA')
+        self.assertEqual(pst1.get_subseq(6, 26, strand=core.PolymerStrand.negative), 'TTGGGCATTTGGGCATTTGGG')
 
 
 class DnaSpeciesTypeTestCase(unittest.TestCase):
-
     def test(self):
-        L = 8
-        dna = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna = core.DnaSpeciesType(id = 'dna1', name = 'dna1', seq=Bio.Seq.Seq('ACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()),
+              circular = False, double_stranded = False)
 
-        dna.circular = False
-        dna.double_stranded = False
+        self.assertEqual(dna.id, 'dna1')
+        self.assertEqual(dna.name, 'dna1')
+        self.assertEqual(dna.circular, False)
+        self.assertEqual(dna.double_stranded, False)
+
+        L = dna.get_len()
         self.assertEqual(dna.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O6P') * 2
                          + chem.EmpiricalFormula('C9H12N3O7P') * 2
@@ -177,6 +155,7 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
                          + chem.EmpiricalFormula('C10H13N2O8P') * 2
                          - chem.EmpiricalFormula('OH') * (L - 1)
                          )
+
         self.assertEqual(dna.get_charge(), -L - 1)
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(dna.get_seq(),
@@ -184,10 +163,13 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
                                             circular=dna.circular,
                                             double_stranded=dna.double_stranded) \
             - 9 * mendeleev.element('H').atomic_weight
+
         self.assertAlmostEqual(dna.get_mol_wt(), exp_mol_wt, places=0)
 
+        # Make DNA circular, single stranded
         dna.circular = True
         dna.double_stranded = False
+
         self.assertEqual(dna.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O6P') * 2
                          + chem.EmpiricalFormula('C9H12N3O7P') * 2
@@ -195,17 +177,22 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
                          + chem.EmpiricalFormula('C10H13N2O8P') * 2
                          - chem.EmpiricalFormula('OH') * L
                          )
+
         self.assertEqual(dna.get_charge(), -L)
+
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(dna.get_seq(),
                                             seq_type='DNA',
                                             circular=dna.circular,
                                             double_stranded=dna.double_stranded) \
             - 8 * mendeleev.element('H').atomic_weight
+
         self.assertAlmostEqual(dna.get_mol_wt(), exp_mol_wt, places=0)
 
+        # Make DNA linear, double stranded
         dna.circular = False
         dna.double_stranded = True
+
         self.assertEqual(dna.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O6P') * 2 * 2
                          + chem.EmpiricalFormula('C9H12N3O7P') * 2 * 2
@@ -213,6 +200,7 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
                          + chem.EmpiricalFormula('C10H13N2O8P') * 2 * 2
                          - chem.EmpiricalFormula('OH') * (L - 1) * 2
                          )
+
         self.assertEqual(dna.get_charge(), 2 * (-L - 1))
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(dna.get_seq(),
@@ -220,10 +208,13 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
                                             circular=dna.circular,
                                             double_stranded=dna.double_stranded) \
             - 18 * mendeleev.element('H').atomic_weight
+
         self.assertAlmostEqual(dna.get_mol_wt(), exp_mol_wt, places=0)
 
+        # Make DNA circular, double stranded
         dna.circular = True
         dna.double_stranded = True
+
         self.assertEqual(dna.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O6P') * 2 * 2
                          + chem.EmpiricalFormula('C9H12N3O7P') * 2 * 2
@@ -231,138 +222,114 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
                          + chem.EmpiricalFormula('C10H13N2O8P') * 2 * 2
                          - chem.EmpiricalFormula('OH') * L * 2
                          )
+
         self.assertEqual(dna.get_charge(), 2 * -L)
+
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(dna.get_seq(),
                                             seq_type='DNA',
                                             circular=dna.circular,
                                             double_stranded=dna.double_stranded) \
             - 16 * mendeleev.element('H').atomic_weight
+
         self.assertAlmostEqual(dna.get_mol_wt(), exp_mol_wt, places=0)
 
 
 class RnaSpeciesTypeTestCase(unittest.TestCase):
+
     def test_constructor(self):
-        rna = core.RnaSpeciesType(id='rna_1', start=1, end=2, strand=core.PolymerStrand.positive)
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=15)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1], type=1, concentration=1, half_life=2)
 
-        self.assertEqual(rna.id, 'rna_1')
-        self.assertEqual(rna.start, 1)
-        self.assertEqual(rna.end, 2)
-        self.assertEqual(rna.strand, core.PolymerStrand.positive)
-
-    def test_get_3_prime(self):
-        rna = core.RnaSpeciesType(start=100, end=200, strand=core.PolymerStrand.positive)
-        self.assertEqual(rna.get_3_prime(), 200)
-
-        rna = core.RnaSpeciesType(start=100, end=200, strand=core.PolymerStrand.negative)
-        self.assertEqual(rna.get_3_prime(), 100)
-
-    def test_get_5_prime(self):
-        rna = core.RnaSpeciesType(start=100, end=200, strand=core.PolymerStrand.positive)
-        self.assertEqual(rna.get_5_prime(), 100)
-
-        rna = core.RnaSpeciesType(start=100, end=200, strand=core.PolymerStrand.negative)
-        self.assertEqual(rna.get_5_prime(), 200)
-
-    def test_get_len(self):
-        rna = core.RnaSpeciesType(start=100, end=200)
-        self.assertEqual(rna.get_len(), 101)
-
-    def test_get_seq(self):
-        dna = core.DnaSpeciesType(seq=Bio.Seq.Seq('AAATGCCC', alphabet=Bio.Alphabet.DNAAlphabet()))
-
-        rna = core.RnaSpeciesType(dna=dna, start=3, end=6)
-        self.assertEqual(rna.get_seq(), 'AUGC')
-
-        rna = core.RnaSpeciesType(dna=dna, start=3, end=6, strand=core.PolymerStrand.positive)
-        self.assertEqual(rna.get_seq(), 'AUGC')
-
-        rna = core.RnaSpeciesType(dna=dna, start=3, end=6, strand=core.PolymerStrand.negative)
-        self.assertEqual(rna.get_seq(), 'GCAU')
+        self.assertEqual(rna1.id, 'rna1')
+        self.assertEqual(rna1.name, 'rna1')
+        self.assertEqual(rna1.transcription_unit, [tu1])
+        self.assertEqual(rna1.type, 1)
+        self.assertEqual(rna1.concentration, 1)
+        self.assertEqual(rna1.half_life, 2)
 
     def test_get_empirical_formula(self):
-        dna = core.DnaSpeciesType()
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('A', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C10H12N5O7P'))
 
-        rna = core.RnaSpeciesType(dna=dna, start=1, end=1)
-        dna.seq = Bio.Seq.Seq('A', alphabet=Bio.Alphabet.DNAAlphabet())
-        self.assertEqual(rna.get_empirical_formula(), chem.EmpiricalFormula('C10H12N5O7P'))
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('C', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C9H12N3O8P'))
 
-        rna = core.RnaSpeciesType(dna=dna, start=1, end=1)
-        dna.seq = Bio.Seq.Seq('C', alphabet=Bio.Alphabet.DNAAlphabet())
-        self.assertEqual(rna.get_empirical_formula(), chem.EmpiricalFormula('C9H12N3O8P'))
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('G', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C10H12N5O8P'))
 
-        rna = core.RnaSpeciesType(dna=dna, start=1, end=1)
-        dna.seq = Bio.Seq.Seq('G', alphabet=Bio.Alphabet.DNAAlphabet())
-        self.assertEqual(rna.get_empirical_formula(), chem.EmpiricalFormula('C10H12N5O8P'))
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('T', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C9H11N2O9P'))
 
-        rna = core.RnaSpeciesType(dna=dna, start=1, end=1)
-        dna.seq = Bio.Seq.Seq('T', alphabet=Bio.Alphabet.DNAAlphabet())
-        self.assertEqual(rna.get_empirical_formula(), chem.EmpiricalFormula('C9H11N2O9P'))
-
-        rna = core.RnaSpeciesType(dna=dna, start=1, end=2)
-        dna.seq = Bio.Seq.Seq('AA', alphabet=Bio.Alphabet.DNAAlphabet())
-        self.assertEqual(rna.get_empirical_formula(), chem.EmpiricalFormula('C20H23N10O13P2'))
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=2)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C20H23N10O13P2'))
 
     def test_get_charge(self):
-        rna = core.RnaSpeciesType(start=1, end=1)
-        self.assertEqual(rna.get_charge(), -2)
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        self.assertEqual(rna1.get_charge(), -2)
 
-        rna = core.RnaSpeciesType(start=1, end=2)
-        self.assertEqual(rna.get_charge(), -3)
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=2)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        self.assertEqual(rna1.get_charge(), -3)
 
     def test_get_mol_wt(self):
-        dna = core.DnaSpeciesType(seq=Bio.Seq.Seq('AACCGGTT'))
-
-        rna = core.RnaSpeciesType(dna=dna, start=1, end=1)
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
         exp_mol_wt = \
-            + Bio.SeqUtils.molecular_weight(rna.get_seq()) \
-            - (rna.get_len() + 1) * mendeleev.element('H').atomic_weight
-        self.assertAlmostEqual(rna.get_mol_wt(), exp_mol_wt, places=1)
+            + Bio.SeqUtils.molecular_weight(rna1.get_seq()) \
+            - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
+        self.assertAlmostEqual(rna1.get_mol_wt(), exp_mol_wt, places=1)
 
-        rna = core.RnaSpeciesType(dna=dna, start=3, end=3)
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=3, end=3)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
         exp_mol_wt = \
-            + Bio.SeqUtils.molecular_weight(rna.get_seq()) \
-            - (rna.get_len() + 1) * mendeleev.element('H').atomic_weight
-        self.assertAlmostEqual(rna.get_mol_wt(), exp_mol_wt, places=1)
+            + Bio.SeqUtils.molecular_weight(rna1.get_seq()) \
+            - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
+        self.assertAlmostEqual(rna1.get_mol_wt(), exp_mol_wt, places=1)
 
-        rna = core.RnaSpeciesType(dna=dna, start=5, end=5)
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=5, end=5)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
         exp_mol_wt = \
-            + Bio.SeqUtils.molecular_weight(rna.get_seq()) \
-            - (rna.get_len() + 1) * mendeleev.element('H').atomic_weight
-        self.assertAlmostEqual(rna.get_mol_wt(), exp_mol_wt, places=1)
-
-        rna = core.RnaSpeciesType(dna=dna, start=7, end=7)
-        exp_mol_wt = \
-            + Bio.SeqUtils.molecular_weight(rna.get_seq()) \
-            - (rna.get_len() + 1) * mendeleev.element('H').atomic_weight
-        self.assertAlmostEqual(rna.get_mol_wt(), exp_mol_wt, places=1)
-
-        rna = core.RnaSpeciesType(dna=dna, start=1, end=2)
-        exp_mol_wt = \
-            + Bio.SeqUtils.molecular_weight(rna.get_seq()) \
-            - (rna.get_len() + 1) * mendeleev.element('H').atomic_weight
-        self.assertAlmostEqual(rna.get_mol_wt(), exp_mol_wt, places=1)
+            + Bio.SeqUtils.molecular_weight(rna1.get_seq()) \
+            - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
+        self.assertAlmostEqual(rna1.get_mol_wt(), exp_mol_wt, places=1)
 
 
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
-        protein = core.ProteinSpeciesType(id='prot1', name='protein_1', concentration=1., half_life=5.)
-        self.assertEqual(protein.id, 'prot1')
-        self.assertEqual(protein.name, 'protein_1')
-        self.assertEqual(protein.reaction_participants, [])
-        self.assertEqual(protein.concentration, 1.)
-        self.assertEqual(protein.half_life, 5.)
-        self.assertEqual(protein.circular, False)
-        self.assertEqual(protein.cell, None)
-        self.assertEqual(protein.orfs, [])
-        self.assertEqual(protein.loci, [])
+        protein = core.ProteinSpeciesType(id='prot1', name='prot1', concentration=1, half_life=2)
+        # attribute_order = ('id', 'cell', 'name', 'gene', 'rna', 'concentration', 'half_life', 'comments')
 
+        self.assertEqual(protein.id, 'prot1')
+        self.assertEqual(protein.name, 'prot1')
+        self.assertEqual(protein.concentration, 1)
+        self.assertEqual(protein.half_life, 2)
+        self.assertEqual(protein.cell, None)
+
+    @unittest.skip('Work in progress')
     def test_get_seq(self):
         records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
         dna_seq = next(records).seq
         dna = core.DnaSpeciesType(seq=dna_seq)
-        cell = dna.cell = core.Cell()
         cell.knowledge_base = core.KnowledgeBase(translation_table=1)
+        cell = dna.cell = core.Cell()
 
         # MPN001
         rna = core.RnaSpeciesType(dna=dna, start=692, end=1834, strand=core.PolymerStrand.positive)
@@ -388,6 +355,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         prot = core.ProteinSpeciesType(orfs=[orf])
         self.assertEqual(prot.get_seq()[0:10], 'MKFKFLLTPL')
 
+    @unittest.skip('Work in progress')
     def test_get_empirical_formula(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
@@ -407,6 +375,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
         self.assertEqual(prot2.get_empirical_formula(), chem.EmpiricalFormula('C21H40N8O6'))
 
+    @unittest.skip('Work in progress')
     def test_get_mol_wt(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
@@ -427,6 +396,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         prot2 = core.ProteinSpeciesType(orfs=[orf2])
         self.assertAlmostEqual(prot2.get_mol_wt(), 500.601)
 
+    @unittest.skip('Work in progress')
     def test_get_charge(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
@@ -450,67 +420,92 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
 class PolymerLocusTestCase(unittest.TestCase):
     def test_constructor(self):
-        dna = core.DnaSpeciesType()
-        locus = core.PolymerLocus(polymer=dna, start=10, end=20, strand=core.PolymerStrand.positive)
-        self.assertEqual(locus.start, 10)
-        self.assertEqual(locus.end, 20)
+        cell1 = core.Cell()
+        dna1 = core.DnaSpeciesType(id = 'dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()),
+               circular = False, double_stranded = False)
+
+        locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=dna1, strand=core.PolymerStrand.positive, start=1, end=15)
+
+        # test constructor
+        self.assertEqual(locus1.id, 'locus1')
+        self.assertEqual(locus1.cell, cell1)
+        self.assertEqual(locus1.name, 'locus1')
+        self.assertEqual(locus1.polymer, dna1)
+        self.assertEqual(locus1.strand, core.PolymerStrand.positive)
+        self.assertEqual(locus1.start, 1)
+        self.assertEqual(locus1.end, 15)
+
+        # test methods
+        self.assertEqual(locus1.get_seq(),'ACGTACGTACGTACG')
+        self.assertEqual(locus1.get_len(),15)
+
+        # flip strand; test methods
+        rev_comp_seq = locus1.get_seq().reverse_complement()
+        locus1.strand = core.PolymerStrand.negative
+        self.assertEqual(locus1.get_seq(), rev_comp_seq)
+        self.assertEqual(locus1.get_len(),15)
+
+
+class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
+    def test_constructor(self):
+        met = core.MetaboliteSpeciesType(structure=(
+            'InChI=1S'
+            '/C10H14N5O7P'
+            '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
+            '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
+            '/p-2/t4-,6-,7-,10-'
+            '/m1'
+            '/s1'
+        ))
+        self.assertEqual(met.get_structure(), met.structure)
+        self.assertEqual(met.get_empirical_formula(), chem.EmpiricalFormula('C10H12N5O7P'))
+        self.assertEqual(met.get_charge(), -2)
+        self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
+
+
+class PromoterLocusTestCase(unittest.TestCase):
+    def test_constructor(self):
+        promoter = core.PromoterLocus(id='promoter1', name='promoter1', pribnow_start=1, pribnow_end=2)
+        self.assertEqual(promoter.id, 'promoter1')
+        self.assertEqual(promoter.name, 'promoter1')
+        self.assertEqual(promoter.pribnow_start, 1)
+        self.assertEqual(promoter.pribnow_end, 2)
 
 
 class GeneLocusTestCase(unittest.TestCase):
-    def test_constructor(self):
-        gene = core.GeneLocus(id='gene_1', name='gene_1', symbol='gene_1',
-                              start=1, end=2, strand=core.PolymerStrand.positive,
-                              type=core.GeneType.mRna)
-        rna = core.RnaSpeciesType(id='rna_1', name='rna_1', genes=[gene],
-                                  type=core.RnaType.mRna)
-
-        self.assertEqual(gene.id, 'gene_1')
-        self.assertEqual(gene.name, 'gene_1')
-        self.assertEqual(gene.rnas, [rna])
-        self.assertEqual(gene.type.name, 'mRna')
-        self.assertEqual(gene.symbol, 'gene_1')
-
-    def test_transcription_unit_constructor(self):
-        locus = core.PromoterLocus(id='tu_1', start=3, end=4, strand=core.PolymerStrand.positive)
-
-        self.assertEqual(locus.start, 3)
-        self.assertEqual(locus.end, 4)
-        self.assertEqual(locus.strand, core.PolymerStrand.positive)
-
-    def test_get_len(self):
-        locus = core.PromoterLocus(start=-40, end=-50)
-        self.assertEqual(locus.get_len(), 11)
-
-    def test_get_seq(self):
-        dna = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACGTACGTACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()),
-                                  circular=True, double_stranded=True)
-        rna = core.RnaSpeciesType(dna=dna, start=7, end=8, strand=core.PolymerStrand.positive)
-        locus = core.PromoterLocus(polymer=dna, rnas=[rna], pribnow_start=-2, pribnow_end=-4)
-        self.assertEqual(locus.get_pribnow_seq(), 'ATG')
-
-        dna = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACGTACGTACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()),
-                                  circular=True, double_stranded=True)
-        rna = core.RnaSpeciesType(dna=dna, start=7, end=8, strand=core.PolymerStrand.negative)
-        locus = core.PromoterLocus(polymer=dna, rnas=[rna], pribnow_start=-2, pribnow_end=-4)
-        self.assertEqual(locus.get_pribnow_seq(), 'GCA')
-
-        records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
-        dna_seq = next(records).seq
-        dna = core.DnaSpeciesType(seq=dna_seq, circular=True, double_stranded=True)
-
-        rna = core.RnaSpeciesType(dna=dna, start=652, end=1900, strand=core.PolymerStrand.positive)
-        locus = core.PromoterLocus(polymer=dna, rnas=[rna], pribnow_start=-35, pribnow_end=-40)
-        self.assertEqual(locus.get_pribnow_seq(), 'TAAAAC')
-
-        rna = core.RnaSpeciesType(dna=dna, start=1252, end=1377, strand=core.PolymerStrand.negative)
-        locus = core.PromoterLocus(polymer=dna, rnas=[rna], pribnow_start=-125, pribnow_end=-130)
-        self.assertEqual(locus.get_pribnow_seq(), 'TAAGTT')
-
-
-class OpenReadingFrameLocusTestCase(unittest.TestCase):
     def test(self):
-        orf = core.OpenReadingFrameLocus()
-        prot = core.ProteinSpeciesType(orfs=[orf])
+        gene = core.GeneLocus(id='gene1', name='gene1', symbol='gene_1', start=1, end=2)
+        self.assertEqual(gene.id, 'gene1')
+        self.assertEqual(gene.name, 'gene1')
+        self.assertEqual(gene.symbol, 'gene_1')
+        self.assertEqual(gene.start, 1)
+        self.assertEqual(gene.end, 2)
+
+
+class TranscriptionUnitLocusTestCase(unittest.TestCase):
+    def test(self):
+        dna1 = core.DnaSpeciesType(id = 'dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()),
+               circular = False, double_stranded = False)
+
+        tu1 = core.TranscriptionUnitLocus(id='tu1', name='tu1', polymer = dna1, strand=core.PolymerStrand.positive, start=1, end=15)
+
+        # test constructor
+        self.assertEqual(tu1.id, 'tu1')
+        self.assertEqual(tu1.name, 'tu1')
+        self.assertEqual(tu1.polymer, dna1)
+        self.assertEqual(tu1.strand, core.PolymerStrand.positive)
+        self.assertEqual(tu1.start, 1)
+        self.assertEqual(tu1.end, 15)
+
+        # test methods
+        self.assertEqual(tu1.get_3_prime(),15)
+        self.assertEqual(tu1.get_5_prime(),1)
+
+        # flip strand; test methods
+        rev_comp_seq = tu1.get_seq().reverse_complement()
+        tu1.strand = core.PolymerStrand.negative
+        self.assertEqual(tu1.get_3_prime(),1)
+        self.assertEqual(tu1.get_5_prime(),15)
 
 
 class ReactionParticipantTestCase(unittest.TestCase):
