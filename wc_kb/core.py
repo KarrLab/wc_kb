@@ -1,4 +1,4 @@
-""" Schema to represent knowledge bases
+""" Schema to represent a knowledge base to build models
 
 :Author: Balazs Szigeti <balazs.szigeti@mssm.edu>
 :Author: Jonathan Karr <jonrkarr@gmail.com>
@@ -20,7 +20,30 @@ import openbabel
 import six
 
 
-""" Base classes and enumeration classes """
+""" Enumeration classes """
+PolymerStrand = enum.Enum(value='PolymerStrand', names=[
+    ('positive', 1),
+    ('+', 1),
+    ('negative', -1),
+    ('-', -1),])
+
+class RnaType(enum.Enum):
+    """ Type of RNA """
+    mRna = 0
+    rRna = 1
+    sRna = 2
+    tRna = 3
+    mixed = 4
+
+class GeneType(enum.Enum):
+    """ Type of gene """
+    mRna = 0
+    rRna = 1
+    sRna = 2
+    tRna = 3
+
+
+""" Base classes """
 class KnowledgeBaseObject(obj_model.core.Model):
     """ Knowlege of a biological entity
 
@@ -32,7 +55,6 @@ class KnowledgeBaseObject(obj_model.core.Model):
     id = obj_model.core.StringAttribute(primary=True, unique=True)
     name = obj_model.core.StringAttribute()
     comments = obj_model.core.StringAttribute()
-
 
 class KnowledgeBase(KnowledgeBaseObject):
     """ A knowledge base
@@ -50,31 +72,6 @@ class KnowledgeBase(KnowledgeBaseObject):
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'name', 'version', 'translation_table', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
-
-
-PolymerStrand = enum.Enum(value='PolymerStrand', names=[
-    ('positive', 1),
-    ('+', 1),
-    ('negative', -1),
-    ('-', -1),])
-
-
-class RnaType(enum.Enum):
-    """ Type of RNA """
-    mRna = 0
-    rRna = 1
-    sRna = 2
-    tRna = 3
-    mixed = 4
-
-
-class GeneType(enum.Enum):
-    """ Type of gene """
-    mRna = 0
-    rRna = 1
-    sRna = 2
-    tRna = 3
-
 
 class Cell(KnowledgeBaseObject):
     """ Knowledge of a cell
@@ -95,8 +92,7 @@ class Cell(KnowledgeBaseObject):
         tabular_orientation = obj_model.core.TabularOrientation.column
 
     def get_species_types(self, cls=None):
-        """ Get the DNA species types
-
+        """ Get species of given type(s)
         Args:
             cls (:obj:`type` or :obj:`tuple` of :obj:`type`, optional): type(s) of species types;
                 if :obj:`None`, every species type will be returned
@@ -107,8 +103,21 @@ class Cell(KnowledgeBaseObject):
         if cls is None:
             return self.species_types
         else:
-            return filter(lambda species_type: isinstance(species_type, cls), self.species_types)
+            return list(filter(lambda species_type: isinstance(species_type, cls), self.species_types))
 
+    def get_locus_types(self, cls=None):
+        """ Get loci of given types(s)
+        Args:
+            cls (:obj:`type` or :obj:`tuple` of :obj:`type`, optional): type(s) of species types;
+                if :obj:`None`, every species type will be returned
+
+        Returns:
+            :obj:`list` of :obj:`PolymerLocus`: polymer locus
+        """
+        if cls is None:
+            return self.species_types
+        else:
+            return list(filter(lambda loci: isinstance(loci, cls), self.loci))
 
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
@@ -125,7 +134,6 @@ class Compartment(KnowledgeBaseObject):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'volume', 'comments')
-
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
     """ Knowledge of a molecular species
@@ -172,7 +180,6 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
             :obj:`float`: molecular weight
         """
         pass
-
 
 class PolymerSpeciesType(SpeciesType):
     """ Knowledge of a polymer
@@ -246,7 +253,6 @@ class PolymerSpeciesType(SpeciesType):
         else:
             return pos_seq.reverse_complement()
 
-
 class PolymerLocus(KnowledgeBaseObject):
     """ Knowledge about a locus of a polymer
 
@@ -291,7 +297,7 @@ class DnaSpeciesType(PolymerSpeciesType):
         seq (:obj:`Bio.Seq.Seq`): sequence
 
     Related attributes:
-        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`): TUs
+        transcription_unit (:obj:`list` of :obj:`TranscriptionUnitLocus`): TUs
     """
 
     seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
@@ -389,7 +395,6 @@ class DnaSpeciesType(PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
-
 class RnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of an RNA species
 
@@ -469,7 +474,6 @@ class RnaSpeciesType(PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
-
 class ProteinSpeciesType(PolymerSpeciesType):
     """ Knowledge of a protein monomer
 
@@ -490,8 +494,8 @@ class ProteinSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        orf = self.orfs[0]
-        return orf.get_seq().translate(orf.polymer.dna.cell.knowledge_base.translation_table)
+        trans_table = self.gene.transcription_unit[0].polymer.cell.knowledge_base.translation_table
+        return self.gene.get_seq().translate(trans_table)
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -576,7 +580,6 @@ class ProteinSpeciesType(PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
-
 class MetaboliteSpeciesType(SpeciesType):
     """ Knowledge of a metabolite
 
@@ -654,7 +657,6 @@ class PromoterLocus(PolymerLocus):
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 'comments')
 
-
 class TranscriptionUnitLocus(PolymerLocus):
     """ Knowledge about an open reading frame
 
@@ -690,7 +692,6 @@ class TranscriptionUnitLocus(PolymerLocus):
             return self.start
         else:
             return self.end
-
 
 class GeneLocus(PolymerLocus):
     """ Knowledge of a gene
@@ -773,7 +774,6 @@ class ReactionParticipant(KnowledgeBaseObject):
         return (None, InvalidAttribute(attr, [
             'No species type and compartment with primary attribute values "{}" and "{}"'.format(
                 species_type_id, compartment_id)]))
-
 
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions

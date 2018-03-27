@@ -36,7 +36,7 @@ class TestIO(unittest.TestCase):
             dna.seq = Bio.Seq.Seq(seq)
 
             for i_trn in range(5):
-                trn = dna.rnas.create(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1), type=core.RnaType.mRna)
+                trn = dna.loci.create(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
                 trn.start = random.randint(100, 200)
                 trn.end = ((trn.start + random.randint(1, 200) - 1) % seq_len) + 1
                 trn.strand = core.PolymerStrand.positive

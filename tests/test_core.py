@@ -323,99 +323,90 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(protein.half_life, 2)
         self.assertEqual(protein.cell, None)
 
-    @unittest.skip('Work in progress')
     def test_get_seq(self):
         records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
         dna_seq = next(records).seq
-        dna = core.DnaSpeciesType(seq=dna_seq)
-        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
-        cell = dna.cell = core.Cell()
+        dna1 = core.DnaSpeciesType(seq=dna_seq)
+
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
         # MPN001
-        rna = core.RnaSpeciesType(dna=dna, start=692, end=1834, strand=core.PolymerStrand.positive)
-        self.assertEqual(rna.get_seq()[0:10], 'AUGAAAGUUU')
-        self.assertEqual(rna.get_seq()[-10:], 'UUCCAAGUAA')
-
-        orf = core.OpenReadingFrameLocus(polymer=rna, start=1, end=rna.get_len())
-        self.assertEqual(orf.get_seq()[0:10], 'AUGAAAGUUU')
-        self.assertEqual(orf.get_seq()[-10:], 'UUCCAAGUAA')
-
-        prot = core.ProteinSpeciesType(orfs=[orf])
-        self.assertEqual(prot.get_seq()[0:10], 'MKVLINKNEL')
+        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1, start=692, end=1834)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        self.assertEqual(prot1.get_seq()[0:10], 'MKVLINKNEL')
 
         # MPN011
-        rna = core.RnaSpeciesType(dna=dna, start=12838, end=13533, strand=core.PolymerStrand.negative)
-        self.assertEqual(rna.get_seq()[0:10], 'AUGAAAUUUA')
-        self.assertEqual(rna.get_seq()[-10:], 'AAUUGAGUAA')
+        gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna1, start=12838, end=13533, strand=core.PolymerStrand.negative)
+        tu2 = core.TranscriptionUnitLocus(id='tu2', gene=[gene2], polymer=dna1)
+        prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2)
+        self.assertEqual(prot2.get_seq()[0:10], 'MKFKFLLTPL')
 
-        orf = core.OpenReadingFrameLocus(polymer=rna, start=1, end=rna.get_len())
-        self.assertEqual(orf.get_seq()[0:10], 'AUGAAAUUUA')
-        self.assertEqual(orf.get_seq()[-10:], 'AAUUGAGUAA')
-
-        prot = core.ProteinSpeciesType(orfs=[orf])
-        self.assertEqual(prot.get_seq()[0:10], 'MKFKFLLTPL')
-
-    @unittest.skip('Work in progress')
     def test_get_empirical_formula(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
-        rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
-        prot1 = core.ProteinSpeciesType(orfs=[orf1])
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
+
+        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertEqual(prot1.get_empirical_formula(), chem.EmpiricalFormula('C105H144N26O32S'))
 
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
-        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
-        rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
-        orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
-        prot2 = core.ProteinSpeciesType(orfs=[orf2])
-        self.assertEqual(prot2.get_empirical_formula(), chem.EmpiricalFormula('C21H40N8O6'))
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
-    @unittest.skip('Work in progress')
+        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        self.assertEqual(prot1.get_empirical_formula(), chem.EmpiricalFormula('C21H40N8O6'))
+
     def test_get_mol_wt(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
-        rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
-        prot1 = core.ProteinSpeciesType(orfs=[orf1])
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
+
+        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertAlmostEqual(prot1.get_mol_wt(), 2314.517)
 
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
-        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
-        rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
-        orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
-        prot2 = core.ProteinSpeciesType(orfs=[orf2])
-        self.assertAlmostEqual(prot2.get_mol_wt(), 500.601)
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
-    @unittest.skip('Work in progress')
+        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        self.assertAlmostEqual(prot1.get_mol_wt(), 500.601)
+
     def test_get_charge(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell = dna1.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
-        rna1 = core.RnaSpeciesType(dna=dna1, start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        orf1 = core.OpenReadingFrameLocus(polymer=rna1, start=1, end=rna1.get_len())
-        prot1 = core.ProteinSpeciesType(orfs=[orf1])
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
+
+        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertEqual(prot1.get_charge(), 0)
 
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
-        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell = dna2.cell = core.Cell()
-        cell.knowledge_base = core.KnowledgeBase(translation_table=1)
-        rna2 = core.RnaSpeciesType(dna=dna2, start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
-        orf2 = core.OpenReadingFrameLocus(polymer=rna2, start=1, end=rna2.get_len())
-        prot2 = core.ProteinSpeciesType(orfs=[orf2])
-        self.assertEqual(prot2.get_charge(), 2)
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
+
+        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        self.assertEqual(prot1.get_charge(), 2)
 
 
 class PolymerLocusTestCase(unittest.TestCase):
