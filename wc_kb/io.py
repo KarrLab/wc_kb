@@ -17,8 +17,8 @@ from . import util
 from obj_model import io
 import Bio.SeqIO
 import Bio.SeqRecord
+import wc_utils.cache
 import wc_kb
-
 
 class Writer(object):
     """ Write knowledge base to file(s) """
@@ -81,6 +81,7 @@ class Writer(object):
 class Reader(object):
     """ Read knowledge base from file(s) """
 
+    @wc_utils.cache.memoize(filename_args=[1, 2])
     def run(self, core_path, seq_path):
         """ Read knowledge base from file(s)
 
