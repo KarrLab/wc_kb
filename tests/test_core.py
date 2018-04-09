@@ -499,20 +499,6 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
         self.assertEqual(tu1.get_5_prime(),15)
 
 
-class ReactionParticipantTestCase(unittest.TestCase):
-    def test_constructor(self):
-        cell1 = core.Cell()
-        compartment1 = core.Compartment(cell = cell1)
-        species1 = core.MetaboliteSpeciesType(id ='1')
-        species2 = core.MetaboliteSpeciesType(id ='2')
-
-        participant1 = core.ReactionParticipant(species_type=[species1, species2], compartment=[compartment1], coefficient=5)
-
-        self.assertEqual(participant1.species_type, [species1, species2])
-        self.assertEqual(participant1.compartment, [compartment1])
-        self.assertEqual(participant1.coefficient, 5)
-
-
 class ReactionTestCase(unittest.TestCase):
         def test_constructor(self):
             cell1 = core.Cell()

@@ -8,6 +8,7 @@
 """
 
 from wc_utils.util import chem
+import wc_utils.util.git as git
 import abc
 import Bio.Seq
 import Bio.SeqUtils
@@ -16,8 +17,15 @@ import math
 import obj_model.abstract
 import obj_model.core
 import obj_model.extra_attributes
+
+from six import with_metaclass, string_types
+from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
+                       RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
+                       OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
+                       InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
 import openbabel
 import six
+import re
 
 
 """ Enumeration classes """
@@ -42,6 +50,24 @@ class GeneType(enum.Enum):
     sRna = 2
     tRna = 3
 
+class ComplexType(enum.Enum):
+    """ Type of gene """
+    tRnaSynthClassII = 0
+    FattyAcylAcp = 1
+
+class ComplexFormationType(enum.Enum):
+    """ Type of gene """
+    process_ChromosomeCondensation = 0
+    process_FtsZPolymerization = 0
+    process_MacroMolecularComplexiation = 0
+    process_Metabolism = 0
+    process_ProteinModification = 0
+    process_Replication = 0
+    process_ReplicationInitation = 0
+    process_RibosomeAssembly = 0
+    process_Transcription = 0
+    process_Translation = 0
+
 
 """ Base classes """
 class KnowledgeBaseObject(obj_model.core.Model):
@@ -62,15 +88,20 @@ class KnowledgeBase(KnowledgeBaseObject):
     Attributes:
         version (:obj:`str`): version
         translation_table (:obj:`int`): translation table
+        url (:obj:`str`): url of the wc_kb github repo
+        branch (:obj:`str`): branch at the time of building the kb
+        revision (:obj:`str`): github revision number at the time of building the kb
 
     Related attributes:
         cell (:obj:`Cell`): cell
     """
-    version = obj_model.core.StringAttribute()
     translation_table = obj_model.core.IntegerAttribute()
+    url = obj_model.core.StringAttribute(default = git.get_repo_metadata().url)
+    branch = obj_model.core.StringAttribute(default = git.get_repo_metadata().branch)
+    revision = obj_model.core.StringAttribute(default = git.get_repo_metadata().revision)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'version', 'translation_table', 'comments')
+        attribute_order = ('id', 'name','translation_table', 'url', 'branch', 'revision', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
 class Cell(KnowledgeBaseObject):
@@ -709,6 +740,477 @@ class GeneLocus(PolymerLocus):
         attribute_order = ('id', 'cell', 'polymer', 'name', 'symbol', 'start', 'end', 'comments')
 
 
+""" Experimental classes """
+class ReactionParticipantAttribute(ManyToManyAttribute):
+    """ Reaction participants """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(ReactionParticipantAttribute, self).__init__('SpeciesCoefficient', related_name=related_name,
+                                                           verbose_name=verbose_name,
+                                                           verbose_related_name=verbose_related_name,
+                                                           help=help)
+
+    def serialize(self, participants):
+        """ Serialize related object
+
+        Args:
+            participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        if not participants:
+            return ''
+
+        comps = set([part.species.compartment for part in participants])
+        if len(comps) == 1:
+            global_comp = comps.pop()
+        else:
+            global_comp = None
+
+        if global_comp:
+            participants = natsorted(participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
+        else:
+            participants = natsorted(participants, lambda part: (
+                part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
+
+        lhs = []
+        rhs = []
+        for part in participants:
+            if part.coefficient < 0:
+                lhs.append(part.serialize(show_compartment=global_comp is None, show_coefficient_sign=False))
+            elif part.coefficient > 0:
+                rhs.append(part.serialize(show_compartment=global_comp is None, show_coefficient_sign=False))
+
+        if global_comp:
+            return '[{}]: {} ==> {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs), ' + '.join(rhs))
+        else:
+            return '{} ==> {}'.format(' + '.join(lhs), ' + '.join(rhs))
+
+    def deserialize(self, value, objects):
+        """ Deserialize value
+
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+
+        Returns:
+            :obj:`tuple` of `list` of `SpeciesCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        errors = []
+
+        id = '[a-z][a-z0-9_]*'
+        stoch = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        gbl_part = '({} )*({})'.format(stoch, id)
+        lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
+        gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
+        lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
+        gbl_pattern = '^\[({})\]: ({}) ==> ({})$'.format(id, gbl_side, gbl_side)
+        lcl_pattern = '^({}) ==> ({})$'.format(lcl_side, lcl_side)
+
+        global_match = re.match(gbl_pattern, value, flags=re.I)
+        local_match = re.match(lcl_pattern, value, flags=re.I)
+
+        if global_match:
+            if global_match.group(1) in objects[Compartment]:
+                global_comp = objects[Compartment][global_match.group(1)]
+            else:
+                global_comp = None
+                errors.append('Undefined compartment "{}"'.format(global_match.group(1)))
+            lhs = global_match.group(2)
+            rhs = global_match.group(14)
+
+        elif local_match:
+            global_comp = None
+            lhs = local_match.group(1)
+            rhs = local_match.group(13)
+
+        else:
+            return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
+
+        lhs_parts, lhs_errors = self.deserialize_side(-1., lhs, objects, global_comp)
+        rhs_parts, rhs_errors = self.deserialize_side(1., rhs, objects, global_comp)
+
+        parts = lhs_parts + rhs_parts
+        errors.extend(lhs_errors)
+        errors.extend(rhs_errors)
+
+        if errors:
+            return (None, InvalidAttribute(self, errors))
+        return (parts, None)
+
+    def deserialize_side(self, direction, value, objects, global_comp):
+        """ Deserialize the LHS or RHS of a reaction equation
+        Args:
+            direction (:obj:`float`): -1. indicates LHS, +1. indicates RHS
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            global_comp (:obj:`Compartment`): global compartment of the reaction
+
+        Returns:
+            :obj:`tuple`:
+                * :obj:`list` of :obj:`SpeciesCoefficient`: list of species coefficients
+                * :obj:`list` of :obj:`Exception`: list of errors
+        """
+        parts = []
+        errors = []
+
+        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
+            part_errors = []
+
+            if part[4] in objects[RnaSpeciesType]:
+                species_type = objects[RnaSpeciesType][part[4]]
+            elif part[4] in objects[ProteinSpeciesType]:
+                species_type = objects[ProteinSpeciesType][part[4]]
+            elif part[4] in objects[MetaboliteSpeciesType]:
+                species_type = objects[MetaboliteSpeciesType][part[4]]
+            else:
+                part_errors.append('Undefined species type "{}"'.format(part[4]))
+
+            if global_comp:
+                compartment = global_comp
+            elif part[6] in objects[Compartment]:
+                compartment = objects[Compartment][part[6]]
+            else:
+                part_errors.append('Undefined compartment "{}"'.format(part[6]))
+
+            coefficient = direction * float(part[1] or 1.)
+
+            if part_errors:
+                errors += part_errors
+            else:
+                spec_primary_attribute = Species.gen_id(species_type.get_primary_attribute(),
+                                                        compartment.get_primary_attribute())
+                species, error = Species.deserialize(self, spec_primary_attribute, objects)
+                if error:
+                    raise ValueError('Invalid species "{}"'.format(spec_primary_attribute)
+                                     )  # pragma: no cover # unreachable due to error checking above
+
+                if coefficient != 0:
+                    if SpeciesCoefficient not in objects:
+                        objects[SpeciesCoefficient] = {}
+                    serialized_value = SpeciesCoefficient._serialize(species, coefficient)
+                    if serialized_value in objects[SpeciesCoefficient]:
+                        rxn_part = objects[SpeciesCoefficient][serialized_value]
+                    else:
+                        rxn_part = SpeciesCoefficient(species=species, coefficient=coefficient)
+                        objects[SpeciesCoefficient][serialized_value] = rxn_part
+                    parts.append(rxn_part)
+
+        return (parts, errors)
+
+class Species(obj_model.Model):
+    """ Species (tuple of species type, compartment)
+
+    Attributes:
+        species_type (:obj:`SpeciesType`): species type
+        compartment (:obj:`Compartment`): compartment
+
+        concentration (:obj:`Concentration`): concentration
+        species_coefficients (:obj:`list` of `SpeciesCoefficient`): participations in reactions and observables
+        rate_law_equations (:obj:`RateLawEquation`): rate law equations
+    """
+    species_type = ManyToOneAttribute(SpeciesType, related_name='species', min_related=1)
+    compartment = ManyToOneAttribute(Compartment, related_name='species', min_related=1)
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('species_type', 'compartment')
+        frozen_columns = 1
+        tabular_orientation = TabularOrientation.inline
+        unique_together = (('species_type', 'compartment', ), )
+        ordering = ('species_type', 'compartment')
+
+    @staticmethod
+    def gen_id(species_type, compartment):
+        """ Generate a Species' primary identifier
+
+        Args:
+            species_type (:obj:`object`): a `SpeciesType`, or its id
+            compartment (:obj:`object`): a `Compartment`, or its id
+
+        Returns:
+            :obj:`str`: canonical identifier for a specie in a compartment, 'species_type_id[compartment_id]'
+        """
+        if isinstance(species_type, SpeciesType) and isinstance(compartment, Compartment):
+            species_type_id = species_type.get_primary_attribute()
+            compartment_id = compartment.get_primary_attribute()
+        elif isinstance(species_type, string_types) and isinstance(compartment, string_types):
+            species_type_id = species_type
+            compartment_id = compartment
+        else:
+            raise ValueError("gen_id: incorrect parameter types: {}, {}".format(species_type, compartment))
+        return '{}[{}]'.format(species_type_id, compartment_id)
+
+    def id(self):
+        """ Provide a Species' primary identifier
+
+        Returns:
+            :obj:`str`: canonical identifier for a specie in a compartment, 'specie_id[compartment_id]'
+        """
+        return self.serialize()
+
+    def serialize(self):
+        """ Provide a Species' primary identifier
+
+        Returns:
+            :obj:`str`: canonical identifier for a specie in a compartment, 'specie_id[compartment_id]'
+        """
+        return self.gen_id(self.species_type, self.compartment)
+
+    @staticmethod
+    def get(ids, species_iterator):
+        """ Find some Species instances
+
+        Args:
+            ids (:obj:`Iterator` of `str`): an iterator over some species identifiers
+            species_iterator (:obj:`Iterator`): an iterator over some species
+
+        Returns:
+            :obj:`list` of `Species` or `None`: each element of the `list` corresponds to an element
+                of `ids` and contains either a `Species` with `id()` equal to the element in `ids`,
+                or `None` indicating that `species_iterator` does not contain a matching `Species`
+        """
+        # TODO: this costs O(|ids||species_iterator|); replace with O(|ids|) operation using obj_model.Manager.get()
+        rv = []
+        for id in ids:
+            s = None
+            for specie in species_iterator:
+                if specie.id() == id:
+                    s = specie
+                    # one match is enough
+                    break
+            rv.append(s)
+        return rv
+
+    @classmethod
+    def deserialize(cls, attribute, value, objects):
+        """ Deserialize value
+
+        Args:
+            attribute (:obj:`Attribute`): attribute
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+
+        Returns:
+            :obj:`tuple` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value and cleaning error
+        """
+        if cls in objects and value in objects[cls]:
+            return (objects[cls][value], None)
+
+        match = re.match('^([a-z][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
+        if match:
+            errors = []
+            if match.group(1) in objects[RnaSpeciesType]:
+                species_type = objects[RnaSpeciesType][match.group(1)]
+            elif match.group(1) in objects[ProteinSpeciesType]:
+                species_type = objects[ProteinSpeciesType][match.group(1)]
+            elif match.group(1) in objects[MetaboliteSpeciesType]:
+                species_type = objects[MetaboliteSpeciesType][match.group(1)]
+            else:
+                errors.append('Species type "{}" is not defined'.format(match.group(1)))
+
+            if match.group(2) in objects[Compartment]:
+                compartment = objects[Compartment][match.group(2)]
+            else:
+                errors.append('Compartment "{}" is not defined'.format(match.group(2)))
+
+            if errors:
+                return (None, InvalidAttribute(attribute, errors))
+            else:
+                obj = cls(species_type=species_type, compartment=compartment)
+                if cls not in objects:
+                    objects[cls] = {}
+                objects[cls][obj.serialize()] = obj
+                return (obj, None)
+
+        return (None, InvalidAttribute(attribute, ['Invalid species']))
+
+    def xml_id(self):
+        """ Make a Species id that satisfies the SBML string id syntax.
+
+        Use `make_xml_id()` to make a SBML id.
+
+        Returns:
+            :obj:`str`: an SBML id
+        """
+        return Species.make_xml_id(
+            self.species_type.get_primary_attribute(),
+            self.compartment.get_primary_attribute())
+
+    @staticmethod
+    def make_xml_id(species_type_id, compartment_id):
+        """ Make a Species id that satisfies the SBML string id syntax.
+
+        Replaces the '[' and ']' in Species.id() with double-underscores '__'.
+        See Finney and Hucka, "Systems Biology Markup Language (SBML) Level 2: Structures and
+        Facilities for Model Definitions", 2003, section 3.4.
+
+        Returns:
+            :obj:`str`: an SBML id
+        """
+        return '{}__{}__'.format(species_type_id, compartment_id)
+
+    @staticmethod
+    def xml_id_to_id(xml_id):
+        """ Convert an `xml_id` to its species id.
+
+        Returns:
+            :obj:`str`: a species id
+        """
+        return xml_id.replace('__', '[', 1).replace('__', ']', 1)
+
+    def add_to_sbml_doc(self, sbml_document):
+        """ Add this Species to a libsbml SBML document.
+
+        Args:
+             sbml_document (:obj:`obj`): a `libsbml` SBMLDocument
+
+        Returns:
+            :obj:`libsbml.species`: the libsbml species that's created
+
+        Raises:
+            :obj:`LibSBMLError`: if calling `libsbml` raises an error
+        """
+        sbml_model = wrap_libsbml(sbml_document.getModel)
+        sbml_species = wrap_libsbml(sbml_model.createSpecies)
+        # initDefaults() isn't wrapped in wrap_libsbml because it returns None
+        sbml_species.initDefaults()
+        wrap_libsbml(sbml_species.setIdAttribute, self.xml_id())
+
+        # add some SpeciesType data
+        wrap_libsbml(sbml_species.setName, self.species_type.name)
+        if self.species_type.comments:
+            wrap_libsbml(sbml_species.setNotes, self.species_type.comments, True)
+
+        # set Compartment, which must already be in the SBML document
+        wrap_libsbml(sbml_species.setCompartment, self.compartment.id)
+
+        # set the Initial Concentration
+        wrap_libsbml(sbml_species.setInitialConcentration, self.concentration.value)
+
+        return sbml_species
+
+class SpeciesCoefficient(obj_model.Model):
+    """ A tuple of a species and a coefficient
+
+    Attributes:
+        species (:obj:`Species`): species
+        coefficient (:obj:`float`): coefficient
+
+    Related attributes:
+        reaction (:obj:`Reaction`): reaction
+    """
+    species = ManyToOneAttribute(Species, related_name='species_coefficients')
+    coefficient = FloatAttribute(nan=False)
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('species', 'coefficient')
+        frozen_columns = 1
+        tabular_orientation = TabularOrientation.inline
+        ordering = ('species',)
+
+    def serialize(self, show_compartment=True, show_coefficient_sign=True):
+        """ Serialize related object
+
+        Args:
+            show_compartment (:obj:`bool`, optional): if true, show compartment
+            show_coefficient_sign (:obj:`bool`, optional): if true, show coefficient sign
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        return self._serialize(self.species, self.coefficient,
+                               show_compartment=show_compartment, show_coefficient_sign=show_coefficient_sign)
+
+    @staticmethod
+    def _serialize(species, coefficient, show_compartment=True, show_coefficient_sign=True):
+        """ Serialize values
+
+        Args:
+            species (:obj:`Species`): species
+            coefficient (:obj:`float`): coefficient
+            show_compartment (:obj:`bool`, optional): if true, show compartment
+            show_coefficient_sign (:obj:`bool`, optional): if true, show coefficient sign
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        coefficient = float(coefficient)
+
+        if not show_coefficient_sign:
+            coefficient = abs(coefficient)
+
+        if coefficient == 1:
+            coefficient_str = ''
+        elif coefficient % 1 == 0 and abs(coefficient) < 1000:
+            coefficient_str = '({:.0f}) '.format(coefficient)
+        else:
+            coefficient_str = '({:e}) '.format(coefficient)
+
+        if show_compartment:
+            return '{}{}'.format(coefficient_str, species.serialize())
+        else:
+            return '{}{}'.format(coefficient_str, species.species_type.get_primary_attribute())
+
+    @classmethod
+    def deserialize(cls, attribute, value, objects, compartment=None):
+        """ Deserialize value
+
+        Args:
+            attribute (:obj:`Attribute`): attribute
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            compartment (:obj:`Compartment`, optional): compartment
+
+        Returns:
+            :obj:`tuple` of `list` of `SpeciesCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        errors = []
+
+        if compartment:
+            pattern = '^(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
+        else:
+            pattern = '^(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*\[[a-z][a-z0-9_]*\])$'
+
+        match = re.match(pattern, value, flags=re.I)
+        if match:
+            errors = []
+
+            coefficient = float(match.group(2) or 1.)
+
+            if compartment:
+                species_id = Species.gen_id(match.group(5), compartment.get_primary_attribute())
+            else:
+                species_id = match.group(5)
+
+            species, error = Species.deserialize(attribute, species_id, objects)
+            if error:
+                return (None, error)
+
+            serial_val = cls._serialize(species, coefficient)
+            if cls in objects and serial_val in objects[cls]:
+                return (objects[cls][serial_val], None)
+
+            obj = cls(species=species, coefficient=coefficient)
+            if cls not in objects:
+                objects[cls] = {}
+            objects[cls][obj.serialize()] = obj
+            return (obj, None)
+
+        else:
+            attr = cls.Meta.attributes['species']
+            return (None, InvalidAttribute(attr, ['Invalid species coefficient']))
+
+
 """ Reaction classes """
 class ReactionParticipant(KnowledgeBaseObject):
     """ Knowledge of a participant in a reaction
@@ -755,6 +1257,7 @@ class ReactionParticipant(KnowledgeBaseObject):
             return (objects[cls][value], None)
 
         matches = re.match('^(.*?) (.*?)\[(.*?)\]$', value)
+
         if matches:
             coefficient = float(matches.group(1))
             species_type_id = matches.group(2)
@@ -784,11 +1287,10 @@ class Reaction(KnowledgeBaseObject):
         v_max (:obj:`float`):V_max value of reaction (unit: mol/L/min)
         k_m (:obj:`float`): K_m value of reaction (unit: mol/L)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
-        todo: Handle submodel here or during model generation?
     """
 
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='reactions')
-    participants = obj_model.core.ManyToManyAttribute(ReactionParticipant, related_name='reactions')
+    participants = ReactionParticipantAttribute(related_name='reactions')
     v_max = obj_model.core.FloatAttribute(min=0, verbose_name='Vmax')
     k_m = obj_model.core.FloatAttribute(min=0, verbose_name='Km')
     reversible = obj_model.core.BooleanAttribute()
