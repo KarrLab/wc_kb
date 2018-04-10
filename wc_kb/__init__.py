@@ -6,10 +6,26 @@ with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
 
 # API
 from .core import (PolymerStrand,
-                   KnowledgeBaseObject, KnowledgeBase, Cell, Compartment,
-                   SpeciesType, MetaboliteSpeciesType, PolymerSpeciesType,
-                   DnaSpeciesType, RnaType, RnaSpeciesType, ProteinSpeciesType,
-                   PolymerLocus, GeneType, GeneLocus, PromoterLocus, TranscriptionUnitLocus,
-                   ReactionParticipant, Reaction)
+                   KnowledgeBaseObject,
+                   KnowledgeBase,
+                   Cell,
+                   Compartment,
+                   SpeciesType,
+                   MetaboliteSpeciesType,
+                   PolymerSpeciesType,
+                   DnaSpeciesType,
+                   RnaType,
+                   RnaSpeciesType,
+                   ProteinSpeciesType,
+                   PolymerLocus,
+                   GeneType,
+                   GeneLocus,
+                   PromoterLocus,
+                   TranscriptionUnitLocus,
+                   Reaction,
+                   Species,
+                   SpeciesCoefficient,
+                   ReactionParticipantAttribute)
+                   
 from . import io
 from . import util
