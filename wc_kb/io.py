@@ -81,7 +81,7 @@ class Writer(object):
 class Reader(object):
     """ Read knowledge base from file(s) """
 
-    #@wc_utils.cache.memoize(filename_args=[1, 2])
+    @wc_utils.cache.memoize(filename_args=[1, 2])
     def run(self, core_path, seq_path):
         """ Read knowledge base from file(s)
 

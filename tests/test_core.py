@@ -97,9 +97,7 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
             def get_mol_wt(self): pass
             def get_seq(self): return Bio.Seq.Seq('AAATGCCC', alphabet=Bio.Alphabet.DNAAlphabet())
 
-            # Methods from PolymerSpeciesType
-            #def get_subseq(self): pass
-            #def get_len(self): pass
+
 
         pst1 = ConcretePolymerSpeciesType(id='pst1', name = 'pst1', concentration=1, half_life=2)
 
@@ -549,3 +547,7 @@ class ReactionTestCase(unittest.TestCase):
             self.assertEqual(reaction1.k_m, 0.1)
             self.assertEqual(reaction1.v_max, 0.5)
             self.assertEqual(reaction1.reversible, 0)
+
+
+class ComplexSpeciesTypeTestCase(unittest.TestCase):
+    pass #add later

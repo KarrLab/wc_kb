@@ -223,6 +223,7 @@ class Species(obj_model.Model):
         species_coefficients (:obj:`list` of `SpeciesCoefficient`): participations in reactions and observables
         rate_law_equations (:obj:`RateLawEquation`): rate law equations
     """
+
     species_type = ManyToOneAttribute(SpeciesType, related_name='species', min_related=1)
     compartment = ManyToOneAttribute(Compartment, related_name='species', min_related=1)
 
@@ -415,6 +416,7 @@ class SpeciesCoefficient(obj_model.Model):
     Related attributes:
         reaction (:obj:`Reaction`): reaction
     """
+
     species = ManyToOneAttribute(Species, related_name='species_coefficients')
     coefficient = FloatAttribute(nan=False)
 
@@ -974,7 +976,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
-class ComplexSpeciesType(PolymerSpeciesType):
+class ComplexSpeciesType(SpeciesType):
     """ Knowledge of a protein complexe
 
     Attributes:
@@ -988,20 +990,26 @@ class ComplexSpeciesType(PolymerSpeciesType):
     binding = obj_model.core.StringAttribute()
     region = obj_model.core.StringAttribute()
 
-    formation_reaction = obj_model.core.ManyToManyAttribute('Reaction', related_name='complex')
+    formation_reaction = obj_model.core.OneToOneAttribute('Reaction', related_name='complex')
+    #subunit = obj_model.core.ManyToManyAttribute('SpeciesCoefficient', related_name='complex')
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'formation_process', 'formation_reaction', 'complex_type', 'binding', 'region', 'comments')
 
-    def get_seq(self):
-        """ Get the sequence
+    def get_subunits(self):
+        """ Get the subunit composition of the complex
 
         Returns:
-            :obj:`Bio.Seq.Seq`: sequence
+            `list` of :obj:`SpeciesType`: list of Speciestype objects that compose the complex
         """
-        pass
-        #trans_table = self.gene.transcription_unit[0].polymer.cell.knowledge_base.translation_table
-        #return self.gene.get_seq().translate(trans_table)
+        subunits =[]
+
+        for participant in self.formation_reaction.participants:
+            if participant.species.species_type.id != self.id:
+                for n in range (0,abs(int(participant.coefficient))):
+                    subunits.append(participant.species.species_type)
+
+        return subunits
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -1009,57 +1017,10 @@ class ComplexSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
+        # Formula addition
+        for subunit in self.get_subunits():
+            formula = subunit.get_empirical_formula()
 
-        seq = self.get_seq()
-        l = len(seq)
-
-        n_a = seq.count('A')  # Ala: Alanine (C3 H7 N O2)
-        n_r = seq.count('R')  # Arg: Arginine (C6 H14 N4 O2)
-        n_n = seq.count('N')  # Asn: Asparagine (C4 H8 N2 O3)
-        n_d = seq.count('D')  # Asp: Aspartic acid (C4 H7 N O4)
-        n_c = seq.count('C')  # Cys: Cysteine (C3 H7 N O2 S)
-
-        n_q = seq.count('Q')  # Gln: Glutamine (C5 H10 N2 O3)
-        n_e = seq.count('E')  # Glu: Glutamic acid (C5 H9 N O4)
-        n_g = seq.count('G')  # Gly: Glycine (C2 H5 N O2)
-        n_h = seq.count('H')  # His: Histidine (C6 H9 N3 O2)
-        n_i = seq.count('I')  # Ile: Isoleucine (C6 H13 N O2)
-
-        n_l = seq.count('L')  # Leu: Leucine (C6 H13 N O2)
-        n_k = seq.count('K')  # Lys: Lysine (C6 H14 N2 O2)
-        n_m = seq.count('M')  # Met: Methionine (C5 H11 N O2 S)
-        n_f = seq.count('F')  # Phe: Phenylalanine (C9 H11 N O2)
-        n_p = seq.count('P')  # Pro: Proline (C5 H9 N O2)
-
-        n_s = seq.count('S')  # Ser: Serine (C3 H7 N O3)
-        n_t = seq.count('T')  # Thr: Threonine (C4 H9 N O3)
-        n_w = seq.count('W')  # Trp: Tryptophan (C11 H12 N2 O2)
-        n_y = seq.count('Y')  # Tyr: Tyrosine (C9 H11 N O3)
-        n_v = seq.count('V')  # Val: Valine (C5 H11 N O2)
-
-        formula = chem.EmpiricalFormula()
-
-        formula.C = 3 * n_a + 6 * n_r + 4 * n_n + 4 * n_d + 3 * n_c + \
-            5 * n_q + 5 * n_e + 2 * n_g + 6 * n_h + 6 * n_i + \
-            6 * n_l + 6 * n_k + 5 * n_m + 9 * n_f + 5 * n_p + \
-            3 * n_s + 4 * n_t + 11 * n_w + 9 * n_y + 5 * n_v
-
-        formula.H = 7 * n_a + 14 * n_r + 8 * n_n + 7 * n_d + 7 * n_c + \
-            10 * n_q + 9 * n_e + 5 * n_g + 9 * n_h + 13 * n_i + \
-            13 * n_l + 14 * n_k + 11 * n_m + 11 * n_f + 9 * n_p + \
-            7 * n_s + 9 * n_t + 12 * n_w + 11 * n_y + 11 * n_v - 2 * (l - 1)
-
-        formula.N = 1 * n_a + 4 * n_r + 2 * n_n + 1 * n_d + 1 * n_c + \
-            2 * n_q + 1 * n_e + 1 * n_g + 3 * n_h + 1 * n_i + \
-            1 * n_l + 2 * n_k + 1 * n_m + 1 * n_f + 1 * n_p + \
-            1 * n_s + 1 * n_t + 2 * n_w + 1 * n_y + 1 * n_v
-
-        formula.O = 2 * n_a + 2 * n_r + 3 * n_n + 4 * n_d + 2 * n_c + \
-            3 * n_q + 4 * n_e + 2 * n_g + 2 * n_h + 2 * n_i + \
-            2 * n_l + 2 * n_k + 2 * n_m + 2 * n_f + 2 * n_p + \
-            3 * n_s + 3 * n_t + 2 * n_w + 3 * n_y + 2 * n_v - (l - 1)
-
-        formula.S = n_c + n_m
         return formula
 
     def get_charge(self):
@@ -1068,15 +1029,11 @@ class ComplexSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`int`: charge
         """
-        seq = self.get_seq()
+        charge = 0
+        for subunit in self.get_subunits():
+            charge = charge + subunit.get_charge()
 
-        n_r = seq.count('R')
-        n_h = seq.count('H')
-        n_k = seq.count('K')
-        n_d = seq.count('D')
-        n_e = seq.count('E')
-
-        return (n_r + n_h + n_k) - (n_d + n_e)
+        return charge
 
     def get_mol_wt(self):
         """ Get the molecular weight
@@ -1084,8 +1041,11 @@ class ComplexSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`float`: molecular weight
         """
-        return self.get_empirical_formula().get_molecular_weight()
+        weight = 0
+        for subunit in self.get_subunits():
+            weight = weight + subunit.get_mol_wt()
 
+        return weight
 
 """ Locus types """
 class PromoterLocus(PolymerLocus):
@@ -1157,7 +1117,7 @@ class GeneLocus(PolymerLocus):
         attribute_order = ('id', 'cell', 'polymer', 'name', 'symbol', 'start', 'end', 'comments')
 
 
-""" Experimental classes """
+""" Reaction classes """
 class ReactionParticipantAttribute(ManyToManyAttribute):
     """ Reaction participants """
 
