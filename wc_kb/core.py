@@ -319,6 +319,8 @@ class Species(obj_model.Model):
                 species_type = objects[ProteinSpeciesType][match.group(1)]
             elif match.group(1) in objects[MetaboliteSpeciesType]:
                 species_type = objects[MetaboliteSpeciesType][match.group(1)]
+            elif match.group(1) in objects[ComplexSpeciesType]:
+                species_type = objects[ComplexSpeciesType][match.group(1)]
             else:
                 errors.append('Species type "{}" is not defined'.format(match.group(1)))
 
@@ -1308,8 +1310,8 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                                                         compartment.get_primary_attribute())
                 species, error = Species.deserialize(self, spec_primary_attribute, objects)
                 if error:
-                    raise ValueError('Invalid species "{}"'.format(spec_primary_attribute)
-                                     )  # pragma: no cover # unreachable due to error checking above
+                     raise ValueError('Invalid species "{}"'.format(spec_primary_attribute))
+                     # pragma: no cover # unreachable due to error checking above
 
                 if coefficient != 0:
                     if SpeciesCoefficient not in objects:
