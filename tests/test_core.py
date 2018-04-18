@@ -76,10 +76,12 @@ class SpeciesTypeTestCase(unittest.TestCase):
 
         class ConcreteSpeciesType(core.SpeciesType):
             def get_empirical_formula(self): pass
+
             def get_charge(self): pass
+
             def get_mol_wt(self): pass
 
-        species_type = ConcreteSpeciesType(id='species1', name = 'species1', concentration=2., half_life=3.)
+        species_type = ConcreteSpeciesType(id='species1', name='species1', concentration=2., half_life=3.)
         self.assertEqual(species_type.id, 'species1')
         self.assertEqual(species_type.name, 'species1')
         self.assertEqual(species_type.concentration, 2.)
@@ -93,15 +95,16 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
 
         class ConcretePolymerSpeciesType(core.PolymerSpeciesType):
             def get_empirical_formula(self): pass
+
             def get_charge(self): pass
+
             def get_mol_wt(self): pass
+
             def get_seq(self): return Bio.Seq.Seq('AAATGCCC', alphabet=Bio.Alphabet.DNAAlphabet())
 
+        pst1 = ConcretePolymerSpeciesType(id='pst1', name='pst1', concentration=1, half_life=2)
 
-
-        pst1 = ConcretePolymerSpeciesType(id='pst1', name = 'pst1', concentration=1, half_life=2)
-
-        #Test constructor
+        # Test constructor
         self.assertEqual(pst1.id, 'pst1')
         self.assertEqual(pst1.name, 'pst1')
         self.assertEqual(pst1.concentration, 1)
@@ -137,8 +140,8 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
 
 class DnaSpeciesTypeTestCase(unittest.TestCase):
     def test(self):
-        dna = core.DnaSpeciesType(id = 'dna1', name = 'dna1', seq=Bio.Seq.Seq('ACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()),
-              circular = False, double_stranded = False)
+        dna = core.DnaSpeciesType(id='dna1', name='dna1', seq=Bio.Seq.Seq('ACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()),
+                                  circular=False, double_stranded=False)
 
         self.assertEqual(dna.id, 'dna1')
         self.assertEqual(dna.name, 'dna1')
@@ -343,7 +346,8 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     def test_get_empirical_formula(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
+            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         cell1 = dna1.cell = core.Cell()
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
@@ -410,10 +414,11 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 class PolymerLocusTestCase(unittest.TestCase):
     def test_constructor(self):
         cell1 = core.Cell()
-        dna1 = core.DnaSpeciesType(id = 'dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()),
-               circular = False, double_stranded = False)
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()),
+                                   circular=False, double_stranded=False)
 
-        locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=dna1, strand=core.PolymerStrand.positive, start=1, end=15)
+        locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=dna1,
+                                   strand=core.PolymerStrand.positive, start=1, end=15)
 
         # test constructor
         self.assertEqual(locus1.id, 'locus1')
@@ -425,14 +430,14 @@ class PolymerLocusTestCase(unittest.TestCase):
         self.assertEqual(locus1.end, 15)
 
         # test methods
-        self.assertEqual(locus1.get_seq(),'ACGTACGTACGTACG')
-        self.assertEqual(locus1.get_len(),15)
+        self.assertEqual(locus1.get_seq(), 'ACGTACGTACGTACG')
+        self.assertEqual(locus1.get_len(), 15)
 
         # flip strand; test methods
         rev_comp_seq = locus1.get_seq().reverse_complement()
         locus1.strand = core.PolymerStrand.negative
         self.assertEqual(locus1.get_seq(), rev_comp_seq)
-        self.assertEqual(locus1.get_len(),15)
+        self.assertEqual(locus1.get_len(), 15)
 
 
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
@@ -473,10 +478,10 @@ class GeneLocusTestCase(unittest.TestCase):
 
 class TranscriptionUnitLocusTestCase(unittest.TestCase):
     def test(self):
-        dna1 = core.DnaSpeciesType(id = 'dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()),
-               circular = False, double_stranded = False)
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()),
+                                   circular=False, double_stranded=False)
 
-        tu1 = core.TranscriptionUnitLocus(id='tu1', name='tu1', polymer = dna1, strand=core.PolymerStrand.positive, start=1, end=15)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', name='tu1', polymer=dna1, strand=core.PolymerStrand.positive, start=1, end=15)
 
         # test constructor
         self.assertEqual(tu1.id, 'tu1')
@@ -487,67 +492,71 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
         self.assertEqual(tu1.end, 15)
 
         # test methods
-        self.assertEqual(tu1.get_3_prime(),15)
-        self.assertEqual(tu1.get_5_prime(),1)
+        self.assertEqual(tu1.get_3_prime(), 15)
+        self.assertEqual(tu1.get_5_prime(), 1)
 
         # flip strand; test methods
         rev_comp_seq = tu1.get_seq().reverse_complement()
         tu1.strand = core.PolymerStrand.negative
-        self.assertEqual(tu1.get_3_prime(),1)
-        self.assertEqual(tu1.get_5_prime(),15)
+        self.assertEqual(tu1.get_3_prime(), 1)
+        self.assertEqual(tu1.get_5_prime(), 15)
 
 
 class ReactionTestCase(unittest.TestCase):
-        def test_constructor(self):
-            cell1 = core.Cell()
-            compartment1 = core.Compartment(cell = cell1)
-            species1 = core.MetaboliteSpeciesType(id ='1')
-            species2 = core.MetaboliteSpeciesType(id ='2')
-            participant1 = core.ReactionParticipant(species_type = [species1], compartment = [compartment1], coefficient = 1)
-            participant2 = core.ReactionParticipant(species_type = [species2], compartment = [compartment1], coefficient = 1)
+    def test_constructor(self):
+        cell1 = core.Cell()
+        compartment1 = core.Compartment(cell=cell1)
+        species1 = core.MetaboliteSpeciesType(id='1')
+        species2 = core.MetaboliteSpeciesType(id='2')
+        participant1 = core.ReactionParticipant(species_type=[species1], compartment=[compartment1], coefficient=1)
+        participant2 = core.ReactionParticipant(species_type=[species2], compartment=[compartment1], coefficient=1)
 
-            reaction1 = core.Reaction(
-                                id ='reaction1',
-                                name = 'test_reaction',
-                                cell = cell1,
-                                participants =[participant1, participant2],
-                                k_m = 0.1,
-                                v_max = 0.5,
-                                reversible=0)
+        reaction1 = core.Reaction(
+            id='reaction1',
+            name='test_reaction',
+            cell=cell1,
+            participants=[participant1, participant2],
+            k_m=0.1,
+            v_max=0.5,
+            reversible=0)
 
-            self.assertEqual(reaction1.id,'reaction1')
-            self.assertEqual(reaction1.name,'test_reaction')
-            self.assertEqual(reaction1.cell,cell1)
-            self.assertEqual(reaction1.participants, [participant1, participant2])
-            self.assertEqual(reaction1.k_m, 0.1)
-            self.assertEqual(reaction1.v_max, 0.5)
-            self.assertEqual(reaction1.reversible, 0)
+        self.assertEqual(reaction1.id, 'reaction1')
+        self.assertEqual(reaction1.name, 'test_reaction')
+        self.assertEqual(reaction1.cell, cell1)
+        self.assertEqual(reaction1.participants, [participant1, participant2])
+        self.assertEqual(reaction1.k_m, 0.1)
+        self.assertEqual(reaction1.v_max, 0.5)
+        self.assertEqual(reaction1.reversible, 0)
 
-        def test_constructor(self):
-            cell1 = core.Cell()
-            compartment1 = core.Compartment(cell=cell1)
-            species1 = core.MetaboliteSpeciesType(id='1')
-            species2 = core.MetaboliteSpeciesType(id='2')
-            participant1 = core.ReactionParticipant(species_type=[species1], compartment=[compartment1], coefficient=1)
-            participant2 = core.ReactionParticipant(species_type=[species2], compartment=[compartment1], coefficient=1)
+    def test_constructor(self):
+        cell_1 = core.Cell()
+        compartment_1 = core.Compartment(cell=cell_1)
+        species_type_1 = core.MetaboliteSpeciesType(id='1')
+        species_type_2 = core.MetaboliteSpeciesType(id='2')
+        species_1 = core.Species(species_type=species_type_1, compartment=compartment_1)
+        species_2 = core.Species(species_type=species_type_2, compartment=compartment_1)
+        participant_1 = core.SpeciesCoefficient(species=species_1, coefficient=1)
+        participant_2 = core.SpeciesCoefficient(species=species_2, coefficient=1)
 
-            reaction1 = core.Reaction(
-                id='reaction1',
-                name='test_reaction',
-                cell=cell1,
-                participants=[participant1, participant2],
-                k_m=0.1,
-                v_max=0.5,
-                reversible=0)
+        reaction_1 = core.Reaction(
+            id='reaction_1',
+            name='test_reaction',
+            cell=cell_1,
+            participants=[participant_1, participant_2],
+            k_m=0.1,
+            v_max=0.5,
+            reversible=0)
 
-            self.assertEqual(reaction1.id, 'reaction1')
-            self.assertEqual(reaction1.name, 'test_reaction')
-            self.assertEqual(reaction1.cell, cell1)
-            self.assertEqual(reaction1.participants, [participant1, participant2])
-            self.assertEqual(reaction1.k_m, 0.1)
-            self.assertEqual(reaction1.v_max, 0.5)
-            self.assertEqual(reaction1.reversible, 0)
+        self.assertEqual(reaction_1.id, 'reaction_1')
+        self.assertEqual(reaction_1.name, 'test_reaction')
+        self.assertEqual(reaction_1.cell, cell_1)
+        self.assertEqual(reaction_1.participants, [participant_1, participant_2])
+        self.assertEqual(reaction_1.k_m, 0.1)
+        self.assertEqual(reaction_1.v_max, 0.5)
+        self.assertEqual(reaction_1.reversible, 0)
 
 
 class ComplexSpeciesTypeTestCase(unittest.TestCase):
-    pass #add later
+    @unittest.skip('Implement tests')
+    def test(self):
+        pass  # todo: add tests

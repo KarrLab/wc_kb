@@ -26,6 +26,6 @@ from .core import (PolymerStrand,
                    Species,
                    SpeciesCoefficient,
                    ReactionParticipantAttribute)
-                   
+
 from . import io
 from . import util

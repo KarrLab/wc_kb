@@ -24,16 +24,23 @@ from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerA
                        OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
                        InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
 import openbabel
+import pkg_resources
 import six
 import re
 
+with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
+    wc_kb_version = file.read().strip()
 
-""" Enumeration classes """
+#####################
+#####################
+# Enumeration classes
+
 PolymerStrand = enum.Enum(value='PolymerStrand', names=[
     ('positive', 1),
     ('+', 1),
     ('negative', -1),
-    ('-', -1),])
+    ('-', -1), ])
+
 
 class RnaType(enum.Enum):
     """ Type of RNA """
@@ -43,6 +50,7 @@ class RnaType(enum.Enum):
     tRna = 3
     mixed = 4
 
+
 class GeneType(enum.Enum):
     """ Type of gene """
     mRna = 0
@@ -50,10 +58,12 @@ class GeneType(enum.Enum):
     sRna = 2
     tRna = 3
 
+
 class ComplexType(enum.Enum):
     """ Type of gene """
     tRnaSynthClassII = 0
     FattyAcylAcp = 1
+
 
 class ComplexFormationType(enum.Enum):
     """ Type of gene """
@@ -69,7 +79,11 @@ class ComplexFormationType(enum.Enum):
     process_Translation = 9
 
 
-""" Base classes """
+#####################
+#####################
+# Base classes
+
+
 class KnowledgeBaseObject(obj_model.core.Model):
     """ Knowlege of a biological entity
 
@@ -82,27 +96,41 @@ class KnowledgeBaseObject(obj_model.core.Model):
     name = obj_model.core.StringAttribute()
     comments = obj_model.core.StringAttribute()
 
+
 class KnowledgeBase(KnowledgeBaseObject):
     """ A knowledge base
 
     Attributes:
         version (:obj:`str`): version
         translation_table (:obj:`int`): translation table
-        url (:obj:`str`): url of the wc_kb github repo
-        branch (:obj:`str`): branch at the time of building the kb
-        revision (:obj:`str`): github revision number at the time of building the kb
+        version (:obj:`str`): version of the KB
+        url (:obj:`str`): url of the KB Git repository
+        branch (:obj:`str`): branch of the KB Git repository
+        revision (:obj:`str`): revision of the KB Git repository
+        wc_kb_version (:obj:`str`): version of ``wc_kb``
 
     Related attributes:
         cell (:obj:`Cell`): cell
     """
     translation_table = obj_model.core.IntegerAttribute()
-    url = obj_model.core.StringAttribute() #default = git.get_repo_metadata().url)
-    branch = obj_model.core.StringAttribute() #default = git.get_repo_metadata().branch)
-    revision = obj_model.core.StringAttribute() #default = git.get_repo_metadata().revision)
+    version = RegexAttribute(min_length=1, pattern='^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I)
+    url = obj_model.core.StringAttribute()
+    branch = obj_model.core.StringAttribute()
+    revision = obj_model.core.StringAttribute()
+    wc_kb_version = RegexAttribute(min_length=1, pattern='^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I,
+                                   default=wc_kb_version, verbose_name='wc_kb version')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name','translation_table', 'url', 'branch', 'revision', 'comments')
+        attribute_order = ('id', 'name', 'translation_table', 'version', 'url', 'branch', 'revision', 'wc_kb_version', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
+
+    def __init__(self, **kwargs):
+        md = git.get_repo_metadata()
+        self.url = md.url
+        self.branch = md.branch
+        self.revision = md.revision
+        super(KnowledgeBase, self).__init__(**kwargs)
+
 
 class Cell(KnowledgeBaseObject):
     """ Knowledge of a cell
@@ -150,6 +178,7 @@ class Cell(KnowledgeBaseObject):
         else:
             return list(filter(lambda loci: isinstance(loci, cls), self.loci))
 
+
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
 
@@ -165,6 +194,7 @@ class Compartment(KnowledgeBaseObject):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'volume', 'comments')
+
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
     """ Knowledge of a molecular species
@@ -211,6 +241,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
             :obj:`float`: molecular weight
         """
         pass
+
 
 class Species(obj_model.Model):
     """ Species (tuple of species type, compartment)
@@ -406,6 +437,7 @@ class Species(obj_model.Model):
 
         return sbml_species
 
+
 class SpeciesCoefficient(obj_model.Model):
     """ A tuple of a species and a coefficient
 
@@ -519,6 +551,7 @@ class SpeciesCoefficient(obj_model.Model):
             attr = cls.Meta.attributes['species']
             return (None, InvalidAttribute(attr, ['Invalid species coefficient']))
 
+
 class PolymerSpeciesType(SpeciesType):
     """ Knowledge of a polymer
 
@@ -591,6 +624,7 @@ class PolymerSpeciesType(SpeciesType):
         else:
             return pos_seq.reverse_complement()
 
+
 class PolymerLocus(KnowledgeBaseObject):
     """ Knowledge about a locus of a polymer
 
@@ -627,7 +661,11 @@ class PolymerLocus(KnowledgeBaseObject):
         return abs(self.start - self.end) + 1
 
 
-""" Species types"""
+#####################
+#####################
+# Species types
+
+
 class MetaboliteSpeciesType(SpeciesType):
     """ Knowledge of a metabolite
 
@@ -685,6 +723,7 @@ class MetaboliteSpeciesType(SpeciesType):
         """
         mol = self.to_openbabel_mol()
         return mol.GetMolWt()
+
 
 class DnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of a DNA species
@@ -791,6 +830,7 @@ class DnaSpeciesType(PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
+
 class RnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of an RNA species
 
@@ -816,7 +856,7 @@ class RnaSpeciesType(PolymerSpeciesType):
         """
         tu_start = self.transcription_unit[0].start
         tu_end = self.transcription_unit[0].end
-        dna_seq = self.transcription_unit[0].polymer.get_subseq(start = tu_start, end = tu_end)
+        dna_seq = self.transcription_unit[0].polymer.get_subseq(start=tu_start, end=tu_end)
         return dna_seq.transcribe()
 
     def get_empirical_formula(self):
@@ -869,6 +909,7 @@ class RnaSpeciesType(PolymerSpeciesType):
             :obj:`float`: molecular weight (Da)
         """
         return self.get_empirical_formula().get_molecular_weight()
+
 
 class ProteinSpeciesType(PolymerSpeciesType):
     """ Knowledge of a protein monomer
@@ -976,6 +1017,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
+
 class ComplexSpeciesType(SpeciesType):
     """ Knowledge of a protein complexe
 
@@ -985,7 +1027,7 @@ class ComplexSpeciesType(SpeciesType):
         biosynthesis (:obj:`string`): eq governing the formaiton of complex
     """
 
-    complex_type = obj_model.core.StringAttribute() #EnumAttribute(ComplexType)
+    complex_type = obj_model.core.StringAttribute()  # EnumAttribute(ComplexType)
     formation_process = obj_model.core.EnumAttribute(ComplexFormationType)
     binding = obj_model.core.StringAttribute()
     region = obj_model.core.StringAttribute()
@@ -994,7 +1036,8 @@ class ComplexSpeciesType(SpeciesType):
     #subunit = obj_model.core.ManyToManyAttribute('SpeciesCoefficient', related_name='complex')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'formation_process', 'formation_reaction', 'complex_type', 'binding', 'region', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'formation_process', 'formation_reaction',
+                           'complex_type', 'binding', 'region', 'comments')
 
     def get_subunits(self):
         """ Get the subunit composition of the complex
@@ -1002,11 +1045,11 @@ class ComplexSpeciesType(SpeciesType):
         Returns:
             `list` of :obj:`SpeciesType`: list of Speciestype objects that compose the complex
         """
-        subunits =[]
+        subunits = []
 
         for participant in self.formation_reaction.participants:
             if participant.species.species_type.id != self.id:
-                for n in range (0,abs(int(participant.coefficient))):
+                for n in range(0, abs(int(participant.coefficient))):
                     subunits.append(participant.species.species_type)
 
         return subunits
@@ -1047,7 +1090,12 @@ class ComplexSpeciesType(SpeciesType):
 
         return weight
 
-""" Locus types """
+
+#####################
+#####################
+# Locus types
+
+
 class PromoterLocus(PolymerLocus):
     """ Knowledge of a promoter for a transcription unit
 
@@ -1064,6 +1112,7 @@ class PromoterLocus(PolymerLocus):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 'comments')
+
 
 class TranscriptionUnitLocus(PolymerLocus):
     """ Knowledge about an open reading frame
@@ -1101,6 +1150,7 @@ class TranscriptionUnitLocus(PolymerLocus):
         else:
             return self.end
 
+
 class GeneLocus(PolymerLocus):
     """ Knowledge of a gene
 
@@ -1117,7 +1167,11 @@ class GeneLocus(PolymerLocus):
         attribute_order = ('id', 'cell', 'polymer', 'name', 'symbol', 'start', 'end', 'comments')
 
 
-""" Reaction classes """
+#####################
+#####################
+# Reactions
+
+
 class ReactionParticipantAttribute(ManyToManyAttribute):
     """ Reaction participants """
 
@@ -1270,8 +1324,8 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                                                         compartment.get_primary_attribute())
                 species, error = Species.deserialize(self, spec_primary_attribute, objects)
                 if error:
-                     raise ValueError('Invalid species "{}"'.format(spec_primary_attribute))
-                     # pragma: no cover # unreachable due to error checking above
+                    raise ValueError('Invalid species "{}"'.format(spec_primary_attribute))
+                    # pragma: no cover # unreachable due to error checking above
 
                 if coefficient != 0:
                     if SpeciesCoefficient not in objects:
@@ -1285,6 +1339,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                     parts.append(rxn_part)
 
         return (parts, errors)
+
 
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions

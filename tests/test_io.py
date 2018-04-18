@@ -36,7 +36,8 @@ class TestIO(unittest.TestCase):
             dna.seq = Bio.Seq.Seq(seq)
 
             for i_trn in range(5):
-                trn = dna.loci.create(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
+                trn = core.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
+                dna.loci.append(trn)
                 trn.start = random.randint(100, 200)
                 trn.end = ((trn.start + random.randint(1, 200) - 1) % seq_len) + 1
                 trn.strand = core.PolymerStrand.positive
@@ -60,7 +61,7 @@ class TestIO(unittest.TestCase):
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.Writer().run(core_path, [], io.Writer.model_order)
+        obj_model.io.WorkbookWriter().run(core_path, [], io.Writer.model_order)
 
         seq_path = os.path.join(self.dir, 'seq.fna')
         with open(seq_path, 'w') as file:
@@ -74,7 +75,7 @@ class TestIO(unittest.TestCase):
         kb2 = core.KnowledgeBase(id='kb2', name='kb2', version='0.0.1')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.Writer().run(core_path, [kb1, kb2], io.Writer.model_order)
+        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.Writer.model_order)
 
         seq_path = os.path.join(self.dir, 'seq.fna')
         with open(seq_path, 'w') as file:

@@ -13,12 +13,13 @@ Supported file types:
 """
 
 from . import core
-from . import util
 from obj_model import io
 import Bio.SeqIO
 import Bio.SeqRecord
+import os
 import wc_utils.cache
 import wc_kb
+
 
 class Writer(object):
     """ Write knowledge base to file(s) """
@@ -30,11 +31,12 @@ class Writer(object):
         core.MetaboliteSpeciesType,
         core.DnaSpeciesType,
         core.PromoterLocus,
+        core.TranscriptionUnitLocus,
         core.RnaSpeciesType,
         core.GeneLocus,
-        core.TranscriptionUnitLocus,
         core.ProteinSpeciesType,
-        core.Reaction
+        core.ComplexSpeciesType,
+        core.Reaction,
     )
 
     def run(self, knowledge_base, core_path, seq_path):
@@ -65,7 +67,8 @@ class Writer(object):
         kwargs['description'] = knowledge_base.name
         kwargs['version'] = knowledge_base.version
 
-        io.Writer().run(core_path, objects, self.model_order, **kwargs)
+        _, ext = os.path.splitext(core_path)
+        io.get_writer(ext)().run(core_path, objects, models=self.model_order, **kwargs)
 
         # export sequences
         with open(seq_path, 'w') as file:
@@ -95,7 +98,8 @@ class Reader(object):
         Raises:
             :obj:`ValueError`: if :obj:`core_path` defines multiple knowledge bases
         """
-        objects = io.Reader().run(core_path, util.get_models(inline=False))
+        _, ext = os.path.splitext(core_path)
+        objects = io.get_reader(ext)().run(core_path, models=Writer.model_order)
 
         if not objects[core.KnowledgeBase]:
             return None
