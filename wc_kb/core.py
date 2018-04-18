@@ -114,7 +114,7 @@ class KnowledgeBase(KnowledgeBaseObject):
     """
     translation_table = obj_model.core.IntegerAttribute()
     version = RegexAttribute(min_length=1, pattern='^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I)
-    url = obj_model.core.StringAttribute()
+    url = obj_model.core.StringAttribute(verbose_name='URL')
     branch = obj_model.core.StringAttribute()
     revision = obj_model.core.StringAttribute()
     wc_kb_version = RegexAttribute(min_length=1, pattern='^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I,
