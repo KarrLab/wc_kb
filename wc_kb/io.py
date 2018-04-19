@@ -13,9 +13,9 @@ Supported file types:
 """
 
 from . import core
-from obj_model import io
 import Bio.SeqIO
 import Bio.SeqRecord
+import obj_model
 import os
 import wc_utils.cache
 import wc_kb
@@ -68,7 +68,7 @@ class Writer(object):
         kwargs['version'] = knowledge_base.version
 
         _, ext = os.path.splitext(core_path)
-        io.get_writer(ext)().run(core_path, objects, models=self.model_order, **kwargs)
+        obj_model.io.get_writer(ext)().run(core_path, objects, models=self.model_order, **kwargs)
 
         # export sequences
         with open(seq_path, 'w') as file:
@@ -85,12 +85,21 @@ class Reader(object):
     """ Read knowledge base from file(s) """
 
     @wc_utils.cache.memoize(filename_args=[1, 2])
-    def run(self, core_path, seq_path):
+    def run(self, core_path, seq_path, strict=True):
         """ Read knowledge base from file(s)
 
         Args:
             core_path (:obj:`str`): path to core knowledge base
             seq_path (:obj:`str`): path to genome sequence
+            strict (:obj:`str`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
+                :obj:`obj_model` serialization format:
+
+                * The worksheets are in the expected order
+                * There are no missing worksheets
+                * There are no extra worksheets
+                * The columns are in the expected order
+                * There are no missing columns
+                * There are no extra columns
 
         Returns:
             :obj:`core.KnowledgeBase`: knowledge base
@@ -99,12 +108,18 @@ class Reader(object):
             :obj:`ValueError`: if :obj:`core_path` defines multiple knowledge bases
         """
         _, ext = os.path.splitext(core_path)
-        objects = io.get_reader(ext)().run(core_path,
-                                           models=Writer.model_order,
-                                           ignore_sheet_order=True,
-                                           ignore_attribute_order=True,
-                                           ignore_missing_attributes=True,
-                                           include_all_attributes=False)
+        reader = obj_model.io.get_reader(ext)()
+
+        kwargs = {}
+        if isinstance(reader, obj_model.io.WorkbookReader) and not strict:
+            kwargs['ignore_missing_sheets'] = True
+            kwargs['ignore_extra_sheets'] = True
+            kwargs['ignore_sheet_order'] = True
+            kwargs['ignore_missing_attributes'] = True
+            kwargs['ignore_extra_attributes'] = True
+            kwargs['ignore_attribute_order'] = True
+
+        objects = reader.run(core_path, models=Writer.model_order, **kwargs)
 
         if not objects[core.KnowledgeBase]:
             return None
@@ -120,7 +135,7 @@ class Reader(object):
         return kb
 
 
-def convert(core_source, core_destination):
+def convert(core_source, core_destination, strict=True):
     """ Convert among Excel (.xlsx), comma separated (.csv), and tab separated (.tsv) file formats
 
     Read a knowledge base from the `source` files(s) and write it to the `destination` files(s). A path to a
@@ -130,8 +145,25 @@ def convert(core_source, core_destination):
     Args:
         core_source (:obj:`str`): path to source core knowledge base
         core_destination (:obj:`str`): path to save converted core knowledge base
+        strict (:obj:`str`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
+                :obj:`obj_model` serialization format:
+
+                * The worksheets are in the expected order
+                * There are no missing worksheets
+                * There are no extra worksheets
+                * The columns are in the expected order
+                * There are no missing columns
+                * There are no extra columns
     """
-    io.convert(core_source, core_destination, models=Writer.model_order)
+    kwargs = {}
+    if not strict:
+        kwargs['ignore_missing_sheets'] = True
+        kwargs['ignore_extra_sheets'] = True
+        kwargs['ignore_sheet_order'] = True
+        kwargs['ignore_missing_attributes'] = True
+        kwargs['ignore_extra_attributes'] = True
+        kwargs['ignore_attribute_order'] = True
+    obj_model.io.convert(core_source, core_destination, models=Writer.model_order, **kwargs)
 
 
 def create_template(core_path, seq_path):

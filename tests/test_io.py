@@ -15,6 +15,7 @@ import random
 import shutil
 import tempfile
 import unittest
+import wc_utils.workbook.io
 
 
 class TestIO(unittest.TestCase):
@@ -59,6 +60,25 @@ class TestIO(unittest.TestCase):
 
         self.assertTrue(kb.is_equal(self.kb))
 
+    def test_write_read_sloppy(self):
+        core_path = os.path.join(self.dir, 'core.xlsx')
+        seq_path = os.path.join(self.dir, 'seq.fna')
+
+        writer = io.Writer()
+        writer.run(self.kb, core_path, seq_path)
+
+        wb = wc_utils.workbook.io.read(core_path)
+        row = wb['Knowledge base'].pop(0)
+        wb['Knowledge base'].insert(1, row)
+        wc_utils.workbook.io.write(core_path, wb)
+
+        reader = io.Reader()
+        with self.assertRaisesRegexp(ValueError, 'The attributes must be defined in this order'):
+            kb = reader.run(core_path, seq_path)
+        kb = reader.run(core_path, seq_path, strict=False)
+
+        self.assertTrue(kb.is_equal(self.kb))
+
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
         obj_model.io.WorkbookWriter().run(core_path, [], io.Writer.model_order)
@@ -100,10 +120,31 @@ class TestIO(unittest.TestCase):
         kb = io.Reader().run(path_core_3, path_seq_1)
         self.assertTrue(kb.is_equal(self.kb))
 
+    def test_convert_sloppy(self):
+        path_core_1 = os.path.join(self.dir, 'core_1.xlsx')
+        path_core_2 = os.path.join(self.dir, 'core_2-*.csv')
+        path_core_3 = os.path.join(self.dir, 'core_3.xlsx')
+        path_seq_1 = os.path.join(self.dir, 'seq_1.fna')
+
+        io.Writer().run(self.kb, path_core_1, path_seq_1)
+
+        wb = wc_utils.workbook.io.read(path_core_1)
+        row = wb['Knowledge base'].pop(0)
+        wb['Knowledge base'].insert(1, row)
+        wc_utils.workbook.io.write(path_core_1, wb)
+
+        with self.assertRaisesRegexp(ValueError, 'The attributes must be defined in this order'):
+            io.convert(path_core_1, path_core_2)
+        io.convert(path_core_1, path_core_2, strict=False)
+        kb = io.Reader().run(path_core_2, path_seq_1)
+        self.assertTrue(kb.is_equal(self.kb))
+
+        io.convert(path_core_2, path_core_3)
+        kb = io.Reader().run(path_core_3, path_seq_1)
+        self.assertTrue(kb.is_equal(self.kb))
+
     def test_create_template(self):
         path_core = os.path.join(self.dir, 'core.xlsx')
         path_seq = os.path.join(self.dir, 'seq.fna')
         io.create_template(path_core, path_seq)
         kb = io.Reader().run(path_core, path_seq)
-
-        print(kb)
