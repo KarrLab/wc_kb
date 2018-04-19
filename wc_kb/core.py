@@ -638,7 +638,7 @@ class PolymerLocus(KnowledgeBaseObject):
 
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='loci')
     polymer = obj_model.core.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
-    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
+    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive, none=True)
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
 
@@ -847,7 +847,8 @@ class RnaSpeciesType(PolymerSpeciesType):
     type = obj_model.core.EnumAttribute(RnaType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'type', 'transcription_units', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'type', 'transcription_units',
+                           'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -924,7 +925,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
     rna = obj_model.core.ManyToOneAttribute('RnaSpeciesType', related_name='proteins')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'gene', 'rna', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'gene', 'rna', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -1038,7 +1039,7 @@ class ComplexSpeciesType(SpeciesType):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'formation_process', 'formation_reaction',
-                           'complex_type', 'binding', 'region', 'comments')
+                           'complex_type', 'binding', 'region', 'concentration', 'half_life', 'comments')
 
     def get_subunits(self):
         """ Get the subunit composition of the complex
@@ -1112,7 +1113,7 @@ class PromoterLocus(PolymerLocus):
     pribnow_end = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 'comments')
+        attribute_order = ('id', 'cell', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 'strand', 'start', 'end', 'comments')
 
 
 class TranscriptionUnitLocus(PolymerLocus):
@@ -1165,7 +1166,7 @@ class GeneLocus(PolymerLocus):
     symbol = obj_model.core.StringAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'polymer', 'name', 'symbol', 'start', 'end', 'comments')
+        attribute_order = ('id', 'cell', 'polymer', 'name', 'symbol', 'strand', 'start', 'end', 'comments')
 
 
 #####################
@@ -1189,11 +1190,12 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                                                            verbose_related_name=verbose_related_name,
                                                            help=help)
 
-    def serialize(self, participants):
+    def serialize(self, participants, encoded=None):
         """ Serialize related object
 
         Args:
             participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
 
         Returns:
             :obj:`str`: simple Python representation
@@ -1226,12 +1228,13 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         else:
             return '{} ==> {}'.format(' + '.join(lhs), ' + '.join(rhs))
 
-    def deserialize(self, value, objects):
+    def deserialize(self, value, objects, decoded=None):
         """ Deserialize value
 
         Args:
             value (:obj:`str`): String representation
             objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
 
         Returns:
             :obj:`tuple` of `list` of `SpeciesCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
