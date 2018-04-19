@@ -171,7 +171,7 @@ class Cell(KnowledgeBaseObject):
                 if :obj:`None`, every species type will be returned
 
         Returns:
-            :obj:`list` of :obj:`PolymerLocus`: polymer locus
+            :obj:`list` of :obj:`PolymerLocus`: polymer loci
         """
         if cls is None:
             return self.species_types
@@ -250,6 +250,7 @@ class Species(obj_model.Model):
         species_type (:obj:`SpeciesType`): species type
         compartment (:obj:`Compartment`): compartment
 
+    Related attributes:
         concentration (:obj:`Concentration`): concentration
         species_coefficients (:obj:`list` of `SpeciesCoefficient`): participations in reactions and observables
         rate_law_equations (:obj:`RateLawEquation`): rate law equations
@@ -732,13 +733,13 @@ class DnaSpeciesType(PolymerSpeciesType):
         seq (:obj:`Bio.Seq.Seq`): sequence
 
     Related attributes:
-        transcription_unit (:obj:`list` of :obj:`TranscriptionUnitLocus`): TUs
+        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`): TUs
     """
 
     seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
         verbose_name = 'DNA species type'
 
     def get_seq(self, start=None, end=None):
@@ -835,18 +836,18 @@ class RnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of an RNA species
 
     Attributes:
-        transcription_unit (:obj:`TranscriptionUnitLocus`): transcription unit
+        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`): transcription units
         type (:obj:`RnaType`): type
 
     Related attributes:
-        protein (:obj:`list` of :obj:`ProteinSpeciesType`): protein(s)
+        proteins (:obj:`list` of :obj:`ProteinSpeciesType`): protein(s)
     """
 
-    transcription_unit = obj_model.core.ManyToManyAttribute('TranscriptionUnitLocus', related_name='rna')
+    transcription_units = obj_model.core.ManyToManyAttribute('TranscriptionUnitLocus', related_name='rna')
     type = obj_model.core.EnumAttribute(RnaType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'type', 'transcription_unit', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'cell', 'name', 'type', 'transcription_units', 'concentration', 'half_life', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -854,9 +855,9 @@ class RnaSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        tu_start = self.transcription_unit[0].start
-        tu_end = self.transcription_unit[0].end
-        dna_seq = self.transcription_unit[0].polymer.get_subseq(start=tu_start, end=tu_end)
+        tu_start = self.transcription_units[0].start
+        tu_end = self.transcription_units[0].end
+        dna_seq = self.transcription_units[0].polymer.get_subseq(start=tu_start, end=tu_end)
         return dna_seq.transcribe()
 
     def get_empirical_formula(self):
@@ -919,8 +920,8 @@ class ProteinSpeciesType(PolymerSpeciesType):
         rna (:obj:`RnaSpeciesType`): rna
     """
 
-    gene = obj_model.core.ManyToOneAttribute('GeneLocus', related_name='protein')
-    rna = obj_model.core.ManyToOneAttribute('RnaSpeciesType', related_name='protein')
+    gene = obj_model.core.ManyToOneAttribute('GeneLocus', related_name='proteins')
+    rna = obj_model.core.ManyToOneAttribute('RnaSpeciesType', related_name='proteins')
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'gene', 'rna', 'concentration', 'half_life', 'comments')
@@ -931,7 +932,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        trans_table = self.gene.transcription_unit[0].polymer.cell.knowledge_base.translation_table
+        trans_table = self.gene.transcription_units[0].polymer.cell.knowledge_base.translation_table
         return self.gene.get_seq().translate(trans_table)
 
     def get_empirical_formula(self):
@@ -1033,7 +1034,7 @@ class ComplexSpeciesType(SpeciesType):
     region = obj_model.core.StringAttribute()
 
     formation_reaction = obj_model.core.OneToOneAttribute('Reaction', related_name='complex')
-    #subunit = obj_model.core.ManyToManyAttribute('SpeciesCoefficient', related_name='complex')
+    #subunits = obj_model.core.ManyToManyAttribute('SpeciesCoefficient', related_name='complexes')
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'cell', 'name', 'formation_process', 'formation_reaction',
@@ -1104,7 +1105,7 @@ class PromoterLocus(PolymerLocus):
         pribnow_end (:obj:`int`): Pribnow box end coordinate
 
     Related attributes:
-        transcription_unit (:obj:`list` of :obj:`TranscriptionUnitLocus`)
+        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`)
 
     """
     pribnow_start = obj_model.core.IntegerAttribute()
@@ -1119,14 +1120,14 @@ class TranscriptionUnitLocus(PolymerLocus):
 
     Attributes:
         promoter (:obj:`PromoterLocus`): promoter controlling the TU
-        gene (:obj:`GeneLocus`): genes
+        genes (:obj:`list` of :obj:`GeneLocus`): genes
     """
 
-    promoter = obj_model.core.ManyToOneAttribute('PromoterLocus', related_name='transcription_unit')
-    gene = obj_model.core.ManyToManyAttribute('GeneLocus', related_name='transcription_unit')
+    promoter = obj_model.core.ManyToOneAttribute('PromoterLocus', related_name='transcription_units')
+    genes = obj_model.core.ManyToManyAttribute('GeneLocus', related_name='transcription_units')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end', 'gene', 'comments')
+        attribute_order = ('id', 'cell', 'polymer', 'name', 'strand', 'promoter', 'start', 'end', 'genes', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -1158,7 +1159,7 @@ class GeneLocus(PolymerLocus):
         symbol (:obj:`str`): symbol
 
     Related attributes:
-        protein (:obj:`list` of :obj:`ProteinSpeciesType`): protein
+        proteins (:obj:`list` of :obj:`ProteinSpeciesType`): protein
     """
 
     symbol = obj_model.core.StringAttribute()

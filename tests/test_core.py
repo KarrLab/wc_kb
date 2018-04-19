@@ -241,11 +241,11 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=15)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1], type=1, concentration=1, half_life=2)
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1], type=1, concentration=1, half_life=2)
 
         self.assertEqual(rna1.id, 'rna1')
         self.assertEqual(rna1.name, 'rna1')
-        self.assertEqual(rna1.transcription_unit, [tu1])
+        self.assertEqual(rna1.transcription_units, [tu1])
         self.assertEqual(rna1.type, 1)
         self.assertEqual(rna1.concentration, 1)
         self.assertEqual(rna1.half_life, 2)
@@ -253,44 +253,44 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
     def test_get_empirical_formula(self):
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('A', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C10H12N5O7P'))
 
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('C', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C9H12N3O8P'))
 
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('G', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C10H12N5O8P'))
 
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('T', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C9H11N2O9P'))
 
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=2)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(rna1.get_empirical_formula(), chem.EmpiricalFormula('C20H23N10O13P2'))
 
     def test_get_charge(self):
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(rna1.get_charge(), -2)
 
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=2)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(rna1.get_charge(), -3)
 
     def test_get_mol_wt(self):
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=1)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(rna1.get_seq()) \
             - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
@@ -298,7 +298,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=3, end=3)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(rna1.get_seq()) \
             - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
@@ -306,7 +306,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
         tu1 = core.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=5, end=5)
-        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_unit=[tu1])
+        rna1 = core.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[tu1])
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(rna1.get_seq()) \
             - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
@@ -334,13 +334,13 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         # MPN001
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1, start=692, end=1834)
-        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
         prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertEqual(prot1.get_seq()[0:10], 'MKVLINKNEL')
 
         # MPN011
         gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna1, start=12838, end=13533, strand=core.PolymerStrand.negative)
-        tu2 = core.TranscriptionUnitLocus(id='tu2', gene=[gene2], polymer=dna1)
+        tu2 = core.TranscriptionUnitLocus(id='tu2', genes=[gene2], polymer=dna1)
         prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2)
         self.assertEqual(prot2.get_seq()[0:10], 'MKFKFLLTPL')
 
@@ -352,7 +352,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
         prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertEqual(prot1.get_empirical_formula(), chem.EmpiricalFormula('C105H144N26O32S'))
 
@@ -362,7 +362,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
         prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertEqual(prot1.get_empirical_formula(), chem.EmpiricalFormula('C21H40N8O6'))
 
@@ -374,7 +374,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
         prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertAlmostEqual(prot1.get_mol_wt(), 2314.517)
 
@@ -384,7 +384,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
         prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertAlmostEqual(prot1.get_mol_wt(), 500.601)
 
@@ -396,7 +396,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
         prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertEqual(prot1.get_charge(), 0)
 
@@ -406,7 +406,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(id='tu1', gene=[gene1], polymer=dna1)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
         prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
         self.assertEqual(prot1.get_charge(), 2)
 
@@ -508,8 +508,8 @@ class ReactionTestCase(unittest.TestCase):
         compartment1 = core.Compartment(cell=cell1)
         species1 = core.MetaboliteSpeciesType(id='1')
         species2 = core.MetaboliteSpeciesType(id='2')
-        participant1 = core.ReactionParticipant(species_type=[species1], compartment=[compartment1], coefficient=1)
-        participant2 = core.ReactionParticipant(species_type=[species2], compartment=[compartment1], coefficient=1)
+        participant1 = core.ReactionParticipant(species_types=[species1], compartments=[compartment1], coefficient=1)
+        participant2 = core.ReactionParticipant(species_types=[species2], compartments=[compartment1], coefficient=1)
 
         reaction1 = core.Reaction(
             id='reaction1',
