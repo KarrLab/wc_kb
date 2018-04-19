@@ -3,6 +3,7 @@ downstream_dependencies:
   - mycoplasma_pneumoniae
   - wc_analysis
   - wc_lang
+  - wc_model_gen
 email_notifications:
   - jonrkarr@gmail.com
   - balazs.szigeti@mssm.edu
