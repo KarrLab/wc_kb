@@ -1126,7 +1126,7 @@ class TranscriptionUnitLocus(PolymerLocus):
     gene = obj_model.core.ManyToManyAttribute('GeneLocus', related_name='transcription_unit')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'promoter', 'start', 'end', 'gene', 'comments')
+        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end', 'gene', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
