@@ -99,7 +99,12 @@ class Reader(object):
             :obj:`ValueError`: if :obj:`core_path` defines multiple knowledge bases
         """
         _, ext = os.path.splitext(core_path)
-        objects = io.get_reader(ext)().run(core_path, models=Writer.model_order)
+        objects = io.get_reader(ext)().run(core_path,
+                                           models=Writer.model_order,
+                                           ignore_sheet_order=True,
+                                           ignore_attribute_order=True,
+                                           ignore_missing_attributes=True,
+                                           include_all_attributes=False)
 
         if not objects[core.KnowledgeBase]:
             return None
