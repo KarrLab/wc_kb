@@ -275,31 +275,6 @@ class Species(obj_model.Model):
         """
         return self.gen_id(self.species_type, self.compartment)
 
-    @staticmethod
-    def get(ids, species_iterator):
-        """ Find some Species instances
-
-        Args:
-            ids (:obj:`Iterator` of `str`): an iterator over some species identifiers
-            species_iterator (:obj:`Iterator`): an iterator over some species
-
-        Returns:
-            :obj:`list` of `Species` or `None`: each element of the `list` corresponds to an element
-                of `ids` and contains either a `Species` with `id()` equal to the element in `ids`,
-                or `None` indicating that `species_iterator` does not contain a matching `Species`
-        """
-        # TODO: this costs O(|ids||species_iterator|); replace with O(|ids|) operation using obj_model.Manager.get()
-        rv = []
-        for id in ids:
-            s = None
-            for specie in species_iterator:
-                if specie.id() == id:
-                    s = specie
-                    # one match is enough
-                    break
-            rv.append(s)
-        return rv
-
     @classmethod
     def deserialize(cls, attribute, value, objects):
         """ Deserialize value
@@ -344,71 +319,6 @@ class Species(obj_model.Model):
                 return (obj, None)
 
         return (None, InvalidAttribute(attribute, ['Invalid species']))
-
-    def xml_id(self):
-        """ Make a Species id that satisfies the SBML string id syntax.
-
-        Use `make_xml_id()` to make a SBML id.
-
-        Returns:
-            :obj:`str`: an SBML id
-        """
-        return Species.make_xml_id(
-            self.species_type.get_primary_attribute(),
-            self.compartment.get_primary_attribute())
-
-    @staticmethod
-    def make_xml_id(species_type_id, compartment_id):
-        """ Make a Species id that satisfies the SBML string id syntax.
-
-        Replaces the '[' and ']' in Species.id() with double-underscores '__'.
-        See Finney and Hucka, "Systems Biology Markup Language (SBML) Level 2: Structures and
-        Facilities for Model Definitions", 2003, section 3.4.
-
-        Returns:
-            :obj:`str`: an SBML id
-        """
-        return '{}__{}__'.format(species_type_id, compartment_id)
-
-    @staticmethod
-    def xml_id_to_id(xml_id):
-        """ Convert an `xml_id` to its species id.
-
-        Returns:
-            :obj:`str`: a species id
-        """
-        return xml_id.replace('__', '[', 1).replace('__', ']', 1)
-
-    def add_to_sbml_doc(self, sbml_document):
-        """ Add this Species to a libsbml SBML document.
-
-        Args:
-             sbml_document (:obj:`obj`): a `libsbml` SBMLDocument
-
-        Returns:
-            :obj:`libsbml.species`: the libsbml species that's created
-
-        Raises:
-            :obj:`LibSBMLError`: if calling `libsbml` raises an error
-        """
-        sbml_model = wrap_libsbml(sbml_document.getModel)
-        sbml_species = wrap_libsbml(sbml_model.createSpecies)
-        # initDefaults() isn't wrapped in wrap_libsbml because it returns None
-        sbml_species.initDefaults()
-        wrap_libsbml(sbml_species.setIdAttribute, self.xml_id())
-
-        # add some SpeciesType data
-        wrap_libsbml(sbml_species.setName, self.species_type.name)
-        if self.species_type.comments:
-            wrap_libsbml(sbml_species.setNotes, self.species_type.comments, True)
-
-        # set Compartment, which must already be in the SBML document
-        wrap_libsbml(sbml_species.setCompartment, self.compartment.id)
-
-        # set the Initial Concentration
-        wrap_libsbml(sbml_species.setInitialConcentration, self.concentration.value)
-
-        return sbml_species
 
 
 class SpeciesCoefficient(obj_model.Model):
