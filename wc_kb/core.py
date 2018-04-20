@@ -147,7 +147,7 @@ class Cell(KnowledgeBaseObject):
     knowledge_base = obj_model.core.OneToOneAttribute(KnowledgeBase, related_name='cell')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'knowledge_base', 'name', 'comments')
+        attribute_order = ('id', 'name', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
 
@@ -165,7 +165,7 @@ class Compartment(KnowledgeBaseObject):
     volume = obj_model.core.FloatAttribute(min=0)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'volume', 'comments')
+        attribute_order = ('id', 'name', 'volume', 'comments')
 
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
@@ -185,7 +185,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     half_life = obj_model.core.FloatAttribute(min=0)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'concentration', 'half_life', 'comments')
 
     @abc.abstractmethod
     def get_empirical_formula(self):
@@ -194,7 +194,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-        pass
+        pass  # pragma: no cover
 
     @abc.abstractmethod
     def get_charge(self):
@@ -203,7 +203,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
         Returns:
             :obj:`int`: charge
         """
-        pass
+        pass  # pragma: no cover
 
     @abc.abstractmethod
     def get_mol_wt(self):
@@ -212,7 +212,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
         Returns:
             :obj:`float`: molecular weight
         """
-        pass
+        pass  # pragma: no cover
 
 
 class Species(obj_model.Model):
@@ -449,7 +449,7 @@ class PolymerSpeciesType(SpeciesType):
     double_stranded = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
 
     @abc.abstractmethod
     def get_seq(self):
@@ -458,7 +458,7 @@ class PolymerSpeciesType(SpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        pass
+        pass  # pragma: no cover
 
     def get_len(self):
         """ Get the polymer length
@@ -525,7 +525,7 @@ class PolymerLocus(KnowledgeBaseObject):
     end = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'polymer', 'strand', 'start', 'end', 'comments')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -558,7 +558,7 @@ class MetaboliteSpeciesType(SpeciesType):
     structure = obj_model.core.StringAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'structure', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'structure', 'concentration', 'half_life', 'comments')
 
     def get_structure(self):
         """ Get the structure
@@ -618,7 +618,7 @@ class DnaSpeciesType(PolymerSpeciesType):
     seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
         verbose_name = 'DNA species type'
 
     def get_seq(self, start=None, end=None):
@@ -726,7 +726,7 @@ class RnaSpeciesType(PolymerSpeciesType):
     type = obj_model.core.EnumAttribute(RnaType)
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'type', 'transcription_units',
+        attribute_order = ('id', 'name', 'type', 'transcription_units',
                            'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
 
     def get_seq(self):
@@ -804,7 +804,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
     rna = obj_model.core.ManyToOneAttribute('RnaSpeciesType', related_name='proteins')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'gene', 'rna', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'gene', 'rna', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -917,7 +917,7 @@ class ComplexSpeciesType(SpeciesType):
     #subunits = obj_model.core.ManyToManyAttribute('SpeciesCoefficient', related_name='complexes')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'formation_process', 'formation_reaction',
+        attribute_order = ('id', 'name', 'formation_process', 'formation_reaction',
                            'complex_type', 'binding', 'region', 'concentration', 'half_life', 'comments')
 
     def get_subunits(self):
@@ -993,7 +993,7 @@ class PromoterLocus(PolymerLocus):
     pribnow_end = obj_model.core.IntegerAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 'strand', 'start', 'end', 'comments')
+        attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 'strand', 'start', 'end', 'comments')
 
 
 class TranscriptionUnitLocus(PolymerLocus):
@@ -1008,7 +1008,7 @@ class TranscriptionUnitLocus(PolymerLocus):
     genes = obj_model.core.ManyToManyAttribute('GeneLocus', related_name='transcription_units')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'polymer', 'name', 'strand', 'promoter', 'start', 'end', 'genes', 'comments')
+        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end', 'genes', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -1046,7 +1046,7 @@ class GeneLocus(PolymerLocus):
     symbol = obj_model.core.StringAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'polymer', 'name', 'symbol', 'strand', 'start', 'end', 'comments')
+        attribute_order = ('id', 'polymer', 'name', 'symbol', 'strand', 'start', 'end', 'comments')
 
 
 #####################
@@ -1243,4 +1243,4 @@ class Reaction(KnowledgeBaseObject):
     reversible = obj_model.core.BooleanAttribute()
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'cell', 'name', 'participants', 'v_max', 'k_m', 'reversible', 'comments')
+        attribute_order = ('id', 'name', 'participants', 'v_max', 'k_m', 'reversible', 'comments')

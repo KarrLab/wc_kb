@@ -48,7 +48,14 @@ class Writer(object):
             core_path (:obj:`str`): path to save core knowledge base
             seq_path (:obj:`str`): path to save genome sequence
         """
+        self.validate_implicit_kb_and_cell_relationships()
+
         cell = knowledge_base.cell
+
+        # check that there is only 1 :obj:`KnowledgeBase` and only 1 :obj:`Cell` and that each relationship
+        # to :obj:`KnowledgeBase` and :obj:`Cell` is set. This is necessary to enable the :obj:`KnowledgeBase` and
+        # :obj:`Cell` relationships to be implicit in the Excel output and added by :obj:`Reader.run`
+        # todo
 
         # gather DNA sequences
         dna_seqs = []
@@ -70,7 +77,7 @@ class Writer(object):
 
         _, ext = os.path.splitext(core_path)
         writer = obj_model.io.get_writer(ext)()
-        writer.run(core_path, objects, models=self.model_order, **kwargs)
+        writer.run(core_path, objects, models=self.model_order, include_all_attributes=False, **kwargs)
 
         # export sequences
         with open(seq_path, 'w') as file:
@@ -81,6 +88,28 @@ class Writer(object):
         if cell:
             for species_type, seq in zip(dna_species_types, dna_seqs):
                 species_type.seq = seq.seq
+
+    @classmethod
+    def validate_implicit_kb_and_cell_relationships(cls):
+        """ Check that relationships to :obj:`core.KnowledgeBase` and :obj:`core.Cell` do not need to be explicitly written to 
+        workbooks because they can be inferred by :obj:`Reader.run`
+        """
+        for attr in core.KnowledgeBase.Meta.attributes.values():
+            if isinstance(attr, obj_model.RelatedAttribute):
+                raise Exception('Relationships from `KnowledgeBase` not supported')
+
+        for attr in core.KnowledgeBase.Meta.related_attributes.values():
+            if attr.primary_class != core.Cell or not isinstance(attr, obj_model.OneToOneAttribute):
+                raise Exception('Only one-to-one relationships to `KnowledgeBase` from `Cell` are supported')
+
+        for attr in core.Cell.Meta.attributes.values():
+            if isinstance(attr, obj_model.RelatedAttribute) and \
+                    (not isinstance(attr, obj_model.OneToOneAttribute) or attr.related_class != core.KnowledgeBase):
+                raise Exception('Only one-to-one relationships from `Cell` to `KnowledgeBase` are supported')
+
+        for attr in core.Cell.Meta.related_attributes.values():
+            if not isinstance(attr, (obj_model.OneToOneAttribute, obj_model.ManyToOneAttribute)):
+                raise Exception('Only one-to-one and many-to-one relationships are supported to `Cell`')
 
 
 class Reader(object):
@@ -109,6 +138,9 @@ class Reader(object):
         Raises:
             :obj:`ValueError`: if :obj:`core_path` defines multiple knowledge bases
         """
+        Writer.validate_implicit_kb_and_cell_relationships()
+
+        # read core objects from file
         _, ext = os.path.splitext(core_path)
         reader = obj_model.io.get_reader(ext)()
 
@@ -121,16 +153,46 @@ class Reader(object):
             kwargs['ignore_extra_attributes'] = True
             kwargs['ignore_attribute_order'] = True
 
-        objects = reader.run(core_path, models=Writer.model_order, **kwargs)
+        objects = reader.run(core_path, models=Writer.model_order, include_all_attributes=False, **kwargs)
 
+        # check that file has 0 or 1 knowledge bases
         if not objects[core.KnowledgeBase]:
+            for model, model_objects in objects.items():
+                if model_objects:
+                    raise ValueError('"{}" cannot contain instances of `{}` without an instance of `KnowledgeBase`'.format(
+                        core_path, model.__name__))
             return None
 
-        if len(objects[core.KnowledgeBase]) > 1:
-            raise ValueError('Knowledge base file "{}" should only define one knowledge base'.format(core_path))
+        elif len(objects[core.KnowledgeBase]) > 1:
+            raise ValueError('"{}" should define one knowledge base'.format(core_path))
 
-        kb = objects[core.KnowledgeBase].pop()
+        else:
+            kb = objects[core.KnowledgeBase].pop()
 
+        # check that file has 0 or 1 cells
+        if not objects[core.Cell]:
+            for model, model_objects in objects.items():
+                if model_objects:
+                    raise ValueError('"{}" cannot contain instances of `{}` without an instance of `Cell`'.format(
+                        core_path, model.__name__))
+            cell = None
+
+        elif len(objects[core.Cell]) > 1:
+            raise ValueError('"{}" should define one cell'.format(core_path))
+
+        else:
+            cell = objects[core.Cell].pop()
+
+        # add implict relationships to `KnowledgeBase` and `Cell`
+        kb.cell = cell
+
+        for model, model_objects in objects.items():
+            for attr in model.Meta.attributes.values():
+                if isinstance(attr, obj_model.RelatedAttribute) and attr.related_class == core.Cell:
+                    for model_obj in model_objects:
+                        setattr(model_obj, attr.name, cell)
+
+        # read genome sequence and link to the DNA species types
         for dna in Bio.SeqIO.parse(seq_path, "fasta"):
             kb.cell.species_types.get_one(id=dna.id).seq = dna.seq
 

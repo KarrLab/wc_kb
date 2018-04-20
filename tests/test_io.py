@@ -38,6 +38,7 @@ class TestIO(unittest.TestCase):
 
             for i_trn in range(5):
                 trn = core.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
+                trn.cell = cell
                 dna.loci.append(trn)
                 trn.start = random.randint(100, 200)
                 trn.end = ((trn.start + random.randint(1, 200) - 1) % seq_len) + 1
@@ -58,7 +59,11 @@ class TestIO(unittest.TestCase):
         reader = io.Reader()
         kb = reader.run(core_path, seq_path)
 
-        self.assertTrue(kb.is_equal(self.kb))
+        core_path = os.path.join(self.dir, 'core2.xlsx')
+        seq_path = os.path.join(self.dir, 'seq2.fna')
+        writer.run(kb, core_path, seq_path)
+
+        self.assertTrue(self.kb.is_equal(kb))
 
     def test_write_read_sloppy(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
@@ -81,7 +86,7 @@ class TestIO(unittest.TestCase):
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [], io.Writer.model_order)
+        obj_model.io.WorkbookWriter().run(core_path, [], io.Writer.model_order, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'seq.fna')
         with open(seq_path, 'w') as file:
@@ -90,18 +95,51 @@ class TestIO(unittest.TestCase):
         kb = io.Reader().run(core_path, seq_path)
         self.assertEqual(kb, None)
 
+        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.Writer.model_order, include_all_attributes=False)
+        with self.assertRaisesRegexp(ValueError, 'cannot contain instances'):
+            io.Reader().run(core_path, seq_path)
+
     def test_reader_error_multiple_kbs(self):
         kb1 = core.KnowledgeBase(id='kb1', name='kb1', version='0.0.1')
         kb2 = core.KnowledgeBase(id='kb2', name='kb2', version='0.0.1')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.Writer.model_order)
+        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.Writer.model_order, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
-        with self.assertRaisesRegexp(ValueError, ' should only define one knowledge base'):
+        with self.assertRaisesRegexp(ValueError, ' should define one knowledge base'):
+            io.Reader().run(core_path, seq_path)
+
+    def test_reader_error_no_cell(self):
+        kb = core.KnowledgeBase(id='kb', name='kb1', version='0.0.1')
+        dna = core.DnaSpeciesType(id='chr')
+
+        core_path = os.path.join(self.dir, 'core.xlsx')
+        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.Writer.model_order, include_all_attributes=False)
+
+        seq_path = os.path.join(self.dir, 'seq.fna')
+        with open(seq_path, 'w') as file:
+            pass
+
+        with self.assertRaisesRegexp(ValueError, 'cannot contain instances'):
+            io.Reader().run(core_path, seq_path)
+
+    def test_reader_error_multiple_cells(self):
+        kb = core.KnowledgeBase(id='kb', name='kb1', version='0.0.1')
+        cell1 = core.Cell(id='cell1', name='cell1')
+        cell2 = core.Cell(id='cell2', name='cell2')
+
+        core_path = os.path.join(self.dir, 'core.xlsx')
+        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.Writer.model_order, include_all_attributes=False)
+
+        seq_path = os.path.join(self.dir, 'seq.fna')
+        with open(seq_path, 'w') as file:
+            pass
+
+        with self.assertRaisesRegexp(ValueError, ' should define one cell'):
             io.Reader().run(core_path, seq_path)
 
     def test_convert(self):
@@ -152,3 +190,27 @@ class TestIO(unittest.TestCase):
         path_seq = os.path.join(self.dir, 'seq.fna')
         io.create_template(path_core, path_seq)
         kb = io.Reader().run(path_core, path_seq)
+
+    def test_validate_implicit_kb_and_cell_relationships(self):
+        class TestModel(obj_model.Model):
+            id = obj_model.StringAttribute(primary=True, unique=True)
+
+        core.KnowledgeBase.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='a')
+        with self.assertRaisesRegexp(Exception, 'Relationships from `KnowledgeBase` not supported'):
+            io.Writer.validate_implicit_kb_and_cell_relationships()
+        core.KnowledgeBase.Meta.attributes.pop('test')
+
+        core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='b')
+        with self.assertRaisesRegexp(Exception, 'Only one-to-one relationships to `KnowledgeBase` from `Cell` are supported'):
+            io.Writer.validate_implicit_kb_and_cell_relationships()
+        core.KnowledgeBase.Meta.related_attributes.pop('test')
+
+        core.Cell.Meta.attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='c')
+        with self.assertRaisesRegexp(Exception, 'Only one-to-one relationships from `Cell` to `KnowledgeBase` are supported'):
+            io.Writer.validate_implicit_kb_and_cell_relationships()
+        core.Cell.Meta.attributes.pop('test')
+
+        core.Cell.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='d')
+        with self.assertRaisesRegexp(Exception, 'Only one-to-one and many-to-one relationships are supported to `Cell`'):
+            io.Writer.validate_implicit_kb_and_cell_relationships()
+        core.Cell.Meta.related_attributes.pop('test')
