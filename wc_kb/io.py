@@ -69,7 +69,8 @@ class Writer(object):
         kwargs['version'] = knowledge_base.version
 
         _, ext = os.path.splitext(core_path)
-        obj_model.io.get_writer(ext)().run(core_path, objects, models=self.model_order, **kwargs)
+        writer = obj_model.io.get_writer(ext)()
+        writer.run(core_path, objects, models=self.model_order, **kwargs)
 
         # export sequences
         with open(seq_path, 'w') as file:
@@ -158,16 +159,8 @@ def convert(source_core, source_seq, dest_core, dest_seq, strict=True):
                 * There are no missing columns
                 * There are no extra columns
     """
-    kwargs = {}
-    if not strict:
-        kwargs['ignore_missing_sheets'] = True
-        kwargs['ignore_extra_sheets'] = True
-        kwargs['ignore_sheet_order'] = True
-        kwargs['ignore_missing_attributes'] = True
-        kwargs['ignore_extra_attributes'] = True
-        kwargs['ignore_attribute_order'] = True
-    obj_model.io.convert(source_core, dest_core, models=Writer.model_order, **kwargs)
-    shutil.copyfile(source_seq, dest_seq)
+    kb = Reader().run(source_core, source_seq, strict=strict)
+    Writer().run(kb, dest_core, dest_seq)
 
 
 def create_template(core_path, seq_path):
