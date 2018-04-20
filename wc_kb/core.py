@@ -150,34 +150,6 @@ class Cell(KnowledgeBaseObject):
         attribute_order = ('id', 'knowledge_base', 'name', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
-    def get_species_types(self, cls=None):
-        """ Get species of given type(s)
-        Args:
-            cls (:obj:`type` or :obj:`tuple` of :obj:`type`, optional): type(s) of species types;
-                if :obj:`None`, every species type will be returned
-
-        Returns:
-            :obj:`list` of :obj:`SpeciesType`: species types
-        """
-        if cls is None:
-            return self.species_types
-        else:
-            return list(filter(lambda species_type: isinstance(species_type, cls), self.species_types))
-
-    def get_locus_types(self, cls=None):
-        """ Get loci of given types(s)
-        Args:
-            cls (:obj:`type` or :obj:`tuple` of :obj:`type`, optional): type(s) of species types;
-                if :obj:`None`, every species type will be returned
-
-        Returns:
-            :obj:`list` of :obj:`PolymerLocus`: polymer loci
-        """
-        if cls is None:
-            return self.species_types
-        else:
-            return list(filter(lambda loci: isinstance(loci, cls), self.loci))
-
 
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
@@ -731,9 +703,6 @@ class DnaSpeciesType(PolymerSpeciesType):
 
     Attributes:
         seq (:obj:`Bio.Seq.Seq`): sequence
-
-    Related attributes:
-        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`): TUs
     """
 
     seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
