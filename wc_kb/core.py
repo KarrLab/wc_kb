@@ -520,7 +520,7 @@ class PolymerLocus(KnowledgeBaseObject):
 
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='loci')
     polymer = obj_model.core.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
-    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive) #dropped none = True flag
+    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
 
