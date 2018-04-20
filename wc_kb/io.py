@@ -17,6 +17,7 @@ import Bio.SeqIO
 import Bio.SeqRecord
 import obj_model
 import os
+import shutil
 import wc_utils.cache
 import wc_kb
 
@@ -135,7 +136,7 @@ class Reader(object):
         return kb
 
 
-def convert(core_source, core_destination, strict=True):
+def convert(source_core, source_seq, dest_core, dest_seq, strict=True):
     """ Convert among Excel (.xlsx), comma separated (.csv), and tab separated (.tsv) file formats
 
     Read a knowledge base from the `source` files(s) and write it to the `destination` files(s). A path to a
@@ -143,8 +144,10 @@ def convert(core_source, core_destination, strict=True):
     matches all delimiter separated files.
 
     Args:
-        core_source (:obj:`str`): path to source core knowledge base
-        core_destination (:obj:`str`): path to save converted core knowledge base
+        source_core (:obj:`str`): path to the core of the source knowledge base
+        source_seq (:obj:`str`): path to the genome sequence of the source knowledge base
+        dest_core (:obj:`str`): path to save the converted core of the knowledge base
+        dest_seq (:obj:`str`): path to save the converted genome sequence of the knowledge base
         strict (:obj:`str`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
                 :obj:`obj_model` serialization format:
 
@@ -163,7 +166,8 @@ def convert(core_source, core_destination, strict=True):
         kwargs['ignore_missing_attributes'] = True
         kwargs['ignore_extra_attributes'] = True
         kwargs['ignore_attribute_order'] = True
-    obj_model.io.convert(core_source, core_destination, models=Writer.model_order, **kwargs)
+    obj_model.io.convert(source_core, dest_core, models=Writer.model_order, **kwargs)
+    shutil.copyfile(source_seq, dest_seq)
 
 
 def create_template(core_path, seq_path):

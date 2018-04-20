@@ -109,15 +109,17 @@ class TestIO(unittest.TestCase):
         path_core_2 = os.path.join(self.dir, 'core_2-*.csv')
         path_core_3 = os.path.join(self.dir, 'core_3.xlsx')
         path_seq_1 = os.path.join(self.dir, 'seq_1.fna')
+        path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
+        path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
         io.Writer().run(self.kb, path_core_1, path_seq_1)
 
-        io.convert(path_core_1, path_core_2)
-        kb = io.Reader().run(path_core_2, path_seq_1)
+        io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
+        kb = io.Reader().run(path_core_2, path_seq_2)
         self.assertTrue(kb.is_equal(self.kb))
 
-        io.convert(path_core_2, path_core_3)
-        kb = io.Reader().run(path_core_3, path_seq_1)
+        io.convert(path_core_2, path_seq_2, path_core_3, path_seq_3)
+        kb = io.Reader().run(path_core_3, path_seq_3)
         self.assertTrue(kb.is_equal(self.kb))
 
     def test_convert_sloppy(self):
@@ -125,6 +127,8 @@ class TestIO(unittest.TestCase):
         path_core_2 = os.path.join(self.dir, 'core_2-*.csv')
         path_core_3 = os.path.join(self.dir, 'core_3.xlsx')
         path_seq_1 = os.path.join(self.dir, 'seq_1.fna')
+        path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
+        path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
         io.Writer().run(self.kb, path_core_1, path_seq_1)
 
@@ -134,13 +138,13 @@ class TestIO(unittest.TestCase):
         wc_utils.workbook.io.write(path_core_1, wb)
 
         with self.assertRaisesRegexp(ValueError, 'The attributes must be defined in this order'):
-            io.convert(path_core_1, path_core_2)
-        io.convert(path_core_1, path_core_2, strict=False)
-        kb = io.Reader().run(path_core_2, path_seq_1)
+            io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
+        io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2, strict=False)
+        kb = io.Reader().run(path_core_2, path_seq_2)
         self.assertTrue(kb.is_equal(self.kb))
 
-        io.convert(path_core_2, path_core_3)
-        kb = io.Reader().run(path_core_3, path_seq_1)
+        io.convert(path_core_2, path_seq_2, path_core_3, path_seq_3)
+        kb = io.Reader().run(path_core_3, path_seq_3)
         self.assertTrue(kb.is_equal(self.kb))
 
     def test_create_template(self):
