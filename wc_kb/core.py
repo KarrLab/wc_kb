@@ -1016,6 +1016,7 @@ class ComplexSpeciesType(SpeciesType):
         Returns:
             `list` of :obj:`SpeciesType`: list of Speciestype objects that compose the complex
         """
+        # todo: represent composition directly and eliminate this method
         subunits = []
 
         for participant in self.formation_reaction.participants:
