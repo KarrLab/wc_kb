@@ -74,18 +74,20 @@ class Writer(object):
                 species_type.seq = None
 
         # export core
-        kwargs = {
-            'language': 'wc_kb',
-            'creator': '{}.{}'.format(self.__class__.__module__, self.__class__.__name__),
-        }
-        objects = [knowledge_base]
-        kwargs['title'] = knowledge_base.id
-        kwargs['description'] = knowledge_base.name
-        kwargs['version'] = knowledge_base.version
-
         _, ext = os.path.splitext(core_path)
         writer = obj_model.io.get_writer(ext)()
-        writer.run(core_path, objects, models=self.model_order, include_all_attributes=False, **kwargs)
+        
+        kwargs = {}
+        if isinstance(writer, obj_model.io.WorkbookWriter):
+            kwargs['include_all_attributes'] = False
+        
+        writer.run(core_path, [knowledge_base], models=self.model_order,
+                   language='wc_kb',
+                   creator='{}.{}'.format(self.__class__.__module__, self.__class__.__name__),
+                   title=knowledge_base.id,
+                   description=knowledge_base.name,
+                   version=knowledge_base.version,
+                   **kwargs)
 
         # export sequences
         with open(seq_path, 'w') as file:
@@ -159,15 +161,17 @@ class Reader(object):
         reader = obj_model.io.get_reader(ext)()
 
         kwargs = {}
-        if isinstance(reader, obj_model.io.WorkbookReader) and not strict:
-            kwargs['ignore_missing_sheets'] = True
-            kwargs['ignore_extra_sheets'] = True
-            kwargs['ignore_sheet_order'] = True
-            kwargs['ignore_missing_attributes'] = True
-            kwargs['ignore_extra_attributes'] = True
-            kwargs['ignore_attribute_order'] = True
+        if isinstance(reader, obj_model.io.WorkbookReader):
+            kwargs['include_all_attributes'] = False
+            if not strict:
+                kwargs['ignore_missing_sheets'] = True
+                kwargs['ignore_extra_sheets'] = True
+                kwargs['ignore_sheet_order'] = True
+                kwargs['ignore_missing_attributes'] = True
+                kwargs['ignore_extra_attributes'] = True
+                kwargs['ignore_attribute_order'] = True
 
-        objects = reader.run(core_path, models=Writer.model_order, include_all_attributes=False, **kwargs)
+        objects = reader.run(core_path, models=Writer.model_order, **kwargs)
 
         # check that file has 0 or 1 knowledge bases
         if not objects[core.KnowledgeBase]:
