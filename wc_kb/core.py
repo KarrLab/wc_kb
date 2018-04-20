@@ -520,7 +520,7 @@ class PolymerLocus(KnowledgeBaseObject):
 
     cell = obj_model.core.ManyToOneAttribute(Cell, related_name='loci')
     polymer = obj_model.core.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
-    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive, none=True)
+    strand = obj_model.core.EnumAttribute(PolymerStrand, default=PolymerStrand.positive) #dropped none = True flag
     start = obj_model.core.IntegerAttribute()
     end = obj_model.core.IntegerAttribute()
 
@@ -943,8 +943,9 @@ class ComplexSpeciesType(SpeciesType):
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
         # Formula addition
+        formula = chem.EmpiricalFormula()
         for subunit in self.get_subunits():
-            formula = subunit.get_empirical_formula()
+            formula = formula + subunit.get_empirical_formula()
 
         return formula
 

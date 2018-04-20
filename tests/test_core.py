@@ -50,17 +50,15 @@ class KnowledgeBaseTestCase(unittest.TestCase):
 class CellTestCase(unittest.TestCase):
     def test_constructor(self):
         cell = core.Cell()
+
         self.assertEqual(cell.knowledge_base, None)
         self.assertEqual(cell.species_types, [])
+        self.assertEqual(cell.compartments, [])
+        self.assertEqual(cell.reactions, [])
+        self.assertEqual(cell.loci, [])
+
         self.assertEqual(cell.species_types.get(__type=core.DnaSpeciesType), [])
-
-        dna = [
-            core.DnaSpeciesType(id='chr1', seq='AAA'),
-            core.DnaSpeciesType(id='chr2', seq='CCC'),
-        ]
-
-        cell = core.Cell(species_types=dna)
-        self.assertEqual(cell.species_types, dna)
+        self.assertEqual(cell.loci.get(__type=core.PromoterLocus), [])
 
 
 class CompartmentTestCase(unittest.TestCase):
@@ -503,32 +501,7 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
 
 
 class ReactionTestCase(unittest.TestCase):
-    def test_constructor(self):
-        cell1 = core.Cell()
-        compartment1 = core.Compartment(cell=cell1)
-        species1 = core.MetaboliteSpeciesType(id='1')
-        species2 = core.MetaboliteSpeciesType(id='2')
-        participant1 = core.ReactionParticipant(species_types=[species1], compartments=[compartment1], coefficient=1)
-        participant2 = core.ReactionParticipant(species_types=[species2], compartments=[compartment1], coefficient=1)
-
-        reaction1 = core.Reaction(
-            id='reaction1',
-            name='test_reaction',
-            cell=cell1,
-            participants=[participant1, participant2],
-            k_m=0.1,
-            v_max=0.5,
-            reversible=0)
-
-        self.assertEqual(reaction1.id, 'reaction1')
-        self.assertEqual(reaction1.name, 'test_reaction')
-        self.assertEqual(reaction1.cell, cell1)
-        self.assertEqual(reaction1.participants, [participant1, participant2])
-        self.assertEqual(reaction1.k_m, 0.1)
-        self.assertEqual(reaction1.v_max, 0.5)
-        self.assertEqual(reaction1.reversible, 0)
-
-    def test_constructor(self):
+    def test_Reaction(self):
         cell_1 = core.Cell()
         compartment_1 = core.Compartment(cell=cell_1)
         species_type_1 = core.MetaboliteSpeciesType(id='1')
@@ -557,6 +530,54 @@ class ReactionTestCase(unittest.TestCase):
 
 
 class ComplexSpeciesTypeTestCase(unittest.TestCase):
-    @unittest.skip('Implement tests')
-    def test(self):
-        pass  # todo: add tests
+    def test_ComplexSpeciesType(self):
+
+        # Test constructor
+        complex1 = core.ComplexSpeciesType()
+
+        self.assertEqual(complex1.region, '')
+        self.assertEqual(complex1.binding, '')
+        self.assertEqual(complex1.complex_type, '')
+        self.assertEqual(complex1.formation_process, None)
+        self.assertEqual(complex1.formation_reaction, None)
+
+        # prot1: = Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
+            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
+        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+
+        # prot2: Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
+        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        cell1 = dna2.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
+        gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna2,  start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
+        tu2 = core.TranscriptionUnitLocus(id='tu2', genes=[gene2], polymer=dna2)
+        prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2)
+
+        # Test adding formation reaction
+        # Add formation reaction: [c]: (2) prot1 + (3) prot2 ==> complex1
+        comp1 = core.Compartment(id='comp1')
+        species1 = core.Species(species_type=prot1, compartment=comp1)
+        species2 = core.Species(species_type=prot2, compartment=comp1)
+        species_coeff1 = core.SpeciesCoefficient(species=species1, coefficient=2)
+        species_coeff2 = core.SpeciesCoefficient(species=species2, coefficient=3)
+        reaction1 = core.Reaction(participants=[species_coeff1,species_coeff2])
+        complex1.formation_reaction = reaction1
+
+        self.assertEqual(complex1.get_subunits(), [prot1, prot1, prot2, prot2, prot2])
+
+        # test get_charge
+        self.assertEqual(complex1.get_charge(), 6)
+
+        # test get_mol_wt
+        self.assertAlmostEqual(complex1.get_mol_wt(), 6130.837)
+
+        # test get_empirical_formula
+        self.assertEqual(complex1.get_empirical_formula(), chem.EmpiricalFormula('C273H408N76O82S2'))
+
+class ReactionParticipantAttributeTestCase(unittest.TestCase):
+    def test_ReactionParticipantAttribute(self): pass

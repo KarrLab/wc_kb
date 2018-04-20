@@ -5,14 +5,14 @@ with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
 # :obj:`str`: version
 
 # API
-from .core import (PolymerStrand,
-                   KnowledgeBaseObject,
+from .core import (KnowledgeBaseObject,
                    KnowledgeBase,
                    Cell,
                    Compartment,
                    SpeciesType,
                    MetaboliteSpeciesType,
                    PolymerSpeciesType,
+                   ComplexSpeciesType,
                    DnaSpeciesType,
                    RnaType,
                    RnaSpeciesType,
