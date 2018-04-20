@@ -47,15 +47,23 @@ class Writer(object):
             knowledge_base (:obj:`core.KnowledgeBase`): knowledge base
             core_path (:obj:`str`): path to save core knowledge base
             seq_path (:obj:`str`): path to save genome sequence
+
+        Raises:
+            :obj:`ValueError`: if any of the relationships with knowledge bases and cells are not set
         """
-        self.validate_implicit_kb_and_cell_relationships()
+        self.validate_implicit_relationships()
 
-        cell = knowledge_base.cell
-
-        # check that there is only 1 :obj:`KnowledgeBase` and only 1 :obj:`Cell` and that each relationship
+        # check that there is only 1 :obj:`KnowledgeBase` and <= 1 :obj:`Cell` and that each relationship
         # to :obj:`KnowledgeBase` and :obj:`Cell` is set. This is necessary to enable the :obj:`KnowledgeBase` and
         # :obj:`Cell` relationships to be implicit in the Excel output and added by :obj:`Reader.run`
-        # todo
+        cell = knowledge_base.cell
+
+        for obj in knowledge_base.get_related():
+            for attr in obj.Meta.attributes.values():
+                if isinstance(attr, obj_model.RelatedAttribute) and attr.related_class == core.Cell:
+                    val = getattr(obj, attr.name)
+                    if val is None or val != cell:
+                        raise ValueError('{}.{} must be set to the instance of `Cell`'.format(obj.__class__.__name__, attr.name))
 
         # gather DNA sequences
         dna_seqs = []
@@ -90,9 +98,12 @@ class Writer(object):
                 species_type.seq = seq.seq
 
     @classmethod
-    def validate_implicit_kb_and_cell_relationships(cls):
+    def validate_implicit_relationships(cls):
         """ Check that relationships to :obj:`core.KnowledgeBase` and :obj:`core.Cell` do not need to be explicitly written to 
         workbooks because they can be inferred by :obj:`Reader.run`
+
+        Raises:
+            :obj:`Exception`: if the Excel serialization involves an unsupported implicit relationship
         """
         for attr in core.KnowledgeBase.Meta.attributes.values():
             if isinstance(attr, obj_model.RelatedAttribute):
@@ -136,9 +147,12 @@ class Reader(object):
             :obj:`core.KnowledgeBase`: knowledge base
 
         Raises:
-            :obj:`ValueError`: if :obj:`core_path` defines multiple knowledge bases
+            :obj:`ValueError`: if :obj:`core_path` 
+
+                * Defines multiple knowledge bases or cells
+                * Represents objects that cannot be linked to a knowledge base and/or cell
         """
-        Writer.validate_implicit_kb_and_cell_relationships()
+        Writer.validate_implicit_relationships()
 
         # read core objects from file
         _, ext = os.path.splitext(core_path)
