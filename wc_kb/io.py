@@ -13,6 +13,7 @@ Supported file types:
 """
 
 from . import core
+from wc_utils.util.string import indent_forest
 import Bio.SeqIO
 import Bio.SeqRecord
 import obj_model
@@ -76,11 +77,11 @@ class Writer(object):
         # export core
         _, ext = os.path.splitext(core_path)
         writer = obj_model.io.get_writer(ext)()
-        
+
         kwargs = {}
         if isinstance(writer, obj_model.io.WorkbookWriter):
             kwargs['include_all_attributes'] = False
-        
+
         writer.run(core_path, [knowledge_base], models=self.model_order,
                    language='wc_kb',
                    creator='{}.{}'.format(self.__class__.__module__, self.__class__.__name__),
@@ -171,7 +172,7 @@ class Reader(object):
                 kwargs['ignore_extra_attributes'] = True
                 kwargs['ignore_attribute_order'] = True
 
-        objects = reader.run(core_path, models=Writer.model_order, **kwargs)
+        objects = reader.run(core_path, models=Writer.model_order, validate=False, **kwargs)
 
         # check that file has 0 or 1 knowledge bases
         if not objects[core.KnowledgeBase]:
@@ -214,6 +215,17 @@ class Reader(object):
         for dna in Bio.SeqIO.parse(seq_path, "fasta"):
             kb.cell.species_types.get_one(id=dna.id).seq = dna.seq
 
+        # validate
+        objs = []
+        for cls_objs in objects.values():
+            objs.extend(cls_objs)
+
+        errors = obj_model.Validator().validate(objs)
+        if errors:
+            raise ValueError(
+                indent_forest(['The knowledge base cannot be loaded because it fails to validate:', [errors]]))
+
+        # return kb
         return kb
 
 
