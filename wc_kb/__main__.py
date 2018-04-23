@@ -121,9 +121,9 @@ class NormalizeController(CementBaseController):
         args = self.app.pargs
         kb = io.Reader().run(args.source_core, args.source_seq, strict=args.strict)
         if args.dest_core or args.dest_seq:
-            io.Writer().run(kb, args.dest_core, args.dest_seq)
+            io.Writer().run(kb, args.dest_core, args.dest_seq, set_repo_metadata_from_path=False)
         else:
-            io.Writer().run(kb, args.source_core, args.source_seq)
+            io.Writer().run(kb, args.source_core, args.source_seq, set_repo_metadata_from_path=False)
 
 
 class ConvertController(CementBaseController):
@@ -159,27 +159,33 @@ class CreateTemplateController(CementBaseController):
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
-            (['path_core'], dict(type=str, help='Path to save a template of the core of a knowledge base')),
-            (['path_seq'], dict(type=str, help='Path to save a template of the genome sequence of a knowledge base')),
+            (['path_core'], dict(metavar='path-core', type=str, help='Path to save a template of the core of a knowledge base')),
+            (['path_seq'], dict(metavar='path-seq', type=str, help='Path to save a template of the genome sequence of a knowledge base')),
+            (['--ignore-repo-metadata'], dict(dest='set_repo_metadata_from_path', default=True, action='store_false',
+                                              help=('If set, do not set the Git repository metadata for the knowledge base from '
+                                                    'the parent directory of `path-core`'))),
         ]
 
     @expose(hide=True)
     def default(self):
         args = self.app.pargs
-        io.create_template(args.path_core, args.path_seq)
+        io.create_template(args.path_core, args.path_seq, set_repo_metadata_from_path=args.set_repo_metadata_from_path)
 
 
-class UpdateWcKbVersionController(CementBaseController):
-    """ Update wc_kb_version of a knowledge base """
+class UpdateVersionMetadataController(CementBaseController):
+    """ Update version metadata of a knowledge base (URL, branch, revision, wc_kb version) """
 
     class Meta:
-        label = 'update-wc-kb-version'
-        description = 'Update wc_kb_version of a knowledge base'
+        label = 'update-version-metadata'
+        description = 'Update version metadata of a knowledge base (URL, branch, revision, wc_kb version)'
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
             (['path_core'], dict(type=str, help='Path to the core of the knowledge base')),
             (['path_seq'], dict(type=str, help='Path to the FASTA-formatted genome sequence of a knowledge base')),
+            (['--ignore-repo-metadata'], dict(dest='set_repo_metadata_from_path', default=True, action='store_false',
+                                              help=('If set, do not set the Git repository metadata for the knowledge base from '
+                                                    'the parent directory of `path-core`'))),
             (['--sloppy'], dict(dest='strict', default=True, action='store_false',
                                 help='If set, do not validate the format of the knowledge base file(s)')),
         ]
@@ -189,7 +195,7 @@ class UpdateWcKbVersionController(CementBaseController):
         args = self.app.pargs
         kb = io.Reader().run(args.path_core, args.path_seq, strict=args.strict)
         kb.wc_kb_version = wc_kb.__version__
-        io.Writer().run(kb, args.path_core, args.path_seq)
+        io.Writer().run(kb, args.path_core, args.path_seq, set_repo_metadata_from_path=args.set_repo_metadata_from_path)
 
 
 class App(CementApp):
@@ -204,7 +210,7 @@ class App(CementApp):
             NormalizeController,
             ConvertController,
             CreateTemplateController,
-            UpdateWcKbVersionController,
+            UpdateVersionMetadataController,
         ]
 
 

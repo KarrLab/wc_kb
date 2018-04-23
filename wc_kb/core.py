@@ -8,7 +8,6 @@
 """
 
 from wc_utils.util import chem
-import wc_utils.util.git as git
 import abc
 import Bio.Seq
 import Bio.SeqUtils
@@ -125,10 +124,6 @@ class KnowledgeBase(KnowledgeBaseObject):
         tabular_orientation = obj_model.core.TabularOrientation.column
 
     def __init__(self, **kwargs):
-        md = git.get_repo_metadata()
-        self.url = md.url
-        self.branch = md.branch
-        self.revision = md.revision
         super(KnowledgeBase, self).__init__(**kwargs)
 
 

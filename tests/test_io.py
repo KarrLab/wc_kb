@@ -54,14 +54,14 @@ class TestIO(unittest.TestCase):
         seq_path = os.path.join(self.dir, 'seq.fna')
 
         writer = io.Writer()
-        writer.run(self.kb, core_path, seq_path)
+        writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=False)
 
         reader = io.Reader()
         kb = reader.run(core_path, seq_path)
 
         core_path = os.path.join(self.dir, 'core2.xlsx')
         seq_path = os.path.join(self.dir, 'seq2.fna')
-        writer.run(kb, core_path, seq_path)
+        writer.run(kb, core_path, seq_path, set_repo_metadata_from_path=False)
 
         self.assertTrue(self.kb.is_equal(kb))
 
@@ -79,14 +79,14 @@ class TestIO(unittest.TestCase):
 
         writer = io.Writer()
         with self.assertRaisesRegexp(ValueError, 'must be set to the instance of `Cell`'):
-            writer.run(self.kb, core_path, seq_path)
+            writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=False)
 
     def test_write_read_sloppy(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
         seq_path = os.path.join(self.dir, 'seq.fna')
 
         writer = io.Writer()
-        writer.run(self.kb, core_path, seq_path)
+        writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=False)
 
         wb = wc_utils.workbook.io.read(core_path)
         row = wb['Knowledge base'].pop(0)
@@ -166,7 +166,7 @@ class TestIO(unittest.TestCase):
         path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
         path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
-        io.Writer().run(self.kb, path_core_1, path_seq_1)
+        io.Writer().run(self.kb, path_core_1, path_seq_1, set_repo_metadata_from_path=False)
 
         io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
         kb = io.Reader().run(path_core_2, path_seq_2)
@@ -184,7 +184,7 @@ class TestIO(unittest.TestCase):
         path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
         path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
-        io.Writer().run(self.kb, path_core_1, path_seq_1)
+        io.Writer().run(self.kb, path_core_1, path_seq_1, set_repo_metadata_from_path=False)
 
         wb = wc_utils.workbook.io.read(path_core_1)
         row = wb['Knowledge base'].pop(0)
@@ -204,7 +204,7 @@ class TestIO(unittest.TestCase):
     def test_create_template(self):
         path_core = os.path.join(self.dir, 'core.xlsx')
         path_seq = os.path.join(self.dir, 'seq.fna')
-        io.create_template(path_core, path_seq)
+        io.create_template(path_core, path_seq, set_repo_metadata_from_path=False)
         kb = io.Reader().run(path_core, path_seq)
 
     def test_validate_implicit_relationships(self):

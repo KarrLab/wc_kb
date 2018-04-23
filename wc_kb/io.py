@@ -13,6 +13,7 @@ Supported file types:
 """
 
 from . import core
+from . import util
 from wc_utils.util.string import indent_forest
 import Bio.SeqIO
 import Bio.SeqRecord
@@ -41,13 +42,15 @@ class Writer(object):
         core.Reaction,
     )
 
-    def run(self, knowledge_base, core_path, seq_path):
+    def run(self, knowledge_base, core_path, seq_path, set_repo_metadata_from_path=True):
         """ Write knowledge base to file(s)
 
         Args:
             knowledge_base (:obj:`core.KnowledgeBase`): knowledge base
             core_path (:obj:`str`): path to save core knowledge base
             seq_path (:obj:`str`): path to save genome sequence
+            set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL, 
+                branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
 
         Raises:
             :obj:`ValueError`: if any of the relationships with knowledge bases and cells are not set
@@ -65,6 +68,10 @@ class Writer(object):
                     val = getattr(obj, attr.name)
                     if val is None or val != cell:
                         raise ValueError('{}.{} must be set to the instance of `Cell`'.format(obj.__class__.__name__, attr.name))
+
+        # set Git repository metadata from the parent directories of :obj:`core_path`
+        if set_repo_metadata_from_path:
+            util.set_git_repo_metadata_from_path(knowledge_base, core_path)
 
         # gather DNA sequences
         dna_seqs = []
@@ -135,8 +142,8 @@ class Reader(object):
 
         Args:
             core_path (:obj:`str`): path to core knowledge base
-            seq_path (:obj:`str`): path to genome sequence
-            strict (:obj:`str`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
+            seq_path (:obj:`str`): path to genome sequence            
+            strict (:obj:`bool`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
                 :obj:`obj_model` serialization format:
 
                 * The worksheets are in the expected order
@@ -241,7 +248,7 @@ def convert(source_core, source_seq, dest_core, dest_seq, strict=True):
         source_seq (:obj:`str`): path to the genome sequence of the source knowledge base
         dest_core (:obj:`str`): path to save the converted core of the knowledge base
         dest_seq (:obj:`str`): path to save the converted genome sequence of the knowledge base
-        strict (:obj:`str`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
+        strict (:obj:`bool`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
                 :obj:`obj_model` serialization format:
 
                 * The worksheets are in the expected order
@@ -252,15 +259,17 @@ def convert(source_core, source_seq, dest_core, dest_seq, strict=True):
                 * There are no extra columns
     """
     kb = Reader().run(source_core, source_seq, strict=strict)
-    Writer().run(kb, dest_core, dest_seq)
+    Writer().run(kb, dest_core, dest_seq, set_repo_metadata_from_path=False)
 
 
-def create_template(core_path, seq_path):
+def create_template(core_path, seq_path, set_repo_metadata_from_path=True):
     """ Create file with knowledge base template, including row and column headings
 
     Args:
         core_path (:obj:`str`): path to save temploate of core knowledge base
         seq_path (:obj:`str`): path to save genome sequence
+        set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL, 
+            branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
     """
     kb = core.KnowledgeBase(id='template', name='Template', version=wc_kb.__version__)
-    Writer().run(kb, core_path, seq_path)
+    Writer().run(kb, core_path, seq_path, set_repo_metadata_from_path=set_repo_metadata_from_path)

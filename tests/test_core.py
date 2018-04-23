@@ -565,7 +565,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         species2 = core.Species(species_type=prot2, compartment=comp1)
         species_coeff1 = core.SpeciesCoefficient(species=species1, coefficient=2)
         species_coeff2 = core.SpeciesCoefficient(species=species2, coefficient=3)
-        reaction1 = core.Reaction(participants=[species_coeff1,species_coeff2])
+        reaction1 = core.Reaction(participants=[species_coeff1, species_coeff2])
         complex1.formation_reaction = reaction1
 
         self.assertEqual(complex1.get_subunits(), [prot1, prot1, prot2, prot2, prot2])
@@ -578,6 +578,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
 
         # test get_empirical_formula
         self.assertEqual(complex1.get_empirical_formula(), chem.EmpiricalFormula('C273H408N76O82S2'))
+
 
 class ReactionParticipantAttributeTestCase(unittest.TestCase):
     def test_ReactionParticipantAttribute(self): pass
