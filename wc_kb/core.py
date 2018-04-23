@@ -123,9 +123,6 @@ class KnowledgeBase(KnowledgeBaseObject):
         attribute_order = ('id', 'name', 'translation_table', 'version', 'url', 'branch', 'revision', 'wc_kb_version', 'comments')
         tabular_orientation = obj_model.core.TabularOrientation.column
 
-    def __init__(self, **kwargs):
-        super(KnowledgeBase, self).__init__(**kwargs)
-
 
 class Cell(KnowledgeBaseObject):
     """ Knowledge of a cell
