@@ -565,7 +565,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         species2 = core.Species(species_type=prot2, compartment=comp1)
         species_coeff1 = core.SpeciesCoefficient(species=species1, coefficient=2)
         species_coeff2 = core.SpeciesCoefficient(species=species2, coefficient=3)
-        reaction1 = core.Reaction(participants=[species_coeff1, species_coeff2])
+        reaction1 = core.Reaction(participants=[species_coeff1,species_coeff2])
         complex1.formation_reaction = reaction1
 
         self.assertEqual(complex1.get_subunits(), [prot1, prot1, prot2, prot2, prot2])
@@ -579,6 +579,101 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         # test get_empirical_formula
         self.assertEqual(complex1.get_empirical_formula(), chem.EmpiricalFormula('C273H408N76O82S2'))
 
+class SpeciesTestCase(unittest.TestCase):
+    def test_SpeciesType(self):
+        comp1 = core.Compartment(id='c')
+        rna1  = core.RnaSpeciesType(id='rna1')
+        prot1 = core.ProteinSpeciesType(id='prot1')
+        species1 = core.Species(species_type=prot1, compartment=comp1)
+
+        self.assertEqual(core.Species.gen_id(prot1,comp1),'prot1[c]')
+        self.assertEqual(core.Species.gen_id('prot1','c'),'prot1[c]')
+
+        self.assertEqual(species1.id(),'prot1[c]')
+        self.assertEqual(species1.serialize(),'prot1[c]')
+
+        """
+        objects = {core.Compartment: [comp1],
+                   core.RnaSpeciesType: [rna1],
+                   core.ProteinSpeciesType: [prot1],
+                   core.Species: [species1]}
+
+        wc_kb.Species.deserialize(attribute='id',
+                                  value='species1[c]',
+                                  objects=objects)
+        """
+
+
+class SpeciesCoefficientTestCase(unittest.TestCase):
+    def test_SpeciesCoefficientType(self):
+        comp1 = core.Compartment(id='c')
+        prot1 = core.ProteinSpeciesType(id='prot1')
+        rna1  = core.RnaSpeciesType(id='rna1')
+        met1  = core.MetaboliteSpeciesType(id='met1')
+
+        species1 = core.Species(species_type=prot1, compartment=comp1)
+        species_coeff = core.SpeciesCoefficient(species=species1, coefficient=3)
+
+        self.assertEqual(species_coeff.serialize(),'(3) prot1[c]')
+        self.assertEqual(core.SpeciesCoefficient()._serialize(species=species1, coefficient=3),'(3) prot1[c]')
+        self.assertEqual(core.SpeciesCoefficient()._serialize(species=species1, coefficient=1),'prot1[c]')
+        self.assertEqual(core.SpeciesCoefficient()._serialize(species=species1, coefficient=2000),'(2.000000e+03) prot1[c]')
+        self.assertEqual(core.SpeciesCoefficient()._serialize(species=species1, coefficient=3, show_compartment=False),'(3) prot1')
+
+        """
+        objects = {core.Compartment: [comp1],
+                   core.ProteinSpeciesType: [prot1],
+                   core.Species: [species1],
+                   core.SpeciesCoefficient: [species_coeff]}
+
+        core.SpeciesCoefficient().deserialize(attribute='id',
+                                                    value='(3) prot1[c]',
+                                                    objects=objects)
+        """
+
 
 class ReactionParticipantAttributeTestCase(unittest.TestCase):
-    def test_ReactionParticipantAttribute(self): pass
+    def test_ReactionParticipantAttribute(self):
+        compart1 = core.Compartment(id='c')
+        compart2 = core.Compartment(id='m')
+
+        prot1 = core.ProteinSpeciesType(id='prot1')
+        prot2 = core.ProteinSpeciesType(id='prot2')
+        complex1 = core.ComplexSpeciesType(id='complex1')
+
+        species1 = core.Species(species_type=prot1, compartment=compart1)
+        species2 = core.Species(species_type=prot2, compartment=compart1)
+        species3 = core.Species(species_type=complex1, compartment=compart1)
+        species4 = core.Species(species_type=complex1, compartment=compart2)
+
+        species_coeff1 = core.SpeciesCoefficient(species=species1, coefficient=-2)
+        species_coeff2 = core.SpeciesCoefficient(species=species2, coefficient=-3)
+        species_coeff3 = core.SpeciesCoefficient(species=species3, coefficient= 5)
+        species_coeff4 = core.SpeciesCoefficient(species=species4, coefficient= 7)
+
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[]),'')
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1]), '[c]: (2) prot1 ==> ')
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2]), '[c]: (2) prot1 + (3) prot2 ==> ')
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2, species_coeff3]),
+                                                                             '[c]: (2) prot1 + (3) prot2 ==> (5) complex1')
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2, species_coeff4]),
+                                                                             '(2) prot1[c] + (3) prot2[c] ==> (7) complex1[m]')
+
+        """
+        objects = {core.Compartment: [compart1, compart2],
+                   core.ProteinSpeciesType: [prot1, prot2],
+                   core.RnaSpeciesType: [],
+                   core.DnaSpeciesType: [],
+                   core.MetaboliteSpeciesType: [],
+                   core.ComplexSpeciesType: [complex1],
+                   core.Species: [species1, species2, species3, species4],
+                   core.SpeciesCoefficient: [species_coeff1, species_coeff2, species_coeff3, species_coeff4]}
+
+        #core.ReactionParticipantAttribute().deserialize(value='(2) prot1[c] + (3) prot2[c] ==> (7) complex1[m]', objects=objects)
+        # returns: ['Undefined species type "prot1"',
+        'Undefined compartment "c"',
+        'Undefined species type "prot2"',
+        'Undefined compartment "c"',
+        'Undefined species type "complex1"',
+        'Undefined compartment "m"']
+        """

@@ -7,6 +7,7 @@
 :License: MIT
 """
 
+from natsort import natsorted, ns
 from wc_utils.util import chem
 import abc
 import Bio.Seq
