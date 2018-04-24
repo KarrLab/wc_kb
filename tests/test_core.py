@@ -116,6 +116,9 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(pst1.get_subseq(1, 3), 'AAA')
         self.assertEqual(pst1.get_subseq(2, 4), 'AAT')
 
+        with self.assertRaisesRegexp(ValueError, 'Start and end coordinates'):
+            self.assertEqual(pst1.get_subseq(-1, 3), 'AAA')
+
         # Test methods: circular, single stranded case
         pst1.circular = True
         pst1.double_stranded = False
