@@ -589,6 +589,10 @@ class SpeciesTestCase(unittest.TestCase):
 
         self.assertEqual(core.Species.gen_id(prot1, comp1), 'prot1[c]')
         self.assertEqual(core.Species.gen_id('prot1', 'c'), 'prot1[c]')
+        with self.assertRaisesRegexp(ValueError, 'incorrect species type'):
+            core.Species.gen_id(None, 'c')
+        with self.assertRaisesRegexp(ValueError, 'incorrect compartment type'):
+            core.Species.gen_id('prot1', None)
 
         self.assertEqual(species1.id(), 'prot1[c]')
         self.assertEqual(species1.serialize(), 'prot1[c]')

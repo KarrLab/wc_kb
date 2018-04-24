@@ -242,14 +242,20 @@ class Species(obj_model.Model):
         Returns:
             :obj:`str`: canonical identifier for a specie in a compartment, 'species_type_id[compartment_id]'
         """
-        if isinstance(species_type, SpeciesType) and isinstance(compartment, Compartment):
+        if isinstance(species_type, SpeciesType):
             species_type_id = species_type.get_primary_attribute()
-            compartment_id = compartment.get_primary_attribute()
-        elif isinstance(species_type, string_types) and isinstance(compartment, string_types):
+        elif isinstance(species_type, string_types):
             species_type_id = species_type
+        else:
+            raise ValueError("gen_id: incorrect species type: {}".format(species_type))
+
+        if isinstance(compartment, Compartment):
+            compartment_id = compartment.get_primary_attribute()
+        elif isinstance(compartment, string_types):
             compartment_id = compartment
         else:
-            raise ValueError("gen_id: incorrect parameter types: {}, {}".format(species_type, compartment))
+            raise ValueError("gen_id: incorrect compartment type: {}".format(compartment))
+
         return '{}[{}]'.format(species_type_id, compartment_id)
 
     def id(self):
