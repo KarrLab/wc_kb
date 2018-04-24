@@ -17,16 +17,16 @@ import math
 import obj_model.abstract
 import obj_model.core
 import obj_model.extra_attributes
-
+import openbabel
+import pkg_resources
+import re
+import six
 from six import with_metaclass, string_types
 from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
                        RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
                        OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
                        InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
-import openbabel
-import pkg_resources
-import six
-import re
+from wc_utils.util.types import get_subclasses
 
 with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
     wc_kb_version = file.read().strip()
@@ -292,15 +292,13 @@ class Species(obj_model.Model):
         match = re.match('^([a-z][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
         if match:
             errors = []
-            if match.group(1) in objects[RnaSpeciesType]:
-                species_type = objects[RnaSpeciesType][match.group(1)]
-            elif match.group(1) in objects[ProteinSpeciesType]:
-                species_type = objects[ProteinSpeciesType][match.group(1)]
-            elif match.group(1) in objects[MetaboliteSpeciesType]:
-                species_type = objects[MetaboliteSpeciesType][match.group(1)]
-            elif match.group(1) in objects[ComplexSpeciesType]:
-                species_type = objects[ComplexSpeciesType][match.group(1)]
-            else:
+
+            species_type = None
+            for species_type_cls in get_subclasses(SpeciesType):
+                if species_type_cls in objects and match.group(1) in objects[species_type_cls]:
+                    species_type = objects[species_type_cls][match.group(1)]
+                    break
+            if not species_type:
                 errors.append('Species type "{}" is not defined'.format(match.group(1)))
 
             if match.group(2) in objects[Compartment]:
@@ -1181,15 +1179,12 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
             part_errors = []
 
-            if part[4] in objects[RnaSpeciesType]:
-                species_type = objects[RnaSpeciesType][part[4]]
-            elif part[4] in objects[ProteinSpeciesType]:
-                species_type = objects[ProteinSpeciesType][part[4]]
-            elif part[4] in objects[MetaboliteSpeciesType]:
-                species_type = objects[MetaboliteSpeciesType][part[4]]
-            elif part[4] in objects[ComplexSpeciesType]:
-                species_type = objects[ComplexSpeciesType][part[4]]
-            else:
+            species_type = None
+            for species_type_cls in get_subclasses(SpeciesType):
+                if species_type_cls in objects and part[4] in objects[species_type_cls]:
+                    species_type = objects[species_type_cls][part[4]]
+                    break
+            if not species_type:
                 part_errors.append('Undefined species type "{}"'.format(part[4]))
 
             if global_comp:

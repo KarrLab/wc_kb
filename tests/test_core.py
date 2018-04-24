@@ -586,7 +586,6 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
 class SpeciesTestCase(unittest.TestCase):
     def test_SpeciesType(self):
         comp1 = core.Compartment(id='c')
-        rna1 = core.RnaSpeciesType(id='rna1')
         prot1 = core.ProteinSpeciesType(id='prot1')
         species1 = core.Species(species_type=prot1, compartment=comp1)
 
@@ -598,18 +597,49 @@ class SpeciesTestCase(unittest.TestCase):
             core.Species.gen_id('prot1', None)
 
         self.assertEqual(species1.id(), 'prot1[c]')
+
+    def test_serialize(self):
+        comp1 = core.Compartment(id='c')
+        prot1 = core.ProteinSpeciesType(id='prot1')
+        species1 = core.Species(species_type=prot1, compartment=comp1)
+
         self.assertEqual(species1.serialize(), 'prot1[c]')
 
-        """
-        objects = {core.Compartment: [comp1],
-                   core.RnaSpeciesType: [rna1],
-                   core.ProteinSpeciesType: [prot1],
-                   core.Species: [species1]}
+    def test_deserialize(self):
+        comp1 = core.Compartment(id='c')
+        prot1 = core.ProteinSpeciesType(id='prot1')
+        rna1 = core.RnaSpeciesType(id='rna1')
 
-        wc_kb.Species.deserialize(attribute='id',
-                                  value='species1[c]',
-                                  objects=objects)
-        """
+        objects = {
+            core.Compartment: {
+                'c': comp1,
+            },
+            core.ProteinSpeciesType: {
+                'prot1': prot1,
+            },
+            core.RnaSpeciesType: {
+                'rna1': rna1,
+            },
+        }
+
+        attr = core.SpeciesCoefficient.species
+        result = core.Species.deserialize(attr, 'prot1[c]', objects)
+        self.assertEqual(result[0].species_type, prot1)
+        self.assertEqual(result[0].compartment, comp1)
+        self.assertEqual(result[1], None)
+
+        result2 = core.Species.deserialize(attr, 'prot1[c]', objects)
+        self.assertEqual(result2[0], result[0])
+        self.assertIn(core.Species, objects)
+        self.assertIn('prot1[c]', objects[core.Species])
+        
+        self.assertNotIn('rna1[c]', objects[core.Species])
+        self.assertEqual(core.Species.deserialize(attr, 'rna1[c]', objects)[1], None)
+        self.assertIn('rna1[c]', objects[core.Species])
+        
+        self.assertNotEqual(core.Species.deserialize(attr, 'prot2[c]', objects)[1], None)
+        self.assertNotEqual(core.Species.deserialize(attr, 'prot1[e]', objects)[1], None)
+        self.assertNotEqual(core.Species.deserialize(attr, 'prot1', objects)[1], None)
 
 
 class SpeciesCoefficientTestCase(unittest.TestCase):
