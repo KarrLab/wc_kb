@@ -65,6 +65,24 @@ class TestIO(unittest.TestCase):
 
         self.assertTrue(self.kb.is_equal(kb))
 
+    def test_write_with_repo_md(self):
+        _, core_path = tempfile.mkstemp(suffix='.xlsx', dir='.')
+        _, seq_path = tempfile.mkstemp(suffix='.fna', dir='.')
+
+        self.assertEqual(self.kb.url, '')
+
+        writer = io.Writer()
+        writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=True)
+
+        self.assertIn(self.kb.url, [
+            'https://github.com/KarrLab/wc_kb.git',
+            'ssh://git@github.com/KarrLab/wc_kb.git',
+            'git@github.com:KarrLab/wc_kb.git',
+        ])
+
+        os.remove(core_path)
+        os.remove(seq_path)
+
     def test_write_without_cell_relationships(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
         seq_path = os.path.join(self.dir, 'seq.fna')
