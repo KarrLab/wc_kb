@@ -632,42 +632,123 @@ class SpeciesTestCase(unittest.TestCase):
         self.assertEqual(result2[0], result[0])
         self.assertIn(core.Species, objects)
         self.assertIn('prot1[c]', objects[core.Species])
-        
+
         self.assertNotIn('rna1[c]', objects[core.Species])
         self.assertEqual(core.Species.deserialize(attr, 'rna1[c]', objects)[1], None)
         self.assertIn('rna1[c]', objects[core.Species])
-        
+
         self.assertNotEqual(core.Species.deserialize(attr, 'prot2[c]', objects)[1], None)
         self.assertNotEqual(core.Species.deserialize(attr, 'prot1[e]', objects)[1], None)
         self.assertNotEqual(core.Species.deserialize(attr, 'prot1', objects)[1], None)
 
 
 class SpeciesCoefficientTestCase(unittest.TestCase):
-    def test_SpeciesCoefficientType(self):
-        comp1 = core.Compartment(id='c')
-        prot1 = core.ProteinSpeciesType(id='prot1')
-        rna1 = core.RnaSpeciesType(id='rna1')
-        met1 = core.MetaboliteSpeciesType(id='met1')
+    def test_constructor(self):
+        comp = core.Compartment(id='c')
+        prot = core.ProteinSpeciesType(id='prot')
 
-        species1 = core.Species(species_type=prot1, compartment=comp1)
-        species_coeff = core.SpeciesCoefficient(species=species1, coefficient=3)
+        spec = core.Species(species_type=prot, compartment=comp)
+        spec_coeff = core.SpeciesCoefficient(species=spec, coefficient=3)
 
-        self.assertEqual(species_coeff.serialize(), '(3) prot1[c]')
-        self.assertEqual(core.SpeciesCoefficient()._serialize(species=species1, coefficient=3), '(3) prot1[c]')
-        self.assertEqual(core.SpeciesCoefficient()._serialize(species=species1, coefficient=1), 'prot1[c]')
-        self.assertEqual(core.SpeciesCoefficient()._serialize(species=species1, coefficient=2000), '(2.000000e+03) prot1[c]')
-        self.assertEqual(core.SpeciesCoefficient()._serialize(species=species1, coefficient=3, show_compartment=False), '(3) prot1')
+    def test_serialize(self):
+        comp = core.Compartment(id='c')
+        prot = core.ProteinSpeciesType(id='prot')
 
-        """
-        objects = {core.Compartment: [comp1],
-                   core.ProteinSpeciesType: [prot1],
-                   core.Species: [species1],
-                   core.SpeciesCoefficient: [species_coeff]}
+        spec = core.Species(species_type=prot, compartment=comp)
+        spec_coeff = core.SpeciesCoefficient(species=spec, coefficient=3)
 
-        core.SpeciesCoefficient().deserialize(attribute='id',
-                                                    value='(3) prot1[c]',
-                                                    objects=objects)
-        """
+        self.assertEqual(spec_coeff.serialize(), '(3) prot[c]')
+        self.assertEqual(core.SpeciesCoefficient._serialize(species=spec, coefficient=3), '(3) prot[c]')
+        self.assertEqual(core.SpeciesCoefficient._serialize(species=spec, coefficient=1), 'prot[c]')
+        self.assertEqual(core.SpeciesCoefficient._serialize(species=spec, coefficient=2000), '(2.000000e+03) prot[c]')
+        self.assertEqual(core.SpeciesCoefficient._serialize(species=spec, coefficient=3, show_compartment=False), '(3) prot')
+        self.assertEqual(core.SpeciesCoefficient._serialize(species=spec, coefficient=-1), '(-1) prot[c]')
+        self.assertEqual(core.SpeciesCoefficient._serialize(species=spec, coefficient=-1, show_coefficient_sign=False), 'prot[c]')
+
+    def test_deserialize(self):
+        comp = core.Compartment(id='c')
+        rna = core.RnaSpeciesType(id='rna')
+        prot = core.ProteinSpeciesType(id='prot')
+
+        spec = core.Species(species_type=rna, compartment=comp)
+
+        objects = {
+            core.Compartment: {
+                'c': comp,
+            },
+            core.RnaSpeciesType: {
+                'rna': rna,
+            },
+            core.ProteinSpeciesType: {
+                'prot': prot,
+            },
+            core.Species: {
+                'rna[c]': spec,
+            },
+        }
+
+        attr = core.Reaction.participants
+
+        result = core.SpeciesCoefficient.deserialize(attr, '(3) rna[c]', objects)
+        self.assertEqual(result[0].species, spec)
+        self.assertEqual(result[0].coefficient, 3)
+        self.assertEqual(result[1], None)
+        self.assertEqual(len(objects[core.Species]), 1)
+        self.assertEqual(len(objects[core.SpeciesCoefficient]), 1)
+
+        result2 = core.SpeciesCoefficient.deserialize(attr, '(3) rna[c]', objects)
+        self.assertEqual(result2[0], result[0])
+        self.assertEqual(result2[1], None)
+        self.assertEqual(len(objects[core.Species]), 1)
+        self.assertEqual(len(objects[core.SpeciesCoefficient]), 1)
+
+        result = core.SpeciesCoefficient.deserialize(attr, '(-2) rna[c]', objects)
+        self.assertEqual(result[0].species, spec)
+        self.assertEqual(result[0].coefficient, -2)
+        self.assertEqual(result[1], None)
+        self.assertEqual(len(objects[core.Species]), 1)
+        self.assertEqual(len(objects[core.SpeciesCoefficient]), 2)
+
+        result = core.SpeciesCoefficient.deserialize(attr, 'rna[c]', objects)
+        self.assertEqual(result[0].species, spec)
+        self.assertEqual(result[0].coefficient, 1)
+        self.assertEqual(result[1], None)
+        self.assertEqual(len(objects[core.Species]), 1)
+        self.assertEqual(len(objects[core.SpeciesCoefficient]), 3)
+
+        result = core.SpeciesCoefficient.deserialize(attr, 'prot[c]', objects)
+        self.assertEqual(result[0].species.species_type, prot)
+        self.assertEqual(result[0].species.compartment, comp)
+        self.assertEqual(result[0].coefficient, 1)
+        self.assertEqual(result[1], None)
+        self.assertEqual(len(objects[core.Species]), 2)
+        self.assertEqual(len(objects[core.SpeciesCoefficient]), 4)
+
+        result = core.SpeciesCoefficient.deserialize(attr, 'rna2[c]', objects)
+        self.assertEqual(result[0], None)
+        self.assertNotEqual(result[1], None)
+
+        result = core.SpeciesCoefficient.deserialize(attr, 'rna', objects)
+        self.assertEqual(result[0], None)
+        self.assertNotEqual(result[1], None)
+
+        result = core.SpeciesCoefficient.deserialize(attr, 'rna', objects, compartment=comp)
+        self.assertEqual(result[0].species.species_type, rna)
+        self.assertEqual(result[0].species.compartment, comp)
+        self.assertEqual(result[0].coefficient, 1)
+        self.assertEqual(result[1], None)
+
+        result = core.SpeciesCoefficient.deserialize(attr, '(2) rna', objects, compartment=comp)
+        self.assertEqual(result[0].species.species_type, rna)
+        self.assertEqual(result[0].species.compartment, comp)
+        self.assertEqual(result[0].coefficient, 2)
+        self.assertEqual(result[1], None)
+
+        result = core.SpeciesCoefficient.deserialize(attr, '(-3) rna', objects, compartment=comp)
+        self.assertEqual(result[0].species.species_type, rna)
+        self.assertEqual(result[0].species.compartment, comp)
+        self.assertEqual(result[0].coefficient, -3)
+        self.assertEqual(result[1], None)
 
 
 class ReactionParticipantAttributeTestCase(unittest.TestCase):
@@ -708,7 +789,7 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
                    core.Species: [species1, species2, species3, species4],
                    core.SpeciesCoefficient: [species_coeff1, species_coeff2, species_coeff3, species_coeff4]}
 
-        #core.ReactionParticipantAttribute().deserialize(value='(2) prot1[c] + (3) prot2[c] ==> (7) complex1[m]', objects=objects)
+        # core.ReactionParticipantAttribute().deserialize(value='(2) prot1[c] + (3) prot2[c] ==> (7) complex1[m]', objects=objects)
         # returns: ['Undefined species type "prot1"',
         'Undefined compartment "c"',
         'Undefined species type "prot2"',

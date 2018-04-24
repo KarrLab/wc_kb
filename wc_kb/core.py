@@ -346,10 +346,11 @@ class SpeciesCoefficient(obj_model.Model):
             show_coefficient_sign (:obj:`bool`, optional): if true, show coefficient sign
 
         Returns:
-            :obj:`str`: simple Python representation
+            :obj:`str`: string representation of a species and a coefficient
         """
         return self._serialize(self.species, self.coefficient,
-                               show_compartment=show_compartment, show_coefficient_sign=show_coefficient_sign)
+                               show_compartment=show_compartment,
+                               show_coefficient_sign=show_coefficient_sign)
 
     @staticmethod
     def _serialize(species, coefficient, show_compartment=True, show_coefficient_sign=True):
@@ -362,7 +363,7 @@ class SpeciesCoefficient(obj_model.Model):
             show_coefficient_sign (:obj:`bool`, optional): if true, show coefficient sign
 
         Returns:
-            :obj:`str`: simple Python representation
+            :obj:`str`: string representation of a species and a coefficient
         """
         coefficient = float(coefficient)
 
@@ -398,9 +399,9 @@ class SpeciesCoefficient(obj_model.Model):
         errors = []
 
         if compartment:
-            pattern = '^(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
+            pattern = '^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
         else:
-            pattern = '^(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*\[[a-z][a-z0-9_]*\])$'
+            pattern = '^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*\[[a-z][a-z0-9_]*\])$'
 
         match = re.match(pattern, value, flags=re.I)
         if match:
