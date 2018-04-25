@@ -950,7 +950,7 @@ class SubunitAttribute(ManyToManyAttribute):
         else:
             return '{}'.format(' + '.join(lhs))
 
-    def deserialize(self, value, objects):
+    def deserialize(self, value, objects, decoded=None):
         parts = []
         errors = []
         id = '[a-z][a-z0-9_]*'
