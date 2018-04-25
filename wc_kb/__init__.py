@@ -25,7 +25,8 @@ from .core import (KnowledgeBaseObject,
                    Reaction,
                    Species,
                    SpeciesCoefficient,
-                   ReactionParticipantAttribute)
+                   ReactionParticipantAttribute,
+                   SubunitAttribute)
 
 from . import io
 from . import util

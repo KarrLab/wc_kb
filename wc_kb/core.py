@@ -897,6 +897,134 @@ class ProteinSpeciesType(PolymerSpeciesType):
         return self.get_empirical_formula().get_molecular_weight()
 
 
+class SubunitAttribute(ManyToManyAttribute):
+    """ Subunits """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+
+        super(SubunitAttribute, self).__init__('SpeciesCoefficient',
+                                                           related_name=related_name,
+                                                           verbose_name=verbose_name,
+                                                           verbose_related_name=verbose_related_name,
+                                                           help=help)
+
+    def serialize(self, participants, encoded=None):
+        """ Serialize related object
+
+        Args:
+            participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        if not participants:
+            return ''
+
+        comps = set([part.species.compartment for part in participants])
+        if len(comps) == 1:
+            global_comp = comps.pop()
+        else:
+            global_comp = None
+
+        if global_comp:
+            participants = natsorted(participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
+        else:
+            participants = natsorted(participants, lambda part: (
+                part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
+
+        lhs = []
+        for part in participants:
+            lhs.append(part.serialize(show_compartment=global_comp is None, show_coefficient_sign=False))
+
+        if global_comp:
+            return '[{}]: {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs))
+        else:
+            return '{}'.format(' + '.join(lhs))
+
+    def deserialize(self, value, objects):
+        parts = []
+        errors = []
+        id = '[a-z][a-z0-9_]*'
+        stoch = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        gbl_part = '({} )*({})'.format(stoch, id)
+        lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
+        gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
+        lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
+        gbl_pattern = '^\[({})\]: ({})$'.format(id, gbl_side)
+        lcl_pattern = '^({})$'.format(lcl_side)
+
+        global_match = re.match(gbl_pattern, value, flags=re.I)
+        local_match = re.match(lcl_pattern, value, flags=re.I)
+
+        if global_match:
+            if global_match.group(1) in objects[Compartment]:
+                global_comp = objects[Compartment][global_match.group(1)]
+            else:
+                global_comp = None
+                errors.append('Undefined compartment "{}"'.format(global_match.group(1)))
+
+            subunits_str = global_match.group(2)
+
+        elif local_match:
+            global_comp = None
+            subunits_str = local_match.group(1)
+
+        else:
+            return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
+
+        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', subunits_str, flags=re.I):
+
+            species_type = None
+            for species_type_cls in get_subclasses(SpeciesType):
+                if species_type_cls in objects and part[4] in objects[species_type_cls]:
+                    species_type = objects[species_type_cls][part[4]]
+                    break
+
+            if not species_type:
+                errors.append('Undefined species type "{}"'.format(part[4]))
+
+            if global_comp:
+                compartment = global_comp
+            elif part[6] in objects[Compartment]:
+                compartment = objects[Compartment][part[6]]
+            else:
+                errors.append('Undefined compartment "{}"'.format(part[6]))
+
+            coefficient = float(part[1] or 1.)
+
+            if not errors:
+                spec_primary_attribute = Species.gen_id(species_type.get_primary_attribute(), compartment.get_primary_attribute())
+                species, error = Species.deserialize(self, spec_primary_attribute, objects)
+
+                if error:
+                    raise ValueError('Invalid species "{}"'.format(spec_primary_attribute))
+                    # pragma: no cover # unreachable due to error checking above
+
+                if coefficient != 0:
+                    if SpeciesCoefficient not in objects:
+                        objects[SpeciesCoefficient] = {}
+                    serialized_value = SpeciesCoefficient._serialize(species, coefficient)
+                    if serialized_value in objects[SpeciesCoefficient]:
+                        rxn_part = objects[SpeciesCoefficient][serialized_value]
+                    else:
+                        rxn_part = SpeciesCoefficient(species=species, coefficient=coefficient)
+                        objects[SpeciesCoefficient][serialized_value] = rxn_part
+                    parts.append(rxn_part)
+
+        if errors:
+            return (None, InvalidAttribute(self, errors))
+        return (parts, None)
+
+
 class ComplexSpeciesType(SpeciesType):
     """ Knowledge of a protein complexe
 
@@ -911,28 +1039,11 @@ class ComplexSpeciesType(SpeciesType):
     binding = obj_model.core.StringAttribute()
     region = obj_model.core.StringAttribute()
 
-    formation_reaction = obj_model.core.OneToOneAttribute('Reaction', related_name='complex')
-    #subunits = obj_model.core.ManyToManyAttribute('SpeciesCoefficient', related_name='complexes')
+    subunits = SubunitAttribute(related_name='complex')
 
     class Meta(obj_model.core.Model.Meta):
-        attribute_order = ('id', 'name', 'formation_process', 'formation_reaction',
+        attribute_order = ('id', 'name', 'formation_process', 'subunits',
                            'complex_type', 'binding', 'region', 'concentration', 'half_life', 'comments')
-
-    def get_subunits(self):
-        """ Get the subunit composition of the complex
-
-        Returns:
-            `list` of :obj:`SpeciesType`: list of Speciestype objects that compose the complex
-        """
-        # todo: represent composition directly and eliminate this method
-        subunits = []
-
-        for participant in self.formation_reaction.participants:
-            if participant.species.species_type.id != self.id:
-                for n in range(0, abs(int(participant.coefficient))):
-                    subunits.append(participant.species.species_type)
-
-        return subunits
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -942,8 +1053,9 @@ class ComplexSpeciesType(SpeciesType):
         """
         # Formula addition
         formula = chem.EmpiricalFormula()
-        for subunit in self.get_subunits():
-            formula = formula + subunit.get_empirical_formula()
+        for subunit in self.subunits:
+            for coeff in range(0,abs(subunit.coefficient)):
+                formula = formula + subunit.species.species_type.get_empirical_formula()
 
         return formula
 
@@ -954,8 +1066,9 @@ class ComplexSpeciesType(SpeciesType):
             :obj:`int`: charge
         """
         charge = 0
-        for subunit in self.get_subunits():
-            charge = charge + subunit.get_charge()
+        for subunit in self.subunits:
+            for coeff in range(0,abs(subunit.coefficient)):
+                charge = charge + subunit.species.species_type.get_charge()
 
         return charge
 
@@ -966,8 +1079,9 @@ class ComplexSpeciesType(SpeciesType):
             :obj:`float`: molecular weight
         """
         weight = 0
-        for subunit in self.get_subunits():
-            weight = weight + subunit.get_mol_wt()
+        for subunit in self.subunits:
+            for coeff in range(0,abs(subunit.coefficient)):
+                weight = weight + subunit.species.species_type.get_mol_wt()
 
         return weight
 
@@ -1051,7 +1165,6 @@ class GeneLocus(PolymerLocus):
 #####################
 #####################
 # Reactions
-
 
 class ReactionParticipantAttribute(ManyToManyAttribute):
     """ Reaction participants """
