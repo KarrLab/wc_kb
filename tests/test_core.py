@@ -744,7 +744,7 @@ class SpeciesCoefficientTestCase(unittest.TestCase):
 
 
 class SubunitAttributeTestCase(unittest.TestCase):
-    def test_ReactionParticipantAttribute(self):
+    def test_SubunitAttribute(self):
         compart1 = core.Compartment(id='c')
         compart2 = core.Compartment(id='m')
 
@@ -811,3 +811,92 @@ class SubunitAttributeTestCase(unittest.TestCase):
         self.assertEqual(result[0][0].species.id(), 'prot1[c]')
         self.assertEqual(result[0][1].species.id(), 'complex1[m]')
         self.assertEqual(result[1], None)
+
+        result = core.SubunitAttribute().deserialize(value= '[e]: prot1 + (2) prot2', objects=objects)
+        self.assertEqual(result[0], None)
+        self.assertEqual(result[1].messages[0], 'Undefined compartment "e"')
+
+        result = core.SubunitAttribute().deserialize(value= '[c]prot1 + (2) prot2', objects=objects)
+        self.assertEqual(result[0], None)
+        self.assertEqual(result[1].messages[0], 'Incorrectly formatted participants: [c]prot1 + (2) prot2')
+
+class ReactionParticipantAttributeTestCase(unittest.TestCase):
+    def test_ReactionParticipantAttribute(self):
+        compart1 = core.Compartment(id='c')
+        compart2 = core.Compartment(id='m')
+
+        prot1 = core.ProteinSpeciesType(id='prot1')
+        prot2 = core.ProteinSpeciesType(id='prot2')
+        complex1 = core.ComplexSpeciesType(id='complex1')
+
+        species1 = core.Species(species_type=prot1, compartment=compart1)
+        species2 = core.Species(species_type=prot2, compartment=compart1)
+        species3 = core.Species(species_type=complex1, compartment=compart1)
+        species4 = core.Species(species_type=complex1, compartment=compart2)
+
+        species_coeff1 = core.SpeciesCoefficient(species=species1, coefficient=-2)
+        species_coeff2 = core.SpeciesCoefficient(species=species2, coefficient=-3)
+        species_coeff3 = core.SpeciesCoefficient(species=species3, coefficient=5)
+        species_coeff4 = core.SpeciesCoefficient(species=species4, coefficient=7)
+
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[]), '')
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1]),
+             '[c]: (2) prot1 ==> ')
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2]),
+             '[c]: (2) prot1 + (3) prot2 ==> ')
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2, species_coeff3]),
+             '[c]: (2) prot1 + (3) prot2 ==> (5) complex1')
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2, species_coeff4]),
+             '(2) prot1[c] + (3) prot2[c] ==> (7) complex1[m]')
+
+        objects = {
+            core.DnaSpeciesType: {},
+            core.RnaSpeciesType: {},
+            core.MetaboliteSpeciesType: {},
+            core.ComplexSpeciesType: {
+                'complex1': complex1
+            },
+            core.Compartment: {
+                'c': compart1, 'm': compart2
+            },
+            core.ProteinSpeciesType: {
+                'prot1': prot1, 'prot2': prot2
+            },
+            core.Species: {
+                'prot1[c]': species1, 'prot2[c]': species2, 'complex1[c]':species3, 'complex[m]': species4
+            },
+        }
+
+        result = core.ReactionParticipantAttribute().deserialize(value= '[c]: prot1 ==> prot2', objects=objects)
+        self.assertEqual(result[0][0].species.species_type, prot1)
+        self.assertEqual(result[0][1].species.species_type, prot2)
+        self.assertEqual(result[0][0].coefficient, -1)
+        self.assertEqual(result[0][1].coefficient,  1)
+        self.assertEqual(result[0][0].species.compartment, compart1)
+        self.assertEqual(result[0][1].species.compartment, compart1)
+        self.assertEqual(result[0][0].species.id(), 'prot1[c]')
+        self.assertEqual(result[0][1].species.id(), 'prot2[c]')
+        self.assertEqual(result[1], None)
+
+        result = core.ReactionParticipantAttribute().deserialize(value= '(2) prot1[c] + (3) prot2[c] ==> (7) complex1[m]', objects=objects)
+        self.assertEqual(result[0][0].species.species_type, prot1)
+        self.assertEqual(result[0][1].species.species_type, prot2)
+        self.assertEqual(result[0][2].species.species_type, complex1)
+        self.assertEqual(result[0][0].coefficient, -2)
+        self.assertEqual(result[0][1].coefficient, -3)
+        self.assertEqual(result[0][2].coefficient,7.0)
+        self.assertEqual(result[0][0].species.compartment, compart1)
+        self.assertEqual(result[0][1].species.compartment, compart1)
+        self.assertEqual(result[0][2].species.compartment, compart2)
+        self.assertEqual(result[0][0].species.id(), 'prot1[c]')
+        self.assertEqual(result[0][1].species.id(), 'prot2[c]')
+        self.assertEqual(result[0][2].species.id(), 'complex1[m]')
+        self.assertEqual(result[1], None)
+
+        result = core.ReactionParticipantAttribute().deserialize(value= 'prot2[c] ==>', objects=objects)
+        self.assertEqual(result[0], None)
+        self.assertEqual(result[1].messages[0], 'Incorrectly formatted participants: prot2[c] ==>')
+
+        result = core.ReactionParticipantAttribute().deserialize(value= '==> prot1[c]', objects=objects)
+        self.assertEqual(result[0], None)
+        self.assertEqual(result[1].messages[0], 'Incorrectly formatted participants: ==> prot1[c]')
