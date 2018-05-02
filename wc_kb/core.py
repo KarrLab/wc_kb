@@ -810,7 +810,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        trans_table = self.gene.transcription_units[0].polymer.cell.knowledge_base.translation_table
+        trans_table = self.cell.knowledge_base.translation_table
         return self.gene.get_seq().translate(trans_table)
 
     def get_empirical_formula(self):
