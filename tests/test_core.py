@@ -336,13 +336,13 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         # MPN001
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1, start=692, end=1834)
         tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
         self.assertEqual(prot1.get_seq()[0:10], 'MKVLINKNEL')
 
         # MPN011
         gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna1, start=12838, end=13533, strand=core.PolymerStrand.negative)
         tu2 = core.TranscriptionUnitLocus(id='tu2', genes=[gene2], polymer=dna1)
-        prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2)
+        prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2, cell=cell1)
         self.assertEqual(prot2.get_seq()[0:10], 'MKFKFLLTPL')
 
     def test_get_empirical_formula(self):
@@ -354,7 +354,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
         self.assertEqual(prot1.get_empirical_formula(), chem.EmpiricalFormula('C105H144N26O32S'))
 
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
@@ -364,7 +364,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
         self.assertEqual(prot1.get_empirical_formula(), chem.EmpiricalFormula('C21H40N8O6'))
 
     def test_get_mol_wt(self):
@@ -376,7 +376,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
         self.assertAlmostEqual(prot1.get_mol_wt(), 2314.517)
 
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
@@ -386,7 +386,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
         self.assertAlmostEqual(prot1.get_mol_wt(), 500.601)
 
     def test_get_charge(self):
@@ -398,7 +398,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
         self.assertEqual(prot1.get_charge(), 0)
 
         # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
@@ -408,7 +408,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
         self.assertEqual(prot1.get_charge(), 2)
 
 
@@ -551,7 +551,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
         gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,  start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
         tu1 = core.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1)
+        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
 
         # prot2: Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
@@ -559,7 +559,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
         gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna2,  start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
         tu2 = core.TranscriptionUnitLocus(id='tu2', genes=[gene2], polymer=dna2)
-        prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2)
+        prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2, cell=cell1)
 
         # Test adding formation reaction
         # Add formation reaction: [c]: (2) prot1 + (3) prot2 ==> complex1
