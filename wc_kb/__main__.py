@@ -19,11 +19,9 @@ class BaseController(CementBaseController):
     class Meta:
         label = 'base'
         description = "Command line programs for managing knowledge bases for whole-cell models"
-
-    @expose(help='Get version')
-    def get_version(self):
-        """ Get version """
-        print(wc_kb.__version__)
+        arguments = [
+            (['-v', '--version'], dict(action='version', version=wc_kb.__version__)),
+        ]
 
 
 class ValidateController(CementBaseController):
