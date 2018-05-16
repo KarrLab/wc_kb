@@ -187,3 +187,8 @@ class TestCli(unittest.TestCase):
             with self.assertRaises(SystemExit) as context:
                 __main__.main()
                 self.assertRegexpMatches(context.Exception, 'usage: wc_kb')
+
+        with mock.patch('sys.argv', ['wc_kb']):
+            with CaptureOutput() as capturer:
+                __main__.main()
+                self.assertRegexpMatches(capturer.get_text(), 'usage: wc_kb')
