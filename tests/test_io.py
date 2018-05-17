@@ -112,7 +112,7 @@ class TestIO(unittest.TestCase):
         wc_utils.workbook.io.write(core_path, wb)
 
         reader = io.Reader()
-        with self.assertRaisesRegexp(ValueError, 'The attributes must be defined in this order'):
+        with self.assertRaisesRegexp(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
             kb = reader.run(core_path, seq_path)
         kb = reader.run(core_path, seq_path, strict=False)
 
@@ -209,7 +209,7 @@ class TestIO(unittest.TestCase):
         wb['Knowledge base'].insert(1, row)
         wc_utils.workbook.io.write(path_core_1, wb)
 
-        with self.assertRaisesRegexp(ValueError, 'The attributes must be defined in this order'):
+        with self.assertRaisesRegexp(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
             io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
         io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2, strict=False)
         kb = io.Reader().run(path_core_2, path_seq_2)
