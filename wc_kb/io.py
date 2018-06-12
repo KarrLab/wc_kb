@@ -40,6 +40,7 @@ class Writer(object):
         core.ProteinSpeciesType,
         core.ComplexSpeciesType,
         core.Reaction,
+        core.Property,        
     )
 
     def run(self, knowledge_base, core_path, seq_path, set_repo_metadata_from_path=True):
