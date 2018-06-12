@@ -1363,3 +1363,4 @@ class Property(KnowledgeBaseObject):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'value', 'units')
+        verbose_name_plural = 'Properties'
