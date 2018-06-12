@@ -901,7 +901,6 @@ class SubunitAttribute(ManyToManyAttribute):
     """ Subunits """
 
     def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
-
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
@@ -911,10 +910,10 @@ class SubunitAttribute(ManyToManyAttribute):
         """
 
         super(SubunitAttribute, self).__init__('SpeciesCoefficient',
-                                                           related_name=related_name,
-                                                           verbose_name=verbose_name,
-                                                           verbose_related_name=verbose_related_name,
-                                                           help=help)
+                                               related_name=related_name,
+                                               verbose_name=verbose_name,
+                                               verbose_related_name=verbose_related_name,
+                                               help=help)
 
     def serialize(self, participants, encoded=None):
         """ Serialize related object
@@ -981,7 +980,8 @@ class SubunitAttribute(ManyToManyAttribute):
         else:
             return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
 
-        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', subunits_str, flags=re.I):
+        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*',
+                               subunits_str, flags=re.I):
 
             species_type = None
             for species_type_cls in get_subclasses(SpeciesType):
@@ -1054,7 +1054,7 @@ class ComplexSpeciesType(SpeciesType):
         # Formula addition
         formula = chem.EmpiricalFormula()
         for subunit in self.subunits:
-            for coeff in range(0,abs(subunit.coefficient)):
+            for coeff in range(0, abs(subunit.coefficient)):
                 formula = formula + subunit.species.species_type.get_empirical_formula()
 
         return formula
@@ -1067,7 +1067,7 @@ class ComplexSpeciesType(SpeciesType):
         """
         charge = 0
         for subunit in self.subunits:
-            for coeff in range(0,abs(subunit.coefficient)):
+            for coeff in range(0, abs(subunit.coefficient)):
                 charge = charge + subunit.species.species_type.get_charge()
 
         return charge
@@ -1080,7 +1080,7 @@ class ComplexSpeciesType(SpeciesType):
         """
         weight = 0
         for subunit in self.subunits:
-            for coeff in range(0,abs(subunit.coefficient)):
+            for coeff in range(0, abs(subunit.coefficient)):
                 weight = weight + subunit.species.species_type.get_mol_wt()
 
         return weight
@@ -1353,3 +1353,13 @@ class Reaction(KnowledgeBaseObject):
 
     class Meta(obj_model.core.Model.Meta):
         attribute_order = ('id', 'name', 'participants', 'v_max', 'k_m', 'reversible', 'comments')
+
+
+class Property(KnowledgeBaseObject):
+    """ Other properties of cells """
+    cell = obj_model.core.ManyToOneAttribute(Cell, related_name='properties')
+    value = obj_model.core.FloatAttribute()
+    units = obj_model.core.StringAttribute()
+
+    class Meta(obj_model.core.Model.Meta):
+        attribute_order = ('id', 'name', 'value', 'units')
