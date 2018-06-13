@@ -27,7 +27,8 @@ from .core import (KnowledgeBaseObject,
                    SpeciesCoefficient,
                    ReactionParticipantAttribute,
                    SubunitAttribute,
-                   Property)
+                   Property,
+                   PolymerStrand)
 
 from . import io
 from . import util

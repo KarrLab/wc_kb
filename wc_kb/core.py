@@ -216,9 +216,7 @@ class Species(obj_model.Model):
         compartment (:obj:`Compartment`): compartment
 
     Related attributes:
-        concentration (:obj:`Concentration`): concentration
         species_coefficients (:obj:`list` of `SpeciesCoefficient`): participations in reactions and observables
-        rate_law_equations (:obj:`RateLawEquation`): rate law equations
     """
 
     species_type = ManyToOneAttribute(SpeciesType, related_name='species', min_related=1)
@@ -1157,9 +1155,10 @@ class GeneLocus(PolymerLocus):
     """
 
     symbol = obj_model.StringAttribute()
+    type = obj_model.EnumAttribute(GeneType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'symbol', 'strand', 'start', 'end', 'comments')
+        attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 'end', 'comments')
 
 
 #####################
