@@ -583,7 +583,7 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
         mol = self.to_openbabel_mol()
-        return chem.EmpiricalFormula(mol.GetFormula().rstrip('-'))
+        return chem.EmpiricalFormula(mol.GetFormula().rstrip('+-'))
 
     def get_charge(self):
         """ Get the charge
