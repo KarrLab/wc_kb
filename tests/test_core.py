@@ -362,12 +362,30 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def setUp(self):
+        # Mycoplasma Genintalium Genome
         records = Bio.SeqIO.parse('fixtures/seq.fna', 'fasta')
         dna_seq = next(records).seq
         dna1 = core.DnaSpeciesType(seq=dna_seq)
 
-        self.cell1 = dna1.cell = core.Cell()
-        self.cell1.knowledge_base = core.KnowledgeBase(translation_table=4)
+        cell1 = dna1.cell = core.Cell()
+        cell1.knowledge_base = core.KnowledgeBase(
+            translation_table=4)  # Table 4 is for mycoplasma
+
+        # MPN001
+        gene1 = core.GeneLocus(id='gene1', cell=cell1,
+                               polymer=dna1, start=692, end=1834)
+        tu1 = core.TranscriptionUnitLocus(
+            id='tu1', genes=[gene1], polymer=dna1)
+        self.prot1 = core.ProteinSpeciesType(
+            id='prot1', gene=gene1, cell=cell1)
+
+        # MPN011
+        gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna1,
+                               start=12838, end=13533, strand=core.PolymerStrand.negative)
+        tu2 = core.TranscriptionUnitLocus(
+            id='tu2', genes=[gene2], polymer=dna1)
+        self.prot2 = core.ProteinSpeciesType(
+            id='prot2', gene=gene2, cell=cell1)
 
     def test_constructor(self):
         protein = core.ProteinSpeciesType(
@@ -383,52 +401,18 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def test_get_seq(self):
 
         # Use table 4 since example genes are from mycoplasma genitallium
-        cell1 = self.cell1
 
         # MPN001
-        gene1 = core.GeneLocus(id='gene1', cell=cell1,
-                               polymer=dna1, start=692, end=1834)
-        tu1 = core.TranscriptionUnitLocus(
-            id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
-        print(str(gene1.get_seq()))
-        self.assertEqual(prot1.get_seq()[0:10], 'MKVLINKNEL')
+        self.assertEqual(self.prot1.get_seq()[0:10], 'MKVLINKNEL')
 
         # MPN011
-        gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna1,
-                               start=12838, end=13533, strand=core.PolymerStrand.negative)
-        tu2 = core.TranscriptionUnitLocus(
-            id='tu2', genes=[gene2], polymer=dna1)
-        prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2, cell=cell1)
-        self.assertEqual(prot2.get_seq()[0:10], 'MKFKFLLTPL')
+        self.assertEqual(self.prot2.get_seq()[0:10], 'MKFKFLLTPL')
 
     def test_get_empirical_formula(self):
-        # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell1 = dna1.cell = core.Cell()
-        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
-
-        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,
-                               start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(
-            id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
-        self.assertEqual(prot1.get_empirical_formula(),
+        self.assertEqual(self.prot1.get_empirical_formula(),
                          chem.EmpiricalFormula('C105H144N26O32S'))
 
-        # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell1 = dna1.cell = core.Cell()
-        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
-
-        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,
-                               start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(
-            id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
-        self.assertEqual(prot1.get_empirical_formula(),
+        self.assertEqual(self.prot2.get_empirical_formula(),
                          chem.EmpiricalFormula('C21H40N8O6'))
 
     def test_get_mol_wt(self):
