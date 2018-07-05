@@ -410,10 +410,10 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     def test_get_empirical_formula(self):
         self.assertEqual(self.prot1.get_empirical_formula(),
-                         chem.EmpiricalFormula('C105H144N26O32S'))
+                         chem.EmpiricalFormula('C1980H3146N510O596S7'))
 
         self.assertEqual(self.prot2.get_empirical_formula(),
-                         chem.EmpiricalFormula('C21H40N8O6'))
+                         chem.EmpiricalFormula('C1246H1928N306O352S3'))
 
     def test_get_mol_wt(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
