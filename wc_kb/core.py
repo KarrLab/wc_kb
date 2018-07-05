@@ -113,8 +113,7 @@ class KnowledgeBase(KnowledgeBaseObject):
         cell (:obj:`Cell`): cell
     """
     translation_table = obj_model.IntegerAttribute()
-    version = RegexAttribute(
-        min_length=1, pattern='^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I)
+    version = RegexAttribute(min_length=1, pattern='^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I)
     url = obj_model.StringAttribute(verbose_name='URL')
     branch = obj_model.StringAttribute()
     revision = obj_model.StringAttribute()
@@ -122,8 +121,7 @@ class KnowledgeBase(KnowledgeBaseObject):
                                    default=wc_kb_version, verbose_name='wc_kb version')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'translation_table', 'version',
-                           'url', 'branch', 'revision', 'wc_kb_version', 'comments')
+        attribute_order = ('id', 'name', 'translation_table', 'version', 'url', 'branch', 'revision', 'wc_kb_version', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
 
 
@@ -139,8 +137,7 @@ class Cell(KnowledgeBaseObject):
         loci (:obj:`list` of :obj:`PolymerLocus`): locus
         reactions (:obj:`list` of :obj:`Reaction`): reactions
     """
-    knowledge_base = obj_model.OneToOneAttribute(
-        KnowledgeBase, related_name='cell')
+    knowledge_base = obj_model.OneToOneAttribute(KnowledgeBase, related_name='cell')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'comments')
@@ -181,8 +178,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     half_life = obj_model.FloatAttribute(min=0)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'concentration',
-                           'half_life', 'comments')
+        attribute_order = ('id', 'name', 'concentration', 'half_life', 'comments')
 
     @abc.abstractmethod
     def get_empirical_formula(self):
@@ -223,10 +219,8 @@ class Species(obj_model.Model):
         species_coefficients (:obj:`list` of `SpeciesCoefficient`): participations in reactions and observables
     """
 
-    species_type = ManyToOneAttribute(
-        SpeciesType, related_name='species', min_related=1)
-    compartment = ManyToOneAttribute(
-        Compartment, related_name='species', min_related=1)
+    species_type = ManyToOneAttribute(SpeciesType, related_name='species', min_related=1)
+    compartment = ManyToOneAttribute(Compartment, related_name='species', min_related=1)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('species_type', 'compartment')
@@ -251,16 +245,14 @@ class Species(obj_model.Model):
         elif isinstance(species_type, string_types):
             species_type_id = species_type
         else:
-            raise ValueError(
-                "gen_id: incorrect species type: {}".format(species_type))
+            raise ValueError("gen_id: incorrect species type: {}".format(species_type))
 
         if isinstance(compartment, Compartment):
             compartment_id = compartment.get_primary_attribute()
         elif isinstance(compartment, string_types):
             compartment_id = compartment
         else:
-            raise ValueError(
-                "gen_id: incorrect compartment type: {}".format(compartment))
+            raise ValueError("gen_id: incorrect compartment type: {}".format(compartment))
 
         return '{}[{}]'.format(species_type_id, compartment_id)
 
@@ -295,8 +287,7 @@ class Species(obj_model.Model):
         if cls in objects and value in objects[cls]:
             return (objects[cls][value], None)
 
-        match = re.match(
-            '^([a-z][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
+        match = re.match('^([a-z][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
         if match:
             errors = []
 
@@ -306,14 +297,12 @@ class Species(obj_model.Model):
                     species_type = objects[species_type_cls][match.group(1)]
                     break
             if not species_type:
-                errors.append(
-                    'Species type "{}" is not defined'.format(match.group(1)))
+                errors.append('Species type "{}" is not defined'.format(match.group(1)))
 
             if match.group(2) in objects[Compartment]:
                 compartment = objects[Compartment][match.group(2)]
             else:
-                errors.append(
-                    'Compartment "{}" is not defined'.format(match.group(2)))
+                errors.append('Compartment "{}" is not defined'.format(match.group(2)))
 
             if errors:
                 return (None, InvalidAttribute(attribute, errors))
@@ -419,13 +408,11 @@ class SpeciesCoefficient(obj_model.Model):
             coefficient = float(match.group(2) or 1.)
 
             if compartment:
-                species_id = Species.gen_id(match.group(
-                    5), compartment.get_primary_attribute())
+                species_id = Species.gen_id(match.group(5), compartment.get_primary_attribute())
             else:
                 species_id = match.group(5)
 
-            species, error = Species.deserialize(
-                attribute, species_id, objects)
+            species, error = Species.deserialize(attribute, species_id, objects)
             if error:
                 return (None, error)
 
@@ -458,8 +445,7 @@ class PolymerSpeciesType(SpeciesType):
     double_stranded = obj_model.BooleanAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'circular', 'double_stranded',
-                           'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
 
     @abc.abstractmethod
     def get_seq(self):
@@ -510,9 +496,7 @@ class PolymerSpeciesType(SpeciesType):
         if end <= seq_len:
             pos_seq = seq[start:end]
         else:
-            pos_seq = seq[start:] + \
-                str(seq) * (int(math.floor(end / seq_len)) - 1) + \
-                seq[0:end % seq_len]
+            pos_seq = seq[start:] + str(seq) * (int(math.floor(end / seq_len)) - 1) + seq[0:end % seq_len]
 
         if strand == PolymerStrand.positive:
             return pos_seq
@@ -531,16 +515,13 @@ class PolymerLocus(KnowledgeBaseObject):
     """
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='loci')
-    polymer = obj_model.ManyToOneAttribute(
-        PolymerSpeciesType, related_name='loci')
-    strand = obj_model.EnumAttribute(
-        PolymerStrand, default=PolymerStrand.positive)
+    polymer = obj_model.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
+    strand = obj_model.EnumAttribute(PolymerStrand, default=PolymerStrand.positive)
     start = obj_model.IntegerAttribute()
     end = obj_model.IntegerAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand',
-                           'start', 'end', 'comments')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -573,8 +554,7 @@ class MetaboliteSpeciesType(SpeciesType):
     structure = obj_model.StringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'structure',
-                           'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'structure', 'concentration', 'half_life', 'comments')
 
     def get_structure(self):
         """ Get the structure
@@ -634,8 +614,7 @@ class DnaSpeciesType(PolymerSpeciesType):
     seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'seq', 'circular',
-                           'double_stranded', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'seq', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
         verbose_name = 'DNA species type'
 
     def get_seq(self, start=None, end=None):
@@ -682,11 +661,9 @@ class DnaSpeciesType(PolymerSpeciesType):
 
         formula = chem.EmpiricalFormula()
         formula.C = 10 * n_a + 9 * n_c + 10 * n_g + 10 * n_t
-        formula.H = 12 * n_a + 12 * n_c + 12 * n_g + 13 * n_t - \
-            (l - 1 + self.circular) * (1 + self.double_stranded)
+        formula.H = 12 * n_a + 12 * n_c + 12 * n_g + 13 * n_t - (l - 1 + self.circular) * (1 + self.double_stranded)
         formula.N = 5 * n_a + 3 * n_c + 5 * n_g + 2 * n_t
-        formula.O = 6 * n_a + 7 * n_c + 7 * n_g + 8 * n_t - \
-            (l - 1 + self.circular) * (1 + self.double_stranded)
+        formula.O = 6 * n_a + 7 * n_c + 7 * n_g + 8 * n_t - (l - 1 + self.circular) * (1 + self.double_stranded)
         formula.P = n_a + n_c + n_g + n_t
 
         return formula
@@ -741,8 +718,7 @@ class RnaSpeciesType(PolymerSpeciesType):
         proteins (:obj:`list` of :obj:`ProteinSpeciesType`): protein(s)
     """
 
-    transcription_units = obj_model.ManyToManyAttribute(
-        'TranscriptionUnitLocus', related_name='rna')
+    transcription_units = obj_model.ManyToManyAttribute('TranscriptionUnitLocus', related_name='rna')
     type = obj_model.EnumAttribute(RnaType)
 
     class Meta(obj_model.Model.Meta):
@@ -757,8 +733,7 @@ class RnaSpeciesType(PolymerSpeciesType):
         """
         tu_start = self.transcription_units[0].start
         tu_end = self.transcription_units[0].end
-        dna_seq = self.transcription_units[0].polymer.get_subseq(
-            start=tu_start, end=tu_end)
+        dna_seq = self.transcription_units[0].polymer.get_subseq(start=tu_start, end=tu_end)
         return dna_seq.transcribe()
 
     def get_empirical_formula(self):
@@ -822,12 +797,10 @@ class ProteinSpeciesType(PolymerSpeciesType):
     """
 
     gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
-    rna = obj_model.ManyToOneAttribute(
-        'RnaSpeciesType', related_name='proteins')
+    rna = obj_model.ManyToOneAttribute('RnaSpeciesType', related_name='proteins')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'rna', 'circular',
-                           'double_stranded', 'concentration', 'half_life', 'comments')
+        attribute_order = ('id', 'name', 'gene', 'rna', 'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -836,7 +809,7 @@ class ProteinSpeciesType(PolymerSpeciesType):
             :obj:`Bio.Seq.Seq`: sequence
         """
         trans_table = self.cell.knowledge_base.translation_table
-        return self.gene.get_seq().translate(trans_table, cds=True)
+        return self.gene.get_seq().translate(trans_table)
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -960,16 +933,14 @@ class SubunitAttribute(ManyToManyAttribute):
             global_comp = None
 
         if global_comp:
-            participants = natsorted(
-                participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
+            participants = natsorted(participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
         else:
             participants = natsorted(participants, lambda part: (
                 part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
 
         lhs = []
         for part in participants:
-            lhs.append(part.serialize(
-                show_compartment=global_comp is None, show_coefficient_sign=False))
+            lhs.append(part.serialize(show_compartment=global_comp is None, show_coefficient_sign=False))
 
         if global_comp:
             return '[{}]: {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs))
@@ -996,8 +967,7 @@ class SubunitAttribute(ManyToManyAttribute):
                 global_comp = objects[Compartment][global_match.group(1)]
             else:
                 global_comp = None
-                errors.append('Undefined compartment "{}"'.format(
-                    global_match.group(1)))
+                errors.append('Undefined compartment "{}"'.format(global_match.group(1)))
 
             subunits_str = global_match.group(2)
 
@@ -1030,26 +1000,21 @@ class SubunitAttribute(ManyToManyAttribute):
             coefficient = float(part[1] or 1.)
 
             if not errors:
-                spec_primary_attribute = Species.gen_id(
-                    species_type.get_primary_attribute(), compartment.get_primary_attribute())
-                species, error = Species.deserialize(
-                    self, spec_primary_attribute, objects)
+                spec_primary_attribute = Species.gen_id(species_type.get_primary_attribute(), compartment.get_primary_attribute())
+                species, error = Species.deserialize(self, spec_primary_attribute, objects)
 
                 if error:
-                    raise ValueError('Invalid species "{}"'.format(
-                        spec_primary_attribute))
+                    raise ValueError('Invalid species "{}"'.format(spec_primary_attribute))
                     # pragma: no cover # unreachable due to error checking above
 
                 if coefficient != 0:
                     if SpeciesCoefficient not in objects:
                         objects[SpeciesCoefficient] = {}
-                    serialized_value = SpeciesCoefficient._serialize(
-                        species, coefficient)
+                    serialized_value = SpeciesCoefficient._serialize(species, coefficient)
                     if serialized_value in objects[SpeciesCoefficient]:
                         rxn_part = objects[SpeciesCoefficient][serialized_value]
                     else:
-                        rxn_part = SpeciesCoefficient(
-                            species=species, coefficient=coefficient)
+                        rxn_part = SpeciesCoefficient(species=species, coefficient=coefficient)
                         objects[SpeciesCoefficient][serialized_value] = rxn_part
                     parts.append(rxn_part)
 
@@ -1139,8 +1104,7 @@ class PromoterLocus(PolymerLocus):
     pribnow_end = obj_model.IntegerAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'pribnow_start',
-                           'pribnow_end', 'strand', 'start', 'end', 'comments')
+        attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 'strand', 'start', 'end', 'comments')
 
 
 class TranscriptionUnitLocus(PolymerLocus):
@@ -1151,14 +1115,11 @@ class TranscriptionUnitLocus(PolymerLocus):
         genes (:obj:`list` of :obj:`GeneLocus`): genes
     """
 
-    promoter = obj_model.ManyToOneAttribute(
-        'PromoterLocus', related_name='transcription_units')
-    genes = obj_model.ManyToManyAttribute(
-        'GeneLocus', related_name='transcription_units')
+    promoter = obj_model.ManyToOneAttribute('PromoterLocus', related_name='transcription_units')
+    genes = obj_model.ManyToManyAttribute('GeneLocus', related_name='transcription_units')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'strand',
-                           'promoter', 'start', 'end', 'genes', 'comments')
+        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end', 'genes', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -1197,8 +1158,7 @@ class GeneLocus(PolymerLocus):
     type = obj_model.EnumAttribute(GeneType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'symbol',
-                           'type', 'strand', 'start', 'end', 'comments')
+        attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 'end', 'comments')
 
 
 #####################
@@ -1241,8 +1201,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
             global_comp = None
 
         if global_comp:
-            participants = natsorted(
-                participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
+            participants = natsorted(participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
         else:
             participants = natsorted(participants, lambda part: (
                 part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
@@ -1251,11 +1210,9 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         rhs = []
         for part in participants:
             if part.coefficient < 0:
-                lhs.append(part.serialize(
-                    show_compartment=global_comp is None, show_coefficient_sign=False))
+                lhs.append(part.serialize(show_compartment=global_comp is None, show_coefficient_sign=False))
             elif part.coefficient > 0:
-                rhs.append(part.serialize(
-                    show_compartment=global_comp is None, show_coefficient_sign=False))
+                rhs.append(part.serialize(show_compartment=global_comp is None, show_coefficient_sign=False))
 
         if global_comp:
             return '[{}]: {} ==> {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs), ' + '.join(rhs))
@@ -1282,8 +1239,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
         gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
         lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
-        gbl_pattern = '^\[({})\]: ({}) ==> ({})$'.format(
-            id, gbl_side, gbl_side)
+        gbl_pattern = '^\[({})\]: ({}) ==> ({})$'.format(id, gbl_side, gbl_side)
         lcl_pattern = '^({}) ==> ({})$'.format(lcl_side, lcl_side)
 
         global_match = re.match(gbl_pattern, value, flags=re.I)
@@ -1294,8 +1250,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                 global_comp = objects[Compartment][global_match.group(1)]
             else:
                 global_comp = None
-                errors.append('Undefined compartment "{}"'.format(
-                    global_match.group(1)))
+                errors.append('Undefined compartment "{}"'.format(global_match.group(1)))
             lhs = global_match.group(2)
             rhs = global_match.group(14)
 
@@ -1307,10 +1262,8 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         else:
             return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
 
-        lhs_parts, lhs_errors = self.deserialize_side(
-            -1., lhs, objects, global_comp)
-        rhs_parts, rhs_errors = self.deserialize_side(
-            1., rhs, objects, global_comp)
+        lhs_parts, lhs_errors = self.deserialize_side(-1., lhs, objects, global_comp)
+        rhs_parts, rhs_errors = self.deserialize_side(1., rhs, objects, global_comp)
 
         parts = lhs_parts + rhs_parts
         errors.extend(lhs_errors)
@@ -1345,16 +1298,14 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                     species_type = objects[species_type_cls][part[4]]
                     break
             if not species_type:
-                part_errors.append(
-                    'Undefined species type "{}"'.format(part[4]))
+                part_errors.append('Undefined species type "{}"'.format(part[4]))
 
             if global_comp:
                 compartment = global_comp
             elif part[6] in objects[Compartment]:
                 compartment = objects[Compartment][part[6]]
             else:
-                part_errors.append(
-                    'Undefined compartment "{}"'.format(part[6]))
+                part_errors.append('Undefined compartment "{}"'.format(part[6]))
 
             coefficient = direction * float(part[1] or 1.)
 
@@ -1363,23 +1314,19 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
             else:
                 spec_primary_attribute = Species.gen_id(species_type.get_primary_attribute(),
                                                         compartment.get_primary_attribute())
-                species, error = Species.deserialize(
-                    self, spec_primary_attribute, objects)
+                species, error = Species.deserialize(self, spec_primary_attribute, objects)
                 if error:
-                    raise ValueError('Invalid species "{}"'.format(
-                        spec_primary_attribute))
+                    raise ValueError('Invalid species "{}"'.format(spec_primary_attribute))
                     # pragma: no cover # unreachable due to error checking above
 
                 if coefficient != 0:
                     if SpeciesCoefficient not in objects:
                         objects[SpeciesCoefficient] = {}
-                    serialized_value = SpeciesCoefficient._serialize(
-                        species, coefficient)
+                    serialized_value = SpeciesCoefficient._serialize(species, coefficient)
                     if serialized_value in objects[SpeciesCoefficient]:
                         rxn_part = objects[SpeciesCoefficient][serialized_value]
                     else:
-                        rxn_part = SpeciesCoefficient(
-                            species=species, coefficient=coefficient)
+                        rxn_part = SpeciesCoefficient(species=species, coefficient=coefficient)
                         objects[SpeciesCoefficient][serialized_value] = rxn_part
                     parts.append(rxn_part)
 
@@ -1404,8 +1351,7 @@ class Reaction(KnowledgeBaseObject):
     reversible = obj_model.BooleanAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'participants',
-                           'v_max', 'k_m', 'reversible', 'comments')
+        attribute_order = ('id', 'name', 'participants', 'v_max', 'k_m', 'reversible', 'comments')
 
 
 class Property(KnowledgeBaseObject):
