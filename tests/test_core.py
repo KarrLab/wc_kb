@@ -409,38 +409,19 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(self.prot2.get_seq()[0:10], 'MKFKFLLTPL')
 
     def test_get_empirical_formula(self):
+        # MPN001
         self.assertEqual(self.prot1.get_empirical_formula(),
                          chem.EmpiricalFormula('C1980H3146N510O596S7'))
-
+        # MPN011
         self.assertEqual(self.prot2.get_empirical_formula(),
                          chem.EmpiricalFormula('C1246H1928N306O352S3'))
 
     def test_get_mol_wt(self):
-        # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell1 = dna1.cell = core.Cell()
-        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
 
-        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,
-                               start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(
-            id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
-        self.assertAlmostEqual(prot1.get_mol_wt(), 2314.517)
+        # MPN001
+        self.assertAlmostEqual(self.prot1.get_mol_wt(), 43856.113, delta=0.3)
 
-        # Test is based on Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell1 = dna1.cell = core.Cell()
-        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
-
-        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,
-                               start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
-        tu1 = core.TranscriptionUnitLocus(
-            id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
-        self.assertAlmostEqual(prot1.get_mol_wt(), 500.601)
+        self.assertAlmostEqual(self.prot2.get_mol_wt(), 26922.957, delta=0.3)
 
     def test_get_charge(self):
         # Test is based on Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
