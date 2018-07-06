@@ -364,7 +364,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def setUp(self):
         # Mycoplasma Genintalium Genome
-        records = Bio.SeqIO.parse('test/fixtures/seq.fna', 'fasta')
+        records = Bio.SeqIO.parse('tests/fixturehs/seq.fna', 'fasta')
         dna_seq = next(records).seq
         dna1 = core.DnaSpeciesType(seq=dna_seq)
 
