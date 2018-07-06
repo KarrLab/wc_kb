@@ -2,6 +2,7 @@
 
 :Author: Balazs Szigeti <balazs.szigeti@mssm.edu>
 :Author: Jonathan Karr <jonrkarr@gmail.com>
+:Author: Bilal Shaikh <bilal.shaikh@columbia.edu>
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
@@ -363,7 +364,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def setUp(self):
         # Mycoplasma Genintalium Genome
-        records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
+        records = Bio.SeqIO.parse('test/fixtures/seq.fna', 'fasta')
         dna_seq = next(records).seq
         dna1 = core.DnaSpeciesType(seq=dna_seq)
 
@@ -570,27 +571,30 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(complex1.formation_process, None)
         self.assertEqual(complex1.subunits, [])
 
-        # prot1: = Collagen Type IV a3 (https://pubchem.ncbi.nlm.nih.gov/compound/44511378)
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'TGTAATTATTATTCTAATTCTTATTCTTTTTGGTTAGCTTCTTTAAATCCTGAACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        # Generate test proteins from  Mycoplasma Genintalium Genome
+        records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
+        dna_seq = next(records).seq
+        dna1 = core.DnaSpeciesType(seq=dna_seq)
+
         cell1 = dna1.cell = core.Cell()
-        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
-        gene1 = core.GeneLocus(id='gene1', cell=cell1, polymer=dna1,
-                               start=1, end=dna1.get_len(), strand=core.PolymerStrand.positive)
+        cell1.knowledge_base = core.KnowledgeBase(
+            translation_table=4)  # Table 4 is for mycoplasma
+
+        # Protein 1,  MPN001
+        gene1 = core.GeneLocus(id='gene1', cell=cell1,
+                               polymer=dna1, start=692, end=1834)
         tu1 = core.TranscriptionUnitLocus(
             id='tu1', genes=[gene1], polymer=dna1)
-        prot1 = core.ProteinSpeciesType(id='prot1', gene=gene1, cell=cell1)
+        prot1 = core.ProteinSpeciesType(
+            id='prot1', gene=gene1, cell=cell1)
 
-        # prot2: Tuftsin (hhttps://pubchem.ncbi.nlm.nih.gov/compounds/156080)
-        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'ACTAAACCTCGT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        cell1 = dna2.cell = core.Cell()
-        cell1.knowledge_base = core.KnowledgeBase(translation_table=1)
-        gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna2,
-                               start=1, end=dna2.get_len(), strand=core.PolymerStrand.positive)
+        # Protein 2, MPN011
+        gene2 = core.GeneLocus(id='gene2', cell=cell1, polymer=dna1,
+                               start=12838, end=13533, strand=core.PolymerStrand.negative)
         tu2 = core.TranscriptionUnitLocus(
-            id='tu2', genes=[gene2], polymer=dna2)
-        prot2 = core.ProteinSpeciesType(id='prot2', gene=gene2, cell=cell1)
+            id='tu2', genes=[gene2], polymer=dna1)
+        prot2 = core.ProteinSpeciesType(
+            id='prot2', gene=gene2, cell=cell1)
 
         # Test adding formation reaction
         # Add formation reaction: [c]: (2) prot1 + (3) prot2 ==> complex1
@@ -603,10 +607,11 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
             species=species2, coefficient=3)
         complex1.subunits = [species_coeff1, species_coeff2]
 
-        self.assertEqual(complex1.get_charge(), 6)
-        self.assertAlmostEqual(complex1.get_mol_wt(), 6130.837)
+        self.assertEqual(complex1.get_charge(), 38)
+        self.assertAlmostEqual(complex1.get_mol_wt(),
+                               (2*prot1.get_mol_wt() + 3 * prot2.get_mol_wt()))
         self.assertEqual(complex1.get_empirical_formula(),
-                         chem.EmpiricalFormula('C273H408N76O82S2'))
+                         chem.EmpiricalFormula('C7698H12076N1938O2248S23'))
 
 
 class SpeciesTestCase(unittest.TestCase):
@@ -930,6 +935,7 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
             },
             core.Species: {
                 'prot1[c]': species1, 'prot2[c]': species2, 'complex1[c]': species3, 'complex[m]': species4
+
             },
         }
 
