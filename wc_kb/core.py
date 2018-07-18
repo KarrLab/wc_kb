@@ -13,7 +13,6 @@ ProteinSpeciesType.get_seq() => cds=True (complete coding sequence) causes error
 from natsort import natsorted, ns
 from wc_utils.util import chem
 import abc
-import Bio.Seq
 import Bio.SeqUtils
 import enum
 import math
@@ -24,7 +23,6 @@ import openbabel
 import pkg_resources
 import re
 import six
-from six import with_metaclass, string_types
 from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
                        RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
                        OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
@@ -785,7 +783,7 @@ class Species(obj_model.Model):
         """
         if isinstance(species_type, SpeciesType):
             species_type_id = species_type.get_primary_attribute()
-        elif isinstance(species_type, string_types):
+        elif isinstance(species_type, six.string_types):
             species_type_id = species_type
         else:
             raise ValueError(
@@ -793,7 +791,7 @@ class Species(obj_model.Model):
 
         if isinstance(compartment, Compartment):
             compartment_id = compartment.get_primary_attribute()
-        elif isinstance(compartment, string_types):
+        elif isinstance(compartment, six.string_types):
             compartment_id = compartment
         else:
             raise ValueError(
@@ -1106,7 +1104,7 @@ class Observable(KnowledgeBaseObject):
 
         observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables and their coefficients
 
-    Related Attributes: 
+    Related Attributes:
         observable_coefficients (:obj:`list` of `ObservableCoefficient`): participations in observables
 """
     cell = ManyToOneAttribute(Cell, related_name="observables")

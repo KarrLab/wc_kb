@@ -40,7 +40,8 @@ class Writer(object):
         core.ProteinSpeciesType,
         core.ComplexSpeciesType,
         core.Reaction,
-        core.Property,        
+        core.Property,
+        core.Observable
     )
 
     def run(self, knowledge_base, core_path, seq_path, set_repo_metadata_from_path=True):
@@ -68,7 +69,8 @@ class Writer(object):
                 if isinstance(attr, obj_model.RelatedAttribute) and attr.related_class == core.Cell:
                     val = getattr(obj, attr.name)
                     if val is None or val != cell:
-                        raise ValueError('{}.{} must be set to the instance of `Cell`'.format(obj.__class__.__name__, attr.name))
+                        raise ValueError('{}.{} must be set to the instance of `Cell`'.format(
+                            obj.__class__.__name__, attr.name))
 
         # set Git repository metadata from the parent directories of :obj:`core_path`
         if set_repo_metadata_from_path:
@@ -77,9 +79,11 @@ class Writer(object):
         # gather DNA sequences
         dna_seqs = []
         if cell:
-            dna_species_types = cell.species_types.get(__type=core.DnaSpeciesType)
+            dna_species_types = cell.species_types.get(
+                __type=core.DnaSpeciesType)
             for species_type in dna_species_types:
-                dna_seqs.append(Bio.SeqRecord.SeqRecord(species_type.seq, species_type.id))
+                dna_seqs.append(Bio.SeqRecord.SeqRecord(
+                    species_type.seq, species_type.id))
                 species_type.seq = None
 
         # export core
@@ -92,7 +96,8 @@ class Writer(object):
 
         writer.run(core_path, [knowledge_base], models=self.model_order,
                    language='wc_kb',
-                   creator='{}.{}'.format(self.__class__.__module__, self.__class__.__name__),
+                   creator='{}.{}'.format(
+                       self.__class__.__module__, self.__class__.__name__),
                    title=knowledge_base.id,
                    description=knowledge_base.name,
                    version=knowledge_base.version,
@@ -100,7 +105,8 @@ class Writer(object):
 
         # export sequences
         with open(seq_path, 'w') as file:
-            writer = Bio.SeqIO.FastaIO.FastaWriter(file, wrap=70, record2title=lambda record: record.id)
+            writer = Bio.SeqIO.FastaIO.FastaWriter(
+                file, wrap=70, record2title=lambda record: record.id)
             writer.write_file(dna_seqs)
 
         # restore DNA sequences
@@ -118,20 +124,24 @@ class Writer(object):
         """
         for attr in core.KnowledgeBase.Meta.attributes.values():
             if isinstance(attr, obj_model.RelatedAttribute):
-                raise Exception('Relationships from `KnowledgeBase` not supported')
+                raise Exception(
+                    'Relationships from `KnowledgeBase` not supported')
 
         for attr in core.KnowledgeBase.Meta.related_attributes.values():
             if attr.primary_class != core.Cell or not isinstance(attr, obj_model.OneToOneAttribute):
-                raise Exception('Only one-to-one relationships to `KnowledgeBase` from `Cell` are supported')
+                raise Exception(
+                    'Only one-to-one relationships to `KnowledgeBase` from `Cell` are supported')
 
         for attr in core.Cell.Meta.attributes.values():
             if isinstance(attr, obj_model.RelatedAttribute) and \
                     (not isinstance(attr, obj_model.OneToOneAttribute) or attr.related_class != core.KnowledgeBase):
-                raise Exception('Only one-to-one relationships from `Cell` to `KnowledgeBase` are supported')
+                raise Exception(
+                    'Only one-to-one relationships from `Cell` to `KnowledgeBase` are supported')
 
         for attr in core.Cell.Meta.related_attributes.values():
             if not isinstance(attr, (obj_model.OneToOneAttribute, obj_model.ManyToOneAttribute)):
-                raise Exception('Only one-to-one and many-to-one relationships are supported to `Cell`')
+                raise Exception(
+                    'Only one-to-one and many-to-one relationships are supported to `Cell`')
 
 
 class Reader(object):
@@ -180,7 +190,8 @@ class Reader(object):
                 kwargs['ignore_extra_attributes'] = True
                 kwargs['ignore_attribute_order'] = True
 
-        objects = reader.run(core_path, models=Writer.model_order, validate=False, **kwargs)
+        objects = reader.run(
+            core_path, models=Writer.model_order, validate=False, **kwargs)
 
         # check that file has 0 or 1 knowledge bases
         if not objects[core.KnowledgeBase]:
@@ -191,7 +202,8 @@ class Reader(object):
             return None
 
         elif len(objects[core.KnowledgeBase]) > 1:
-            raise ValueError('"{}" should define one knowledge base'.format(core_path))
+            raise ValueError(
+                '"{}" should define one knowledge base'.format(core_path))
 
         else:
             kb = objects[core.KnowledgeBase].pop()
@@ -272,5 +284,7 @@ def create_template(core_path, seq_path, set_repo_metadata_from_path=True):
         set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL, 
             branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
     """
-    kb = core.KnowledgeBase(id='template', name='Template', version=wc_kb.__version__)
-    Writer().run(kb, core_path, seq_path, set_repo_metadata_from_path=set_repo_metadata_from_path)
+    kb = core.KnowledgeBase(
+        id='template', name='Template', version=wc_kb.__version__)
+    Writer().run(kb, core_path, seq_path,
+                 set_repo_metadata_from_path=set_repo_metadata_from_path)
