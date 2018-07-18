@@ -5,6 +5,9 @@
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
+
+TODO:
+ProteinSpeciesType.get_seq() => cds=True (complete coding sequence) causes errors, talk to J
 """
 
 from natsort import natsorted, ns
@@ -829,23 +832,22 @@ class ProteinSpeciesType(PolymerSpeciesType):
         attribute_order = ('id', 'name', 'gene', 'rna', 'circular',
                            'double_stranded', 'concentration', 'half_life', 'comments')
 
-    def get_seq(self):
+    def get_seq(self, cds=True):
         """ Get the sequence
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        trans_table = self.cell.knowledge_base.translation_table
-        return self.gene.get_seq().translate(table=trans_table, cds=True)
+        return self.gene.get_seq().translate(table=self.cell.knowledge_base.translation_table, cds=cds)
 
-    def get_empirical_formula(self):
+    def get_empirical_formula(self, cds=True):
         """ Get the empirical formula
 
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
 
-        seq = self.get_seq()
+        seq = self.get_seq(cds)
         l = len(seq)
 
         n_a = seq.count('A')  # Ala: Alanine (C3 H7 N O2)
@@ -897,13 +899,13 @@ class ProteinSpeciesType(PolymerSpeciesType):
         formula.S = n_c + n_m
         return formula
 
-    def get_charge(self):
+    def get_charge(self, cds=True):
         """ Get the charge at physiological pH
 
         Returns:
             :obj:`int`: charge
         """
-        seq = self.get_seq()
+        seq = self.get_seq(cds)
 
         n_r = seq.count('R')
         n_h = seq.count('H')
@@ -913,13 +915,13 @@ class ProteinSpeciesType(PolymerSpeciesType):
 
         return (n_r + n_h + n_k) - (n_d + n_e)
 
-    def get_mol_wt(self):
+    def get_mol_wt(self, cds=True):
         """ Get the molecular weight
 
         Returns:
             :obj:`float`: molecular weight
         """
-        return self.get_empirical_formula().get_molecular_weight()
+        return self.get_empirical_formula(cds).get_molecular_weight()
 
 
 class SubunitAttribute(ManyToManyAttribute):
