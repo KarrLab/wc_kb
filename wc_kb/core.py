@@ -1,5 +1,5 @@
 """ Schema to represent a knowledge base to build models
-
+:Author: Bilal Shaikh  <bilal.shaikh@columbia.edu>
 :Author: Balazs Szigeti <balazs.szigeti@mssm.edu>
 :Author: Jonathan Karr <jonrkarr@gmail.com>
 :Date: 2018-02-07
@@ -80,6 +80,540 @@ class ComplexFormationType(enum.Enum):
     process_RibosomeAssembly = 7
     process_Transcription = 8
     process_Translation = 9
+
+#####################
+#####################
+# Attributes
+
+
+class SubunitAttribute(ManyToManyAttribute):
+    """ Subunits """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+
+        super(SubunitAttribute, self).__init__('SpeciesCoefficient',
+                                               related_name=related_name,
+                                               verbose_name=verbose_name,
+                                               verbose_related_name=verbose_related_name,
+                                               help=help)
+
+    def serialize(self, participants, encoded=None):
+        """ Serialize related object
+
+        Args:
+            participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        if not participants:
+            return ''
+
+        comps = set([part.species.compartment for part in participants])
+        if len(comps) == 1:
+            global_comp = comps.pop()
+        else:
+            global_comp = None
+
+        if global_comp:
+            participants = natsorted(
+                participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
+        else:
+            participants = natsorted(participants, lambda part: (
+                part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
+
+        lhs = []
+        for part in participants:
+            lhs.append(part.serialize(
+                show_compartment=global_comp is None, show_coefficient_sign=False))
+
+        if global_comp:
+            return '[{}]: {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs))
+        else:
+            return '{}'.format(' + '.join(lhs))
+
+    def deserialize(self, value, objects, decoded=None):
+        parts = []
+        errors = []
+        id = '[a-z][a-z0-9_]*'
+        stoch = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        gbl_part = '({} )*({})'.format(stoch, id)
+        lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
+        gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
+        lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
+        gbl_pattern = '^\[({})\]: ({})$'.format(id, gbl_side)
+        lcl_pattern = '^({})$'.format(lcl_side)
+
+        global_match = re.match(gbl_pattern, value, flags=re.I)
+        local_match = re.match(lcl_pattern, value, flags=re.I)
+
+        if global_match:
+            if global_match.group(1) in objects[Compartment]:
+                global_comp = objects[Compartment][global_match.group(1)]
+            else:
+                global_comp = None
+                errors.append('Undefined compartment "{}"'.format(
+                    global_match.group(1)))
+
+            subunits_str = global_match.group(2)
+
+        elif local_match:
+            global_comp = None
+            subunits_str = local_match.group(1)
+
+        else:
+            return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
+
+        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*',
+                               subunits_str, flags=re.I):
+
+            species_type = None
+            for species_type_cls in get_subclasses(SpeciesType):
+                if species_type_cls in objects and part[4] in objects[species_type_cls]:
+                    species_type = objects[species_type_cls][part[4]]
+                    break
+
+            if not species_type:
+                errors.append('Undefined species type "{}"'.format(part[4]))
+
+            if global_comp:
+                compartment = global_comp
+            elif part[6] in objects[Compartment]:
+                compartment = objects[Compartment][part[6]]
+            else:
+                errors.append('Undefined compartment "{}"'.format(part[6]))
+
+            coefficient = float(part[1] or 1.)
+
+            if not errors:
+                spec_primary_attribute = Species.gen_id(
+                    species_type.get_primary_attribute(), compartment.get_primary_attribute())
+                species, error = Species.deserialize(
+                    self, spec_primary_attribute, objects)
+
+                if error:
+                    raise ValueError('Invalid species "{}"'.format(
+                        spec_primary_attribute))
+                    # pragma: no cover # unreachable due to error checking above
+
+                if coefficient != 0:
+                    if SpeciesCoefficient not in objects:
+                        objects[SpeciesCoefficient] = {}
+                    serialized_value = SpeciesCoefficient._serialize(
+                        species, coefficient)
+                    if serialized_value in objects[SpeciesCoefficient]:
+                        rxn_part = objects[SpeciesCoefficient][serialized_value]
+                    else:
+                        rxn_part = SpeciesCoefficient(
+                            species=species, coefficient=coefficient)
+                        objects[SpeciesCoefficient][serialized_value] = rxn_part
+                    parts.append(rxn_part)
+
+        if errors:
+            return (None, InvalidAttribute(self, errors))
+        return (parts, None)
+
+
+class ReactionParticipantAttribute(ManyToManyAttribute):
+    """ Reaction participants """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(ReactionParticipantAttribute, self).__init__('SpeciesCoefficient', related_name=related_name,
+                                                           verbose_name=verbose_name,
+                                                           verbose_related_name=verbose_related_name,
+                                                           help=help)
+
+    def serialize(self, participants, encoded=None):
+        """ Serialize related object
+
+        Args:
+            participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        if not participants:
+            return ''
+
+        comps = set([part.species.compartment for part in participants])
+        if len(comps) == 1:
+            global_comp = comps.pop()
+        else:
+            global_comp = None
+
+        if global_comp:
+            participants = natsorted(
+                participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
+        else:
+            participants = natsorted(participants, lambda part: (
+                part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
+
+        lhs = []
+        rhs = []
+        for part in participants:
+            if part.coefficient < 0:
+                lhs.append(part.serialize(
+                    show_compartment=global_comp is None, show_coefficient_sign=False))
+            elif part.coefficient > 0:
+                rhs.append(part.serialize(
+                    show_compartment=global_comp is None, show_coefficient_sign=False))
+
+        if global_comp:
+            return '[{}]: {} ==> {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs), ' + '.join(rhs))
+        else:
+            return '{} ==> {}'.format(' + '.join(lhs), ' + '.join(rhs))
+
+    def deserialize(self, value, objects, decoded=None):
+        """ Deserialize value
+
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+
+        Returns:
+            :obj:`tuple` of `list` of `SpeciesCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        errors = []
+
+        id = '[a-z][a-z0-9_]*'
+        stoch = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        gbl_part = '({} )*({})'.format(stoch, id)
+        lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
+        gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
+        lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
+        gbl_pattern = '^\[({})\]: ({}) ==> ({})$'.format(
+            id, gbl_side, gbl_side)
+        lcl_pattern = '^({}) ==> ({})$'.format(lcl_side, lcl_side)
+
+        global_match = re.match(gbl_pattern, value, flags=re.I)
+        local_match = re.match(lcl_pattern, value, flags=re.I)
+
+        if global_match:
+            if global_match.group(1) in objects[Compartment]:
+                global_comp = objects[Compartment][global_match.group(1)]
+            else:
+                global_comp = None
+                errors.append('Undefined compartment "{}"'.format(
+                    global_match.group(1)))
+            lhs = global_match.group(2)
+            rhs = global_match.group(14)
+
+        elif local_match:
+            global_comp = None
+            lhs = local_match.group(1)
+            rhs = local_match.group(13)
+
+        else:
+            return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
+
+        lhs_parts, lhs_errors = self.deserialize_side(
+            -1., lhs, objects, global_comp)
+        rhs_parts, rhs_errors = self.deserialize_side(
+            1., rhs, objects, global_comp)
+
+        parts = lhs_parts + rhs_parts
+        errors.extend(lhs_errors)
+        errors.extend(rhs_errors)
+
+        if errors:
+            return (None, InvalidAttribute(self, errors))
+        return (parts, None)
+
+    def deserialize_side(self, direction, value, objects, global_comp):
+        """ Deserialize the LHS or RHS of a reaction equation
+        Args:
+            direction (:obj:`float`): -1. indicates LHS, +1. indicates RHS
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            global_comp (:obj:`Compartment`): global compartment of the reaction
+
+        Returns:
+            :obj:`tuple`:
+                * :obj:`list` of :obj:`SpeciesCoefficient`: list of species coefficients
+                * :obj:`list` of :obj:`Exception`: list of errors
+        """
+        parts = []
+        errors = []
+
+        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
+            part_errors = []
+
+            species_type = None
+            for species_type_cls in get_subclasses(SpeciesType):
+                if species_type_cls in objects and part[4] in objects[species_type_cls]:
+                    species_type = objects[species_type_cls][part[4]]
+                    break
+            if not species_type:
+                part_errors.append(
+                    'Undefined species type "{}"'.format(part[4]))
+
+            if global_comp:
+                compartment = global_comp
+            elif part[6] in objects[Compartment]:
+                compartment = objects[Compartment][part[6]]
+            else:
+                part_errors.append(
+                    'Undefined compartment "{}"'.format(part[6]))
+
+            coefficient = direction * float(part[1] or 1.)
+
+            if part_errors:
+                errors += part_errors
+            else:
+                spec_primary_attribute = Species.gen_id(species_type.get_primary_attribute(),
+                                                        compartment.get_primary_attribute())
+                species, error = Species.deserialize(
+                    self, spec_primary_attribute, objects)
+                if error:
+                    raise ValueError('Invalid species "{}"'.format(
+                        spec_primary_attribute))
+                    # pragma: no cover # unreachable due to error checking above
+
+                if coefficient != 0:
+                    if SpeciesCoefficient not in objects:
+                        objects[SpeciesCoefficient] = {}
+                    serialized_value = SpeciesCoefficient._serialize(
+                        species, coefficient)
+                    if serialized_value in objects[SpeciesCoefficient]:
+                        rxn_part = objects[SpeciesCoefficient][serialized_value]
+                    else:
+                        rxn_part = SpeciesCoefficient(
+                            species=species, coefficient=coefficient)
+                        objects[SpeciesCoefficient][serialized_value] = rxn_part
+                    parts.append(rxn_part)
+
+        return (parts, errors)
+
+
+class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
+    """ Inline separated list of species and their weights of an observable
+
+    Attributes:
+        separator (:obj:`str`): list separator
+    """
+
+    def __init__(self, related_class, separator=' + ', related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_class (:obj:`class`): related class
+            separator (:obj:`str`, optional): list separator
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(ObservableSpeciesParticipantAttribute, self).__init__(related_class, related_name=related_name,
+                                                                    verbose_name=verbose_name,
+                                                                    verbose_related_name=verbose_related_name,
+                                                                    help=help)
+        self.separator = separator
+
+    def serialize(self, spec_coeffs, encoded=None):
+        """ Serialize related object
+
+        Args:
+            spec_coeffs (:obj:`list` of `Model`): Python representation of species and their coefficients
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        if not spec_coeffs:
+            return ''
+
+        spec_coeff_strs = []
+        for spec_coeff_obj in spec_coeffs:
+            spec_coeff_str = spec_coeff_obj.serialize(
+                show_compartment=True, show_coefficient_sign=True)
+            spec_coeff_strs.append(spec_coeff_str)
+
+        return self.separator.join(spec_coeff_strs)
+
+    def deserialize(self, value, objects, decoded=None):
+        """ Deserialize value
+
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+
+        Returns:
+            :obj:`tuple` of `list` of `related_class`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        if not value:
+            return ([], None)
+
+        pat_id = '([a-z][a-z0-9_]*)'
+        pat_coeff = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        pat_spec_coeff = '({} )*({}\[{}\])'.format(pat_coeff, pat_id, pat_id)
+        pat_observable = '^{}( \+ {})*$'.format(pat_spec_coeff, pat_spec_coeff)
+        if not re.match(pat_observable, value, flags=re.I):
+            return (None, InvalidAttribute(self, ['Incorrectly formatted observable: {}'.format(value)]))
+
+        spec_coeff_objs = []
+        errors = []
+        for spec_coeff_match in re.findall(pat_spec_coeff, value, flags=re.I):
+            spec_type_errors = []
+
+            spec_type_id = spec_coeff_match[5]
+            if spec_type_id in objects[SpeciesType]:
+                spec_type = objects[SpeciesType][spec_type_id]
+            else:
+                spec_type_errors.append(
+                    'Undefined species type "{}"'.format(spec_type_id))
+
+            compartment_id = spec_coeff_match[6]
+            if compartment_id in objects[Compartment]:
+                compartment = objects[Compartment][compartment_id]
+            else:
+                spec_type_errors.append(
+                    'Undefined compartment "{}"'.format(compartment_id))
+
+            coefficient = float(spec_coeff_match[1] or 1.)
+
+            if spec_type_errors:
+                errors += spec_type_errors
+            elif coefficient != 0:
+                spec_id = Species.gen_id(
+                    spec_type.get_primary_attribute(), compartment.get_primary_attribute())
+                obj, error = Species.deserialize(self, spec_id, objects)
+
+                if error:
+                    raise ValueError('Invalid object "{}"'.format(spec_primary_attribute)
+                                     )  # pragma: no cover # unreachable due to error checking above
+
+                if self.related_class not in objects:
+                    objects[self.related_class] = {}
+                serialized_value = self.related_class._serialize(
+                    obj, coefficient)
+                if serialized_value in objects[self.related_class]:
+                    spec_coeff_obj = objects[self.related_class][serialized_value]
+                else:
+                    spec_coeff_obj = self.related_class(
+                        species=obj, coefficient=coefficient)
+                    objects[self.related_class][serialized_value] = spec_coeff_obj
+                spec_coeff_objs.append(spec_coeff_obj)
+
+        if errors:
+            return (None, InvalidAttribute(self, errors))
+        return (spec_coeff_objs, None)
+
+
+class ObservableObservableParticipantAttribute(ManyToManyAttribute):
+    """ Inline separated list of observables and their weights of an observable
+
+    Attributes:
+        separator (:obj:`str`): list separator
+    """
+
+    def __init__(self, related_class, separator=' + ', related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_class (:obj:`class`): related class
+            separator (:obj:`str`, optional): list separator
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(ObservableObservableParticipantAttribute, self).__init__(related_class, related_name=related_name,
+                                                                       verbose_name=verbose_name,
+                                                                       verbose_related_name=verbose_related_name,
+                                                                       help=help)
+        self.separator = separator
+
+    def serialize(self, obs_coeffs, encoded=None):
+        """ Serialize related object
+
+        Args:
+            obs_coeffs (:obj:`list` of `Model`): Python representation of observables and their coefficients
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        if not obs_coeffs:
+            return ''
+
+        obs_coeff_strs = []
+        for obs_coeff_obj in obs_coeffs:
+            obs_coeff_str = obs_coeff_obj.serialize()
+            obs_coeff_strs.append(obs_coeff_str)
+
+        return self.separator.join(obs_coeff_strs)
+
+    def deserialize(self, value, objects, decoded=None):
+        """ Deserialize value
+
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+
+        Returns:
+            :obj:`tuple` of `list` of `related_class`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        if not value:
+            return ([], None)
+
+        pat_id = '([a-z][a-z0-9_]*)'
+        pat_coeff = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        pat_obs_coeff = '({} )*({})'.format(pat_coeff, pat_id, pat_id)
+        pat_observable = '^{}( \+ {})*$'.format(pat_obs_coeff, pat_obs_coeff)
+        if not re.match(pat_observable, value, flags=re.I):
+            return (None, InvalidAttribute(self, ['Incorrectly formatted observable: {}'.format(value)]))
+
+        obs_coeff_objs = []
+        errors = []
+        for obs_coeff_match in re.findall(pat_obs_coeff, value, flags=re.I):
+            obs_errors = []
+
+            obs_id = obs_coeff_match[5]
+            if obs_id in objects[Observable]:
+                obs = objects[Observable][obs_id]
+            else:
+                obs_errors.append('Undefined observable "{}"'.format(obs_id))
+
+            coefficient = float(obs_coeff_match[1] or 1.)
+
+            if obs_errors:
+                errors += obs_errors
+            elif coefficient != 0:
+                if self.related_class not in objects:
+                    objects[self.related_class] = {}
+                serialized_value = self.related_class._serialize(
+                    obs, coefficient)
+                if serialized_value in objects[self.related_class]:
+                    obs_coeff_obj = objects[self.related_class][serialized_value]
+                else:
+                    obs_coeff_obj = self.related_class(
+                        observable=obs, coefficient=coefficient)
+                    objects[self.related_class][serialized_value] = obs_coeff_obj
+                obs_coeff_objs.append(obs_coeff_obj)
+
+        if errors:
+            return (None, InvalidAttribute(self, errors))
+        return (obs_coeff_objs, None)
 
 
 #####################
@@ -562,6 +1096,125 @@ class PolymerLocus(KnowledgeBaseObject):
         return abs(self.start - self.end) + 1
 
 
+class Observable(KnowledgeBaseObject):
+    """Knowledge of an observable to include in a model
+
+    Attributes:
+        cell (:obj:'Cell'): the cell that the observable is in
+
+        species(:obj:`list` of :obj: `SpeciesCoefficient`): A list of the species and the coefficients to be included in the observable
+
+        observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables and their coefficients
+
+    Related Attributes: 
+        observable_coefficients (:obj:`list` of `ObservableCoefficient`): participations in observables
+"""
+    cell = ManyToOneAttribute(Cell, related_name="observables")
+    species = ObservableSpeciesParticipantAttribute(
+        'SpeciesCoefficient', related_name='observables')
+    observables = ObservableObservableParticipantAttribute(
+        'ObservableCoefficient', related_name='observable')
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'name', 'cell', 'species',
+                           'observables', 'comments')
+
+
+class ObservableCoefficient(obj_model.Model):
+    """ A tuple of observable and coefficient
+
+    Attributes:
+        observable (:obj:`Observable`): observable
+        coefficient (:obj:`float`): coefficient
+    """
+    observable = ManyToOneAttribute(
+        Observable, related_name='observable_coefficients')
+    coefficient = FloatAttribute(nan=False)
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('observable', 'coefficient')
+        frozen_columns = 1
+        tabular_orientation = TabularOrientation.inline
+        ordering = ('observable',)
+
+    def serialize(self):
+        """ Serialize related object
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        return self._serialize(self.observable, self.coefficient)
+
+    @staticmethod
+    def _serialize(observable, coefficient):
+        """ Serialize values
+
+        Args:
+            observable (:obj:`Observable`): observable
+            coefficient (:obj:`float`): coefficient
+
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        coefficient = float(coefficient)
+
+        if coefficient == 1:
+            coefficient_str = ''
+        elif coefficient % 1 == 0 and abs(coefficient) < 1000:
+            coefficient_str = '({:.0f}) '.format(coefficient)
+        else:
+            coefficient_str = '({:e}) '.format(coefficient)
+
+        return '{}{}'.format(coefficient_str, observable.serialize())
+
+    @classmethod
+    def deserialize(cls, attribute, value, objects):
+        """ Deserialize value
+
+        Args:
+            attribute (:obj:`Attribute`): attribute
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+
+        Returns:
+            :obj:`tuple` of `list` of `ObservableCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        errors = []
+
+        pattern = '^(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
+
+        match = re.match(pattern, value, flags=re.I)
+        if match:
+            errors = []
+
+            coefficient = float(match.group(2) or 1.)
+
+            obs_id = match.group(5)
+
+            observable, error = Observable.deserialize(obs_id, objects)
+            if error:
+                return (None, error)
+
+            serial_val = cls._serialize(observable, coefficient)
+            if cls in objects and serial_val in objects[cls]:
+                return (objects[cls][serial_val], None)
+
+            if cls not in objects:
+                objects[cls] = {}
+            serialized_val = cls._serialize(observable, coefficient)
+            if serialized_val in objects[cls]:
+                obj = objects[cls][serialized_val]
+            else:
+                obj = cls(observable=observable, coefficient=coefficient)
+                objects[cls][serialized_val] = obj
+            return (obj, None)
+
+        else:
+            attr = cls.Meta.attributes['observable']
+            return (None, InvalidAttribute(attr, ['Invalid observable coefficient']))
+
+
 #####################
 #####################
 # Species types
@@ -924,142 +1577,6 @@ class ProteinSpeciesType(PolymerSpeciesType):
         return self.get_empirical_formula(cds).get_molecular_weight()
 
 
-class SubunitAttribute(ManyToManyAttribute):
-    """ Subunits """
-
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
-        """
-        Args:
-            related_name (:obj:`str`, optional): name of related attribute on `related_class`
-            verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
-        """
-
-        super(SubunitAttribute, self).__init__('SpeciesCoefficient',
-                                               related_name=related_name,
-                                               verbose_name=verbose_name,
-                                               verbose_related_name=verbose_related_name,
-                                               help=help)
-
-    def serialize(self, participants, encoded=None):
-        """ Serialize related object
-
-        Args:
-            participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
-            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
-
-        Returns:
-            :obj:`str`: simple Python representation
-        """
-        if not participants:
-            return ''
-
-        comps = set([part.species.compartment for part in participants])
-        if len(comps) == 1:
-            global_comp = comps.pop()
-        else:
-            global_comp = None
-
-        if global_comp:
-            participants = natsorted(
-                participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
-        else:
-            participants = natsorted(participants, lambda part: (
-                part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
-
-        lhs = []
-        for part in participants:
-            lhs.append(part.serialize(
-                show_compartment=global_comp is None, show_coefficient_sign=False))
-
-        if global_comp:
-            return '[{}]: {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs))
-        else:
-            return '{}'.format(' + '.join(lhs))
-
-    def deserialize(self, value, objects, decoded=None):
-        parts = []
-        errors = []
-        id = '[a-z][a-z0-9_]*'
-        stoch = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = '({} )*({})'.format(stoch, id)
-        lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
-        gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
-        lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
-        gbl_pattern = '^\[({})\]: ({})$'.format(id, gbl_side)
-        lcl_pattern = '^({})$'.format(lcl_side)
-
-        global_match = re.match(gbl_pattern, value, flags=re.I)
-        local_match = re.match(lcl_pattern, value, flags=re.I)
-
-        if global_match:
-            if global_match.group(1) in objects[Compartment]:
-                global_comp = objects[Compartment][global_match.group(1)]
-            else:
-                global_comp = None
-                errors.append('Undefined compartment "{}"'.format(
-                    global_match.group(1)))
-
-            subunits_str = global_match.group(2)
-
-        elif local_match:
-            global_comp = None
-            subunits_str = local_match.group(1)
-
-        else:
-            return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
-
-        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*',
-                               subunits_str, flags=re.I):
-
-            species_type = None
-            for species_type_cls in get_subclasses(SpeciesType):
-                if species_type_cls in objects and part[4] in objects[species_type_cls]:
-                    species_type = objects[species_type_cls][part[4]]
-                    break
-
-            if not species_type:
-                errors.append('Undefined species type "{}"'.format(part[4]))
-
-            if global_comp:
-                compartment = global_comp
-            elif part[6] in objects[Compartment]:
-                compartment = objects[Compartment][part[6]]
-            else:
-                errors.append('Undefined compartment "{}"'.format(part[6]))
-
-            coefficient = float(part[1] or 1.)
-
-            if not errors:
-                spec_primary_attribute = Species.gen_id(
-                    species_type.get_primary_attribute(), compartment.get_primary_attribute())
-                species, error = Species.deserialize(
-                    self, spec_primary_attribute, objects)
-
-                if error:
-                    raise ValueError('Invalid species "{}"'.format(
-                        spec_primary_attribute))
-                    # pragma: no cover # unreachable due to error checking above
-
-                if coefficient != 0:
-                    if SpeciesCoefficient not in objects:
-                        objects[SpeciesCoefficient] = {}
-                    serialized_value = SpeciesCoefficient._serialize(
-                        species, coefficient)
-                    if serialized_value in objects[SpeciesCoefficient]:
-                        rxn_part = objects[SpeciesCoefficient][serialized_value]
-                    else:
-                        rxn_part = SpeciesCoefficient(
-                            species=species, coefficient=coefficient)
-                        objects[SpeciesCoefficient][serialized_value] = rxn_part
-                    parts.append(rxn_part)
-
-        if errors:
-            return (None, InvalidAttribute(self, errors))
-        return (parts, None)
-
-
 class ComplexSpeciesType(SpeciesType):
     """ Knowledge of a protein complexe
 
@@ -1206,187 +1723,6 @@ class GeneLocus(PolymerLocus):
 #####################
 #####################
 # Reactions
-
-class ReactionParticipantAttribute(ManyToManyAttribute):
-    """ Reaction participants """
-
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
-        """
-        Args:
-            related_name (:obj:`str`, optional): name of related attribute on `related_class`
-            verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
-        """
-        super(ReactionParticipantAttribute, self).__init__('SpeciesCoefficient', related_name=related_name,
-                                                           verbose_name=verbose_name,
-                                                           verbose_related_name=verbose_related_name,
-                                                           help=help)
-
-    def serialize(self, participants, encoded=None):
-        """ Serialize related object
-
-        Args:
-            participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
-            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
-
-        Returns:
-            :obj:`str`: simple Python representation
-        """
-        if not participants:
-            return ''
-
-        comps = set([part.species.compartment for part in participants])
-        if len(comps) == 1:
-            global_comp = comps.pop()
-        else:
-            global_comp = None
-
-        if global_comp:
-            participants = natsorted(
-                participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
-        else:
-            participants = natsorted(participants, lambda part: (
-                part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
-
-        lhs = []
-        rhs = []
-        for part in participants:
-            if part.coefficient < 0:
-                lhs.append(part.serialize(
-                    show_compartment=global_comp is None, show_coefficient_sign=False))
-            elif part.coefficient > 0:
-                rhs.append(part.serialize(
-                    show_compartment=global_comp is None, show_coefficient_sign=False))
-
-        if global_comp:
-            return '[{}]: {} ==> {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs), ' + '.join(rhs))
-        else:
-            return '{} ==> {}'.format(' + '.join(lhs), ' + '.join(rhs))
-
-    def deserialize(self, value, objects, decoded=None):
-        """ Deserialize value
-
-        Args:
-            value (:obj:`str`): String representation
-            objects (:obj:`dict`): dictionary of objects, grouped by model
-            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
-
-        Returns:
-            :obj:`tuple` of `list` of `SpeciesCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
-                and cleaning error
-        """
-        errors = []
-
-        id = '[a-z][a-z0-9_]*'
-        stoch = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = '({} )*({})'.format(stoch, id)
-        lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
-        gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
-        lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
-        gbl_pattern = '^\[({})\]: ({}) ==> ({})$'.format(
-            id, gbl_side, gbl_side)
-        lcl_pattern = '^({}) ==> ({})$'.format(lcl_side, lcl_side)
-
-        global_match = re.match(gbl_pattern, value, flags=re.I)
-        local_match = re.match(lcl_pattern, value, flags=re.I)
-
-        if global_match:
-            if global_match.group(1) in objects[Compartment]:
-                global_comp = objects[Compartment][global_match.group(1)]
-            else:
-                global_comp = None
-                errors.append('Undefined compartment "{}"'.format(
-                    global_match.group(1)))
-            lhs = global_match.group(2)
-            rhs = global_match.group(14)
-
-        elif local_match:
-            global_comp = None
-            lhs = local_match.group(1)
-            rhs = local_match.group(13)
-
-        else:
-            return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
-
-        lhs_parts, lhs_errors = self.deserialize_side(
-            -1., lhs, objects, global_comp)
-        rhs_parts, rhs_errors = self.deserialize_side(
-            1., rhs, objects, global_comp)
-
-        parts = lhs_parts + rhs_parts
-        errors.extend(lhs_errors)
-        errors.extend(rhs_errors)
-
-        if errors:
-            return (None, InvalidAttribute(self, errors))
-        return (parts, None)
-
-    def deserialize_side(self, direction, value, objects, global_comp):
-        """ Deserialize the LHS or RHS of a reaction equation
-        Args:
-            direction (:obj:`float`): -1. indicates LHS, +1. indicates RHS
-            value (:obj:`str`): String representation
-            objects (:obj:`dict`): dictionary of objects, grouped by model
-            global_comp (:obj:`Compartment`): global compartment of the reaction
-
-        Returns:
-            :obj:`tuple`:
-                * :obj:`list` of :obj:`SpeciesCoefficient`: list of species coefficients
-                * :obj:`list` of :obj:`Exception`: list of errors
-        """
-        parts = []
-        errors = []
-
-        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
-            part_errors = []
-
-            species_type = None
-            for species_type_cls in get_subclasses(SpeciesType):
-                if species_type_cls in objects and part[4] in objects[species_type_cls]:
-                    species_type = objects[species_type_cls][part[4]]
-                    break
-            if not species_type:
-                part_errors.append(
-                    'Undefined species type "{}"'.format(part[4]))
-
-            if global_comp:
-                compartment = global_comp
-            elif part[6] in objects[Compartment]:
-                compartment = objects[Compartment][part[6]]
-            else:
-                part_errors.append(
-                    'Undefined compartment "{}"'.format(part[6]))
-
-            coefficient = direction * float(part[1] or 1.)
-
-            if part_errors:
-                errors += part_errors
-            else:
-                spec_primary_attribute = Species.gen_id(species_type.get_primary_attribute(),
-                                                        compartment.get_primary_attribute())
-                species, error = Species.deserialize(
-                    self, spec_primary_attribute, objects)
-                if error:
-                    raise ValueError('Invalid species "{}"'.format(
-                        spec_primary_attribute))
-                    # pragma: no cover # unreachable due to error checking above
-
-                if coefficient != 0:
-                    if SpeciesCoefficient not in objects:
-                        objects[SpeciesCoefficient] = {}
-                    serialized_value = SpeciesCoefficient._serialize(
-                        species, coefficient)
-                    if serialized_value in objects[SpeciesCoefficient]:
-                        rxn_part = objects[SpeciesCoefficient][serialized_value]
-                    else:
-                        rxn_part = SpeciesCoefficient(
-                            species=species, coefficient=coefficient)
-                        objects[SpeciesCoefficient][serialized_value] = rxn_part
-                    parts.append(rxn_part)
-
-        return (parts, errors)
-
 
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
