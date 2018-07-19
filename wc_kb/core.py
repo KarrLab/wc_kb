@@ -672,6 +672,7 @@ class Cell(KnowledgeBaseObject):
     Related attributes:
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
+        observables (:obj:'list' or :obj: 'Observable') : observables
         loci (:obj:`list` of :obj:`PolymerLocus`): locus
         reactions (:obj:`list` of :obj:`Reaction`): reactions
     """
@@ -1099,14 +1100,14 @@ class Observable(KnowledgeBaseObject):
     """Knowledge of an observable to include in a model
 
     Attributes:
-        cell (:obj:'Cell'): the cell that the observable is in
+        cell (:obj:'Cell'): The cell that the observable is in
 
         species(:obj:`list` of :obj: `SpeciesCoefficient`): A list of the species and the coefficients to be included in the observable
 
         observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables and their coefficients
 
     Related Attributes:
-        observable_coefficients (:obj:`list` of `ObservableCoefficient`): participations in observables
+        observable_coefficients (:obj:`list` of `ObservableCoefficient`): Participants in observables
 """
     cell = ManyToOneAttribute(Cell, related_name="observables")
     species = ObservableSpeciesParticipantAttribute(
