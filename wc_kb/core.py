@@ -1,7 +1,8 @@
 """ Schema to represent a knowledge base to build models
-:Author: Bilal Shaikh  <bilal.shaikh@columbia.edu>
+
 :Author: Balazs Szigeti <balazs.szigeti@mssm.edu>
 :Author: Jonathan Karr <jonrkarr@gmail.com>
+:Author: Bilal Shaikh  <bilal.shaikh@columbia.edu>
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
@@ -1111,7 +1112,7 @@ class Observable(KnowledgeBaseObject):
     species = ObservableSpeciesParticipantAttribute(
         'SpeciesCoefficient', related_name='observables')
     observables = ObservableObservableParticipantAttribute(
-        'ObservableCoefficient', related_name='observable')
+        'ObservableCoefficient', related_name='observables')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'cell', 'species',

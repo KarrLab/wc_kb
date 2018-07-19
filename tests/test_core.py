@@ -978,3 +978,62 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
         self.assertEqual(result[0], None)
         self.assertEqual(
             result[1].messages[0], 'Incorrectly formatted participants: ==> prot1[c]')
+
+
+class ObservableCoefficientTestCase(unittest.TestCase):
+    def test_observable_coefficient(self):
+        pass
+
+    def test_serialize(self):
+        pass
+
+    def test_deserialize(self):
+        pass
+
+
+class ObservableTestCase(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_observables(self):
+        cell = core.Cell()
+        comp1 = core.Compartment(id='c')
+        prot1 = core.ProteinSpeciesType(id='prot1')
+        prot2 = core.ProteinSpeciesType(id='prot2')
+        rna1 = core.RnaSpeciesType(id="rna1")
+        rna2 = core.RnaSpeciesType(id='rna2')
+
+        species1 = core.Species(species_type=prot1, compartment=comp1)
+        species2 = core.Species(species_type=rna1, compartment=comp1)
+
+        speciesCoefficient1 = core.SpeciesCoefficient(
+            species=species1, coefficient=2)
+        speciesCoefficient2 = core.SpeciesCoefficient(
+            species=species2, coefficient=3)
+
+        observable1 = core.Observable(
+            cell=cell, species=[speciesCoefficient1, speciesCoefficient2])
+        observableCoefficinet1 = core.ObservableCoefficient(
+            observable=observable1, coefficient=2)
+
+        observable2 = core.Observable(cell=cell, species=[
+                                      speciesCoefficient1, speciesCoefficient2], observables=[observableCoefficinet1])
+
+        self.assertIsInstance(observable1, core.Observable)
+        self.assertIsInstance(observable2, core.Observable)
+        with self.assertRaisesRegex(AttributeError, ""):
+            observable3 = core.Observable(
+                cell=cell, species=[species1, species2])
+        self.assertIsInstance(observable1.species[0], core.SpeciesCoefficient)
+        self.assertIsInstance(
+            observable2.observables[0], core.ObservableCoefficient)
+        self.assertIsInstance(
+            observable1.species[0].species, core.Species)
+        self.assertEqual(observable1.species[0].species.id(), 'prot1[c]')
+        self.assertEqual(
+            observable1.species[1].species.species_type.id, 'rna1')
+        self.assertIsInstance(
+            observable2.observables[0].observable, core.Observable)
+
+    def test_obervables(self):
+        pass
