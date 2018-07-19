@@ -28,6 +28,10 @@ from .core import (KnowledgeBaseObject,
                    ReactionParticipantAttribute,
                    SubunitAttribute,
                    Property,
+                   Observable,
+                   ObservableCoefficient,
+                   ObservableObservableParticipantAttribute,
+                   ObservableSpeciesParticipantAttribute,
                    PolymerStrand)
 
 from . import io
