@@ -982,13 +982,30 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
 
 class ObservableCoefficientTestCase(unittest.TestCase):
     def test_observable_coefficient(self):
-        pass
+        cell = core.Cell()
+        comp1 = core.Compartment(id='c')
+        prot1 = core.ProteinSpeciesType(id='prot1')
+        rna1 = core.RnaSpeciesType(id="rna1")
 
-    def test_serialize(self):
-        pass
+        species1 = core.Species(species_type=prot1, compartment=comp1)
+        species2 = core.Species(species_type=rna1, compartment=comp1)
 
-    def test_deserialize(self):
-        pass
+        speciesCoefficient1 = core.SpeciesCoefficient(
+            species=species1, coefficient=2.5)
+        speciesCoefficient2 = core.SpeciesCoefficient(
+            species=species2, coefficient=3)
+
+        observable1 = core.Observable(
+            id='test', cell=cell, species=[speciesCoefficient1, speciesCoefficient2])
+        observableCoefficinet1 = core.ObservableCoefficient(
+            observable=observable1, coefficient=2.3)
+
+        self.assertIsInstance(observableCoefficinet1,
+                              core.ObservableCoefficient)
+        self.assertIsInstance(
+            observableCoefficinet1.observable, core.Observable)
+        self.assertIsInstance(observableCoefficinet1.coefficient, float)
+        self.assertEqual(observableCoefficinet1.observable.id, 'test')
 
 
 class ObservableTestCase(unittest.TestCase):
@@ -999,9 +1016,7 @@ class ObservableTestCase(unittest.TestCase):
         cell = core.Cell()
         comp1 = core.Compartment(id='c')
         prot1 = core.ProteinSpeciesType(id='prot1')
-        prot2 = core.ProteinSpeciesType(id='prot2')
         rna1 = core.RnaSpeciesType(id="rna1")
-        rna2 = core.RnaSpeciesType(id='rna2')
 
         species1 = core.Species(species_type=prot1, compartment=comp1)
         species2 = core.Species(species_type=rna1, compartment=comp1)
@@ -1009,7 +1024,7 @@ class ObservableTestCase(unittest.TestCase):
         speciesCoefficient1 = core.SpeciesCoefficient(
             species=species1, coefficient=2)
         speciesCoefficient2 = core.SpeciesCoefficient(
-            species=species2, coefficient=3)
+            species=species2, coefficient=3.3)
 
         observable1 = core.Observable(
             cell=cell, species=[speciesCoefficient1, speciesCoefficient2])
@@ -1034,6 +1049,3 @@ class ObservableTestCase(unittest.TestCase):
             observable1.species[1].species.species_type.id, 'rna1')
         self.assertIsInstance(
             observable2.observables[0].observable, core.Observable)
-
-    def test_obervables(self):
-        pass
