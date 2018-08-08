@@ -474,11 +474,23 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
             spec_type_errors = []
 
             spec_type_id = spec_coeff_match[5]
-            if spec_type_id in objects[SpeciesType]:
-                spec_type = objects[SpeciesType][spec_type_id]
-            else:
-                spec_type_errors.append(
-                    'Undefined species type "{}"'.format(spec_type_id))
+           
+            try:
+                if spec_type_id in objects[ProteinSpeciesType]:
+                    spec_type = objects[ProteinSpeciesType][spec_type_id]
+                elif spec_type_id in objects[RnaSpeciesType]:
+                    spec_type = objects[RnaSpeciesType][spec_type_id]
+                elif spec_type_id in objects[ComplexSpeciesType]:
+                    spec_type = objects[ComplexSpeciesType][spec_type_id]
+                elif spec_type_id in objects[DnaSpeciesType]:
+                    spec_type = objects[DnaSpeciesType][spec_type_id]
+                elif spec_type_id in objects[MetaboliteSpeciesType]:
+                    spec_type = objects[MetaboliteSpeciesType][spec_type_id]
+                else:
+                    spec_type_errors.append(
+                        'Undefined species type "{}"'.format(spec_type_id))
+            except KeyError:
+                pass
 
             compartment_id = spec_coeff_match[6]
             if compartment_id in objects[Compartment]:
@@ -1096,7 +1108,7 @@ class PolymerLocus(KnowledgeBaseObject):
         return abs(self.start - self.end) + 1
 
 
-class Observable(KnowledgeBaseObject):
+class Observable(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
     """Knowledge of an observable to include in a model
 
     Attributes:
