@@ -6,14 +6,13 @@
 :License: MIT
 """
 
-from cement.core.foundation import CementApp
-from cement.core.controller import CementBaseController, expose
 from wc_kb import io
+import cement
 import wc_kb
 import wc_utils.workbook.io
 
 
-class BaseController(CementBaseController):
+class BaseController(cement.Controller):
     """ Base controller for command line application """
 
     class Meta:
@@ -23,12 +22,12 @@ class BaseController(CementBaseController):
             (['-v', '--version'], dict(action='version', version=wc_kb.__version__)),
         ]
 
-    @expose(hide=True)
-    def default(self):
+    @cement.ex(hide=True)
+    def _default(self):
         self.app.args.print_help()
 
 
-class ValidateController(CementBaseController):
+class ValidateController(cement.Controller):
     """ Validate knowledge base and display errors """
 
     class Meta:
@@ -43,8 +42,8 @@ class ValidateController(CementBaseController):
                                 help='If set, do not validate the format of the knowledge base core file(s)')),
         ]
 
-    @expose(hide=True)
-    def default(self):
+    @cement.ex(hide=True)
+    def _default(self):
         args = self.app.pargs
         try:
             io.Reader().run(args.core_path, args.seq_path, strict=args.strict)
@@ -53,7 +52,7 @@ class ValidateController(CementBaseController):
             raise ValueError('Knowledge base is invalid: ' + str(exception))
 
 
-class DifferenceController(CementBaseController):
+class DifferenceController(cement.Controller):
     """ Display difference between two knowledge bases """
 
     class Meta:
@@ -72,8 +71,8 @@ class DifferenceController(CementBaseController):
                                 help='If set, do not validate the format of the knowledge base file(s)')),
         ]
 
-    @expose(hide=True)
-    def default(self):
+    @cement.ex(hide=True)
+    def _default(self):
         args = self.app.pargs
 
         if args.compare_files:
@@ -92,7 +91,7 @@ class DifferenceController(CementBaseController):
             print('Knowledge bases are identical')
 
 
-class NormalizeController(CementBaseController):
+class NormalizeController(cement.Controller):
     """ Normalize knowledge base """
 
     class Meta:
@@ -118,8 +117,8 @@ class NormalizeController(CementBaseController):
                 help='If set, do not validate the format of the knowledge base file(s)')),
         ]
 
-    @expose(hide=True)
-    def default(self):
+    @cement.ex(hide=True)
+    def _default(self):
         args = self.app.pargs
         kb = io.Reader().run(args.source_core, args.source_seq, strict=args.strict)
         if args.dest_core or args.dest_seq:
@@ -128,7 +127,7 @@ class NormalizeController(CementBaseController):
             io.Writer().run(kb, args.source_core, args.source_seq, set_repo_metadata_from_path=False)
 
 
-class ConvertController(CementBaseController):
+class ConvertController(cement.Controller):
     """ Convert knowledge base among Excel (.xlsx), comma separated (.csv), JavaScript Object Notation (.json),
     tab separated (.tsv), and Yet Another Markup Language (.yaml, .yml) formats """
 
@@ -146,13 +145,13 @@ class ConvertController(CementBaseController):
                                 help='If set, do not validate the format of the knowledge base file(s)')),
         ]
 
-    @expose(hide=True)
-    def default(self):
+    @cement.ex(hide=True)
+    def _default(self):
         args = self.app.pargs
         io.convert(args.source_core, args.source_seq, args.dest_core, args.dest_seq, strict=args.strict)
 
 
-class CreateTemplateController(CementBaseController):
+class CreateTemplateController(cement.Controller):
     """ Create file with knowledge base template (i.e. create file with row and column labels) """
 
     class Meta:
@@ -168,13 +167,13 @@ class CreateTemplateController(CementBaseController):
                                                     'the parent directory of `path-core`'))),
         ]
 
-    @expose(hide=True)
-    def default(self):
+    @cement.ex(hide=True)
+    def _default(self):
         args = self.app.pargs
         io.create_template(args.path_core, args.path_seq, set_repo_metadata_from_path=args.set_repo_metadata_from_path)
 
 
-class UpdateVersionMetadataController(CementBaseController):
+class UpdateVersionMetadataController(cement.Controller):
     """ Update version metadata of a knowledge base (URL, branch, revision, wc_kb version) """
 
     class Meta:
@@ -192,15 +191,15 @@ class UpdateVersionMetadataController(CementBaseController):
                                 help='If set, do not validate the format of the knowledge base file(s)')),
         ]
 
-    @expose(hide=True)
-    def default(self):
+    @cement.ex(hide=True)
+    def _default(self):
         args = self.app.pargs
         kb = io.Reader().run(args.path_core, args.path_seq, strict=args.strict)
         kb.wc_kb_version = wc_kb.__version__
         io.Writer().run(kb, args.path_core, args.path_seq, set_repo_metadata_from_path=args.set_repo_metadata_from_path)
 
 
-class App(CementApp):
+class App(cement.App):
     """ Command line application """
     class Meta:
         label = 'wc_kb'
