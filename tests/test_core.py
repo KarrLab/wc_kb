@@ -3,6 +3,7 @@
 :Author: Balazs Szigeti <balazs.szigeti@mssm.edu>
 :Author: Jonathan Karr <jonrkarr@gmail.com>
 :Author: Bilal Shaikh <bilal.shaikh@columbia.edu>
+:Author: Arthur Goldberg <Arthur.Goldberg@mssm.edu>
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
@@ -525,7 +526,7 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
         self.assertEqual(tu1.get_5_prime(), 15)
 
 
-class ReactionAndRelatedClassesCase(unittest.TestCase):
+class ReactionAndRelatedClassesTestCase(unittest.TestCase):
 
     def setUp(self):
         self.cell_1 = cell_1 = core.Cell()

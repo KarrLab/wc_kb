@@ -3,6 +3,7 @@
 :Author: Balazs Szigeti <balazs.szigeti@mssm.edu>
 :Author: Jonathan Karr <jonrkarr@gmail.com>
 :Author: Bilal Shaikh  <bilal.shaikh@columbia.edu>
+:Author: Arthur Goldberg <Arthur.Goldberg@mssm.edu>
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
