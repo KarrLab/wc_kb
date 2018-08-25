@@ -546,8 +546,6 @@ class ReactionAndRelatedClassesCase(unittest.TestCase):
             name='test_reaction',
             cell=cell_1,
             participants=[participant_1, participant_2],
-            k_m=0.1,
-            v_max=0.5,
             reversible=False)
 
         self.rate_law_equation_1 = rate_law_equation_1 = core.RateLawEquation(
@@ -559,6 +557,8 @@ class ReactionAndRelatedClassesCase(unittest.TestCase):
             id='rate_law_1',
             reaction=reaction_1,
             direction=core.RateLawDirection.forward,
+            k_m=0.1,
+            k_cat=0.5,
             equation=rate_law_equation_1
         )
 
@@ -574,8 +574,6 @@ class ReactionAndRelatedClassesCase(unittest.TestCase):
         self.assertEqual(self.reaction_1.name, 'test_reaction')
         self.assertEqual(self.reaction_1.cell, self.cell_1)
         self.assertEqual(self.reaction_1.participants, [self.participant_1, self.participant_2])
-        self.assertEqual(self.reaction_1.k_m, 0.1)
-        self.assertEqual(self.reaction_1.v_max, 0.5)
         self.assertEqual(self.reaction_1.reversible, 0)
 
     def test_RateLawEquation(self):
@@ -586,6 +584,8 @@ class ReactionAndRelatedClassesCase(unittest.TestCase):
         self.assertEqual(self.rate_law_1.id, 'rate_law_1')
         self.assertEqual(self.rate_law_1.direction, core.RateLawDirection.forward)
         self.assertEqual(self.rate_law_1.equation, self.rate_law_equation_1)
+        self.assertEqual(self.rate_law_1.k_m, 0.1)
+        self.assertEqual(self.rate_law_1.k_cat, 0.5)
         self.assertIn(self.reaction_1.id, self.rate_law_1.serialize())
         self.assertIn('forward', self.rate_law_1.serialize())
 

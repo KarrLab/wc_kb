@@ -1792,8 +1792,8 @@ class RateLaw(KnowledgeBaseObject):
         reaction (:obj:`Reaction`): reaction
         direction (:obj:`RateLawDirection`): direction
         equation (:obj:`RateLawEquation`): equation
-        k_cat (:obj:`float`): v_max (reactions enz^-1 s^-1)
-        k_m (:obj:`float`): k_m (M)
+        k_cat (:obj:`float`): k_cat for law with Michaelis–Menten kinetics (units: 1/sec)
+        k_m (:obj:`float`): K_m for law with Michaelis–Menten kinetics (units: mol/L)
     """
 
     reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
@@ -1899,8 +1899,6 @@ class Reaction(KnowledgeBaseObject):
     Attributes:
         cell (:obj:`Cell`): cell
         participants (:obj:`list` of :obj:`ReactionParticipant`): participants
-        v_max (:obj:`float`):V_max value of reaction (unit: mol/L/min)
-        k_m (:obj:`float`): K_m value of reaction (unit: mol/L)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
 
     Related attributes:
@@ -1910,13 +1908,11 @@ class Reaction(KnowledgeBaseObject):
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='reactions')
     participants = ReactionParticipantAttribute(related_name='reactions')
-    v_max = obj_model.FloatAttribute(min=0, verbose_name='Vmax')
-    k_m = obj_model.FloatAttribute(min=0, verbose_name='Km')
     reversible = obj_model.BooleanAttribute()
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'participants',
-                           'v_max', 'k_m', 'reversible', 'comments')
+                           'reversible', 'comments')
 
 
 class Property(KnowledgeBaseObject):
