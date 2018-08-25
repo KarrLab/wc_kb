@@ -40,6 +40,7 @@ class Writer(object):
         core.ProteinSpeciesType,
         core.ComplexSpeciesType,
         core.Reaction,
+        core.RateLaw,
         core.Property,
         core.Observable
     )

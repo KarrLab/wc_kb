@@ -525,38 +525,94 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
         self.assertEqual(tu1.get_5_prime(), 15)
 
 
-class ReactionTestCase(unittest.TestCase):
-    def test_Reaction(self):
-        cell_1 = core.Cell()
-        compartment_1 = core.Compartment(cell=cell_1)
-        species_type_1 = core.MetaboliteSpeciesType(id='1')
-        species_type_2 = core.MetaboliteSpeciesType(id='2')
-        species_1 = core.Species(
+class ReactionAndRelatedClassesCase(unittest.TestCase):
+
+    def setUp(self):
+        self.cell_1 = cell_1 = core.Cell()
+        self.compartment_1 = compartment_1 = core.Compartment(cell=cell_1, id='compartment_1')
+        self.species_type_1 = species_type_1 = core.MetaboliteSpeciesType(id='species_type_1')
+        self.species_type_2 = species_type_2 = core.MetaboliteSpeciesType(id='species_type_2')
+        self.species_1 = species_1 = core.Species(
             species_type=species_type_1, compartment=compartment_1)
-        species_2 = core.Species(
+        self.species_2 = species_2 = core.Species(
             species_type=species_type_2, compartment=compartment_1)
-        participant_1 = core.SpeciesCoefficient(
+        self.participant_1 = participant_1 = core.SpeciesCoefficient(
             species=species_1, coefficient=1)
-        participant_2 = core.SpeciesCoefficient(
+        self.participant_2 = participant_2 = core.SpeciesCoefficient(
             species=species_2, coefficient=1)
 
-        reaction_1 = core.Reaction(
+        self.reaction_1 = reaction_1 = core.Reaction(
             id='reaction_1',
             name='test_reaction',
             cell=cell_1,
             participants=[participant_1, participant_2],
             k_m=0.1,
             v_max=0.5,
-            reversible=0)
+            reversible=False)
 
-        self.assertEqual(reaction_1.id, 'reaction_1')
-        self.assertEqual(reaction_1.name, 'test_reaction')
-        self.assertEqual(reaction_1.cell, cell_1)
-        self.assertEqual(reaction_1.participants, [
-                         participant_1, participant_2])
-        self.assertEqual(reaction_1.k_m, 0.1)
-        self.assertEqual(reaction_1.v_max, 0.5)
-        self.assertEqual(reaction_1.reversible, 0)
+        self.rate_law_equation_1 = rate_law_equation_1 = core.RateLawEquation(
+            id='rate_law_equation_1',
+            expression=species_1.id()
+        )
+
+        self.rate_law_1 = rate_law_1 = core.RateLaw(
+            id='rate_law_1',
+            reaction=reaction_1,
+            direction=core.RateLawDirection.forward,
+            equation=rate_law_equation_1
+        )
+
+        self.objects = {
+            core.Species: {
+                species_1.id(): species_1,
+                species_2.id(): species_2
+            }
+        }
+
+    def test_Reaction(self):
+        self.assertEqual(self.reaction_1.id, 'reaction_1')
+        self.assertEqual(self.reaction_1.name, 'test_reaction')
+        self.assertEqual(self.reaction_1.cell, self.cell_1)
+        self.assertEqual(self.reaction_1.participants, [self.participant_1, self.participant_2])
+        self.assertEqual(self.reaction_1.k_m, 0.1)
+        self.assertEqual(self.reaction_1.v_max, 0.5)
+        self.assertEqual(self.reaction_1.reversible, 0)
+
+    def test_RateLawEquation(self):
+        self.assertEqual(self.rate_law_equation_1.id, 'rate_law_equation_1')
+        self.assertEqual(self.rate_law_equation_1.serialize(), self.species_1.id())
+
+    def test_RateLaw(self):
+        self.assertEqual(self.rate_law_1.id, 'rate_law_1')
+        self.assertEqual(self.rate_law_1.direction, core.RateLawDirection.forward)
+        self.assertEqual(self.rate_law_1.equation, self.rate_law_equation_1)
+        self.assertIn(self.reaction_1.id, self.rate_law_1.serialize())
+        self.assertIn('forward', self.rate_law_1.serialize())
+
+    def test_deserialize_RateLawEquation(self):
+        attr = core.RateLawEquation.expression
+
+        # add RateLawEquation to self.objects
+        rle_1, error = core.RateLawEquation.deserialize(attr, self.species_1.id(), self.objects)
+        self.assertTrue(error is None)
+        self.assertEqual(rle_1.modifiers, [self.species_1])
+
+        # RateLawEquation is in self.objects, and value is in self.objects[RateLawEquation]
+        rle_2, error = core.RateLawEquation.deserialize(attr, self.species_1.id(), self.objects)
+        self.assertTrue(error is None)
+        self.assertEqual(rle_2.modifiers, [self.species_1])
+        self.assertEqual(rle_1, rle_2)
+
+        # serialization errors
+        # value not string; re.findall raises exception
+        value = 123
+        obj, error = core.RateLawEquation.deserialize(attr, value, self.objects)
+        self.assertTrue(obj is None)
+
+        # Species.deserialize fails
+        value = 'not_species_id[x]'
+        obj, error = core.RateLawEquation.deserialize(attr, value, self.objects)
+        self.assertTrue(obj is None)
 
 
 class ComplexSpeciesTypeTestCase(unittest.TestCase):

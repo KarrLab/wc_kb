@@ -220,8 +220,8 @@ class TestIO(unittest.TestCase):
         self.assertTrue(kb.is_equal(self.kb))
 
     def test_create_template(self):
-        path_core = os.path.join(self.dir, 'core.xlsx')
-        path_seq = os.path.join(self.dir, 'seq.fna')
+        path_core = os.path.join(self.dir, 'template.xlsx')
+        path_seq = os.path.join(self.dir, 'template_seq.fna')
         io.create_template(path_core, path_seq, set_repo_metadata_from_path=False)
         kb = io.Reader().run(path_core, path_seq)
 

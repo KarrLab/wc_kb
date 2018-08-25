@@ -12,7 +12,9 @@ ProteinSpeciesType.get_seq() => cds=True (complete coding sequence) causes error
 """
 
 from natsort import natsorted, ns
+from math import ceil, floor, exp, log, log10, isnan
 from wc_utils.util import chem
+from wc_utils.util.list import det_dedupe
 import abc
 import Bio.SeqUtils
 import enum
@@ -640,7 +642,7 @@ class KnowledgeBaseObject(obj_model.Model):
         name (:obj:`str`): name
         comments (:obj:`str`): comments
     """
-    id = obj_model.StringAttribute(primary=True, unique=True)
+    id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
     comments = obj_model.StringAttribute()
 
@@ -858,7 +860,7 @@ class Species(obj_model.Model):
                 errors.append(
                     'Species type "{}" is not defined'.format(match.group(1)))
 
-            if match.group(2) in objects[Compartment]:
+            if Compartment in objects and match.group(2) in objects[Compartment]:
                 compartment = objects[Compartment][match.group(2)]
             else:
                 errors.append(
@@ -1736,6 +1738,161 @@ class GeneLocus(PolymerLocus):
 #####################
 # Reactions
 
+class RateLawDirection(enum.Enum):
+    """ Rate law directions """
+    backward = -1
+    forward = 1
+
+
+class RateLawEquationAttribute(ManyToOneAttribute):
+    """ Rate law equation """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(RateLawEquationAttribute, self).__init__('RateLawEquation',
+                                                       related_name=related_name, min_related=1, min_related_rev=1,
+                                                       verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+
+    def serialize(self, rate_law_equation, encoded=None):
+        """ Serialize related object
+
+        Args:
+            rate_law_equation (:obj:`RateLawEquation`): the related `RateLawEquation`
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+
+        Returns:
+            :obj:`str`: simple Python representation of the rate law equation
+        """
+        return rate_law_equation.serialize()
+
+    def deserialize(self, value, objects, decoded=None):
+        """ Deserialize value
+
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+
+        Returns:
+            :obj:`tuple` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value and cleaning error
+        """
+        return RateLawEquation.deserialize(self, value, objects)
+
+
+class RateLaw(KnowledgeBaseObject):
+    """ Rate law
+
+    Attributes:
+        reaction (:obj:`Reaction`): reaction
+        direction (:obj:`RateLawDirection`): direction
+        equation (:obj:`RateLawEquation`): equation
+        k_cat (:obj:`float`): v_max (reactions enz^-1 s^-1)
+        k_m (:obj:`float`): k_m (M)
+    """
+
+    reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
+    direction = EnumAttribute(RateLawDirection, default=RateLawDirection.forward)
+    equation = RateLawEquationAttribute(related_name='rate_laws')
+    k_cat = FloatAttribute(min=0, nan=True)
+    k_m = FloatAttribute(min=0, nan=True)
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('reaction', 'direction',
+                           'equation', 'k_cat', 'k_m',
+                           'comments')
+        unique_together = (('reaction', 'direction'), )
+        ordering = ('reaction', 'direction',)
+
+    def serialize(self):
+        """ Generate string representation
+
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return '{}.{}'.format(self.reaction.serialize(), self.direction.name)
+
+
+class RateLawEquation(KnowledgeBaseObject):
+    """ Rate law equation
+
+    Attributes:
+        expression (:obj:`str`): mathematical expression of the rate law
+        modifiers (:obj:`list` of `Species`): species whose concentrations are used in the rate law
+
+    Related attributes:
+        rate_law (:obj:`RateLaw`): the `RateLaw` which uses this `RateLawEquation`
+    """
+    expression = LongStringAttribute(primary=True, unique=True)
+    modifiers = ManyToManyAttribute(Species, related_name='rate_law_equations')
+
+    class Meta(obj_model.Model.Meta):
+        """
+        Attributes:
+            valid_functions (:obj:`tuple` of `builtin_function_or_method`): tuple of functions that
+                can be used in a `RateLawEquation`s `expression`
+        """
+        attribute_order = ('expression', 'modifiers')
+        tabular_orientation = TabularOrientation.inline
+        ordering = ('rate_law',)
+        valid_functions = (ceil, floor, exp, pow, log, log10, min, max)
+
+    def serialize(self):
+        """ Generate string representation
+
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return self.expression
+
+    @classmethod
+    def deserialize(cls, attribute, value, objects):
+        """ Deserialize value
+
+        Args:
+            attribute (:obj:`Attribute`): attribute
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+
+        Returns:
+            :obj:`tuple` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value and cleaning error
+        """
+        modifiers = []
+        errors = []
+        modifier_pattern = '(^|[^a-z0-9_])({}\[{}\])([^a-z0-9_]|$)'.format(SpeciesType.id.pattern[1:-1],
+                                                                           Compartment.id.pattern[1:-1])
+
+        try:
+            for match in re.findall(modifier_pattern, value, flags=re.I):
+                species, error = Species.deserialize(attribute, match[1], objects)
+                if error:
+                    errors += error.messages
+                else:
+                    modifiers.append(species)
+        except Exception as e:
+            errors += ["deserialize fails on '{}': {}".format(value, str(e))]
+
+        if errors:
+            attr = cls.Meta.attributes['expression']
+            return (None, InvalidAttribute(attribute, errors))
+
+        # return value
+        if cls not in objects:
+            objects[cls] = {}
+        serialized_val = value
+        if serialized_val in objects[cls]:
+            obj = objects[cls][serialized_val]
+        else:
+            obj = cls(expression=value, modifiers=det_dedupe(modifiers))
+            objects[cls][serialized_val] = obj
+        return (obj, None)
+
+
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
 
@@ -1745,6 +1902,10 @@ class Reaction(KnowledgeBaseObject):
         v_max (:obj:`float`):V_max value of reaction (unit: mol/L/min)
         k_m (:obj:`float`): K_m value of reaction (unit: mol/L)
         reversible (:obj:`boolean`): denotes whether reaction is reversible
+
+    Related attributes:
+        rate_laws (:obj:`list` of `RateLaw`): rate laws; if present, rate_laws[0] is the forward
+            rate law, and rate_laws[1] is the backward rate law
     """
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='reactions')
