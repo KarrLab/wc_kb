@@ -1804,7 +1804,7 @@ class RateLaw(KnowledgeBaseObject):
     k_m = FloatAttribute(min=0, nan=True)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('reaction', 'direction',
+        attribute_order = ('id', 'name', 'reaction', 'direction',
                            'equation', 'k_cat', 'k_m',
                            'comments')
         unique_together = (('reaction', 'direction'), )
@@ -1899,7 +1899,7 @@ class Reaction(KnowledgeBaseObject):
 
     Attributes:
         cell (:obj:`Cell`): cell
-        participants (:obj:`list` of :obj:`ReactionParticipant`): participants
+        participants (:obj:`list` of :obj:`SpeciesCoefficient`): participants
         reversible (:obj:`boolean`): denotes whether reaction is reversible
 
     Related attributes:
