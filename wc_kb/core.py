@@ -1786,7 +1786,7 @@ class RateLawEquationAttribute(ManyToOneAttribute):
         return RateLawEquation.deserialize(self, value, objects)
 
 
-class RateLaw(KnowledgeBaseObject):
+class RateLaw(obj_model.Model):
     """ Rate law
 
     Attributes:
@@ -1795,6 +1795,7 @@ class RateLaw(KnowledgeBaseObject):
         equation (:obj:`RateLawEquation`): equation
         k_cat (:obj:`float`): k_cat for law with Michaelis–Menten kinetics (units: 1/sec)
         k_m (:obj:`float`): K_m for law with Michaelis–Menten kinetics (units: mol/L)
+        comments (:obj:`str`): comments
     """
 
     reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
@@ -1802,9 +1803,10 @@ class RateLaw(KnowledgeBaseObject):
     equation = RateLawEquationAttribute(related_name='rate_laws')
     k_cat = FloatAttribute(min=0, nan=True)
     k_m = FloatAttribute(min=0, nan=True)
+    comments = obj_model.StringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'reaction', 'direction',
+        attribute_order = ('reaction', 'direction',
                            'equation', 'k_cat', 'k_m',
                            'comments')
         unique_together = (('reaction', 'direction'), )
@@ -1819,7 +1821,7 @@ class RateLaw(KnowledgeBaseObject):
         return '{}.{}'.format(self.reaction.serialize(), self.direction.name)
 
 
-class RateLawEquation(KnowledgeBaseObject):
+class RateLawEquation(obj_model.Model):
     """ Rate law equation
 
     Attributes:

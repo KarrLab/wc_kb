@@ -32,7 +32,11 @@ from .core import (KnowledgeBaseObject,
                    ObservableCoefficient,
                    ObservableObservableParticipantAttribute,
                    ObservableSpeciesParticipantAttribute,
-                   PolymerStrand)
+                   PolymerStrand,
+                   RateLawDirection,
+                   RateLawEquationAttribute,
+                   RateLaw,
+                   RateLawEquation)
 
 from . import io
 from . import util

@@ -550,12 +550,10 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             reversible=False)
 
         self.rate_law_equation_1 = rate_law_equation_1 = core.RateLawEquation(
-            id='rate_law_equation_1',
             expression=species_1.id()
         )
 
         self.rate_law_1 = rate_law_1 = core.RateLaw(
-            id='rate_law_1',
             reaction=reaction_1,
             direction=core.RateLawDirection.forward,
             k_m=0.1,
@@ -578,11 +576,9 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         self.assertEqual(self.reaction_1.reversible, 0)
 
     def test_RateLawEquation(self):
-        self.assertEqual(self.rate_law_equation_1.id, 'rate_law_equation_1')
         self.assertEqual(self.rate_law_equation_1.serialize(), self.species_1.id())
 
     def test_RateLaw(self):
-        self.assertEqual(self.rate_law_1.id, 'rate_law_1')
         self.assertEqual(self.rate_law_1.direction, core.RateLawDirection.forward)
         self.assertEqual(self.rate_law_1.equation, self.rate_law_equation_1)
         self.assertEqual(self.rate_law_1.k_m, 0.1)
