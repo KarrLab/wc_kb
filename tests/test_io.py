@@ -65,6 +65,24 @@ class TestIO(unittest.TestCase):
 
         self.assertTrue(self.kb.is_equal(kb))
 
+    def test_read_write(self):
+        fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
+        core_path = os.path.join(fixtures, 'core.xlsx')
+        seq_path = os.path.join(fixtures, 'seq.fna')
+
+        reader = io.Reader()
+        kb = reader.run(core_path, seq_path)
+
+        tmp_core_path = os.path.join(self.dir, 'tmp_core.xlsx')
+        tmp_seq_path = os.path.join(self.dir, 'tmp_seq.fna')
+
+        writer = io.Writer()
+        writer.run(kb, tmp_core_path, tmp_seq_path, set_repo_metadata_from_path=False)
+
+        tmp_kb = reader.run(tmp_core_path, tmp_seq_path)
+
+        self.assertTrue(kb.is_equal(tmp_kb))
+
     def test_write_with_repo_md(self):
         _, core_path = tempfile.mkstemp(suffix='.xlsx', dir='.')
         _, seq_path = tempfile.mkstemp(suffix='.fna', dir='.')

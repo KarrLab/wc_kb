@@ -31,6 +31,7 @@ from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerA
                        RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
                        OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
                        InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
+from wc_utils.util.enumerate import CaseInsensitiveEnum
 from wc_utils.util.types import get_subclasses
 
 with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
@@ -1739,7 +1740,8 @@ class GeneLocus(PolymerLocus):
 #####################
 # Reactions
 
-class RateLawDirection(enum.Enum):
+class RateLawDirection(int, CaseInsensitiveEnum):
+    """ Submodel algorithms """
     """ Rate law directions """
     backward = -1
     forward = 1
