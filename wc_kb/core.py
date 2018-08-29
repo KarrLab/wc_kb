@@ -1741,7 +1741,6 @@ class GeneLocus(PolymerLocus):
 # Reactions
 
 class RateLawDirection(int, CaseInsensitiveEnum):
-    """ Submodel algorithms """
     """ Rate law directions """
     backward = -1
     forward = 1
