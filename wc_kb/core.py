@@ -1926,5 +1926,5 @@ class Property(KnowledgeBaseObject):
     units = obj_model.StringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'value', 'units')
+        attribute_order = ('id', 'name', 'value', 'units', 'comments')
         verbose_name_plural = 'Properties'
