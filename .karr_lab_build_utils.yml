@@ -5,6 +5,7 @@ downstream_dependencies:
   - wc_analysis
   - wc_model_gen
   - wc_test
+  - wc_sim
 email_notifications:
   - jonrkarr@gmail.com
   - balazs.szigeti@mssm.edu
