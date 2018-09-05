@@ -478,7 +478,7 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
             spec_type_errors = []
 
             spec_type_id = spec_coeff_match[5]
-           
+
             try:
                 if spec_type_id in objects[ProteinSpeciesType]:
                     spec_type = objects[ProteinSpeciesType][spec_type_id]
@@ -1622,7 +1622,7 @@ class ComplexSpeciesType(SpeciesType):
         # Formula addition
         formula = chem.EmpiricalFormula()
         for subunit in self.subunits:
-            for coeff in range(0, abs(subunit.coefficient)):
+            for coeff in range(0, abs(int(subunit.coefficient))):
                 formula = formula + subunit.species.species_type.get_empirical_formula()
 
         return formula
@@ -1635,8 +1635,7 @@ class ComplexSpeciesType(SpeciesType):
         """
         charge = 0
         for subunit in self.subunits:
-            for coeff in range(0, abs(subunit.coefficient)):
-                charge = charge + subunit.species.species_type.get_charge()
+            charge += abs(subunit.coefficient)*subunit.species.species_type.get_charge()
 
         return charge
 
@@ -1648,8 +1647,7 @@ class ComplexSpeciesType(SpeciesType):
         """
         weight = 0
         for subunit in self.subunits:
-            for coeff in range(0, abs(subunit.coefficient)):
-                weight = weight + subunit.species.species_type.get_mol_wt()
+            weight += abs(subunit.coefficient)*subunit.species.species_type.get_mol_wt()
 
         return weight
 
