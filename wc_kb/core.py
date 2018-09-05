@@ -4,6 +4,7 @@
 :Author: Jonathan Karr <jonrkarr@gmail.com>
 :Author: Bilal Shaikh  <bilal.shaikh@columbia.edu>
 :Author: Arthur Goldberg <Arthur.Goldberg@mssm.edu>
+:Author: Yin Hoon Chew <yinhoon.chew@mssm.edu>
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
@@ -636,17 +637,44 @@ class ObservableObservableParticipantAttribute(ManyToManyAttribute):
 # Base classes
 
 
+class DatabaseReference(obj_model.Model):
+    """ Reference to an entity in an external database
+
+    Attributes:
+        database (:obj:`str`): name of the external database
+        id (:obj:`str`): identifier within the database
+    """
+    database = obj_model.StringAttribute()
+    id = obj_model.StringAttribute()
+
+    class Meta(obj_model.Model.Meta):
+        unique_together = (('database', 'id'), )
+
+
+class Reference(obj_model.Model):
+    """ Reference to the literature
+
+    Attributes:        
+        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
+    """      
+    standard_id = obj_model.StringAttribute()
+
+
 class KnowledgeBaseObject(obj_model.Model):
-    """ Knowlege of a biological entity
+    """ Knowledge of a biological entity
 
     Attributes:
         id (:obj:`str`): identifier
         name (:obj:`str`): name
         comments (:obj:`str`): comments
+        database_refs (:obj:`list` of :obj:`DatabaseReference`): database references
+        references (:obj:`list` of :obj:`Reference`): references to the literature
     """
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
     comments = obj_model.StringAttribute()
+    database_refs = obj_model.ManyToManyAttribute(DatabaseReference, related_name='knowledgebase')
+    references = obj_model.ManyToManyAttribute(Reference, related_name='knowledgebase')
 
 
 class KnowledgeBase(KnowledgeBaseObject):
@@ -686,6 +714,7 @@ class Cell(KnowledgeBaseObject):
         knowledge_base (:obj:`KnowledgeBase`): knowledge base
 
     Related attributes:
+        taxon (:obj:`Taxon`): taxon
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
         observables (:obj:'list' or :obj: 'Observable') : observables
@@ -700,21 +729,32 @@ class Cell(KnowledgeBaseObject):
         tabular_orientation = obj_model.TabularOrientation.column
 
 
+class Taxon(KnowledgeBaseObject):
+    """ Knowledge of the taxonomic group of the cell
+
+    Attributes:
+        cell (:obj:`Cell`): cell
+    """
+    cell = obj_model.OneToOneAttribute(Cell, related_name='taxon')        
+
+
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
 
     Attributes:
         cell (:obj:`Cell`): cell
-        volume (:obj:`float`): average volume at the begining of the cell cycle (L)
+        volume (:obj:`float`): average volume at the beginning of the cell cycle (L)
+        volumetric_fraction (:obj:`float`): volumetric fraction relative to the cell volume 
 
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """
     cell = obj_model.ManyToOneAttribute(Cell, related_name='compartments')
-    volume = obj_model.FloatAttribute(min=0)
+    volume = obj_model.FloatAttribute(min=0.)
+    volumetric_fraction = obj_model.FloatAttribute(min=0., max=1.)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'volume', 'comments')
+        attribute_order = ('id', 'name', 'volume', 'volumetric_fraction', 'comments')
 
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
