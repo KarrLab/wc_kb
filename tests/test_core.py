@@ -4,6 +4,7 @@
 :Author: Jonathan Karr <jonrkarr@gmail.com>
 :Author: Bilal Shaikh <bilal.shaikh@columbia.edu>
 :Author: Arthur Goldberg <Arthur.Goldberg@mssm.edu>
+:Author: Yin Hoon Chew <yinhoon.chew@mssm.edu>
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
@@ -47,6 +48,8 @@ class KnowledgeBaseTestCase(unittest.TestCase):
     def test_constructor(self):
         kb = core.KnowledgeBase()
         self.assertEqual(kb.cell, None)
+        self.assertEqual(kb.database_refs, [])
+        self.assertEqual(kb.references, [])
 
 
 class CellTestCase(unittest.TestCase):
@@ -54,6 +57,8 @@ class CellTestCase(unittest.TestCase):
         cell = core.Cell()
 
         self.assertEqual(cell.knowledge_base, None)
+        self.assertEqual(cell.taxon, None)
+        self.assertEqual(cell.observables, [])
         self.assertEqual(cell.species_types, [])
         self.assertEqual(cell.compartments, [])
         self.assertEqual(cell.reactions, [])
@@ -66,8 +71,9 @@ class CellTestCase(unittest.TestCase):
 
 class CompartmentTestCase(unittest.TestCase):
     def test_constructor(self):
-        comp = core.Compartment(volume=2.)
+        comp = core.Compartment(volume=2., volumetric_fraction=0.5)
         self.assertEqual(comp.volume, 2.)
+        self.assertEqual(comp.volumetric_fraction, 0.5)
 
 
 class SpeciesTypeTestCase(unittest.TestCase):
