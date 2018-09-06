@@ -1,6 +1,7 @@
 """ Tests of the knowledge base IO
 
 :Author: Jonathan Karr <jonrkarr@gmail.com>
+:Author: Arthur Goldberg <Arthur.Goldberg@mssm.edu>
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
