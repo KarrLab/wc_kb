@@ -48,16 +48,14 @@ class KnowledgeBaseTestCase(unittest.TestCase):
     def test_constructor(self):
         kb = core.KnowledgeBase()
         self.assertEqual(kb.cell, None)
-        self.assertEqual(kb.database_refs, [])
-        self.assertEqual(kb.references, [])
-
+        
 
 class CellTestCase(unittest.TestCase):
     def test_constructor(self):
-        cell = core.Cell()
+        cell = core.Cell(taxon=9606)
 
         self.assertEqual(cell.knowledge_base, None)
-        self.assertEqual(cell.taxon, None)
+        self.assertEqual(cell.taxon, 9606)
         self.assertEqual(cell.observables, [])
         self.assertEqual(cell.species_types, [])
         self.assertEqual(cell.compartments, [])
@@ -71,8 +69,7 @@ class CellTestCase(unittest.TestCase):
 
 class CompartmentTestCase(unittest.TestCase):
     def test_constructor(self):
-        comp = core.Compartment(volume=2., volumetric_fraction=0.5)
-        self.assertEqual(comp.volume, 2.)
+        comp = core.Compartment(volumetric_fraction=0.5)
         self.assertEqual(comp.volumetric_fraction, 0.5)
 
 

@@ -673,9 +673,7 @@ class KnowledgeBaseObject(obj_model.Model):
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
     comments = obj_model.StringAttribute()
-    database_refs = obj_model.ManyToManyAttribute(DatabaseReference, related_name='knowledgebase')
-    references = obj_model.ManyToManyAttribute(Reference, related_name='knowledgebase')
-
+    
 
 class KnowledgeBase(KnowledgeBaseObject):
     """ A knowledge base
@@ -712,9 +710,9 @@ class Cell(KnowledgeBaseObject):
 
     Attributes:
         knowledge_base (:obj:`KnowledgeBase`): knowledge base
+        taxon (:obj:`int`): NCBI taxon identifier
 
-    Related attributes:
-        taxon (:obj:`Taxon`): taxon
+    Related attributes:        
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
         observables (:obj:'list' or :obj: 'Observable') : observables
@@ -723,38 +721,28 @@ class Cell(KnowledgeBaseObject):
     """
     knowledge_base = obj_model.OneToOneAttribute(
         KnowledgeBase, related_name='cell')
+    taxon = obj_model.StringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'comments')
+        attribute_order = ('id', 'name', 'taxon', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
-
-
-class Taxon(KnowledgeBaseObject):
-    """ Knowledge of the taxonomic group of the cell
-
-    Attributes:
-        cell (:obj:`Cell`): cell
-    """
-    cell = obj_model.OneToOneAttribute(Cell, related_name='taxon')        
-
+   
 
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
 
     Attributes:
-        cell (:obj:`Cell`): cell
-        volume (:obj:`float`): average volume at the beginning of the cell cycle (L)
+        cell (:obj:`Cell`): cell        
         volumetric_fraction (:obj:`float`): volumetric fraction relative to the cell volume 
 
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """
-    cell = obj_model.ManyToOneAttribute(Cell, related_name='compartments')
-    volume = obj_model.FloatAttribute(min=0.)
+    cell = obj_model.ManyToOneAttribute(Cell, related_name='compartments')    
     volumetric_fraction = obj_model.FloatAttribute(min=0., max=1.)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'volume', 'volumetric_fraction', 'comments')
+        attribute_order = ('id', 'name', 'volumetric_fraction', 'comments')
 
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
