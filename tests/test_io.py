@@ -7,7 +7,7 @@
 :License: MIT
 """
 
-from wc_kb import core
+from wc_kb import core, prokaryote_schema
 from wc_kb import io
 import Bio.Seq
 import obj_model.io
@@ -38,7 +38,7 @@ class TestIO(unittest.TestCase):
             dna.seq = Bio.Seq.Seq(seq)
 
             for i_trn in range(5):
-                trn = core.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
+                trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
                 trn.cell = cell
                 dna.loci.append(trn)
                 trn.start = random.randint(100, 200)
@@ -110,7 +110,7 @@ class TestIO(unittest.TestCase):
         dna.seq = Bio.Seq.Seq('ACGT')
         self.kb.cell.species_types.append(dna)
 
-        trn = core.TranscriptionUnitLocus(id='tu_x_0')
+        trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_x_0')
         dna.loci.append(trn)
         trn.cell = None
 

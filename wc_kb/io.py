@@ -13,6 +13,7 @@ Supported file types:
 """
 
 from . import core
+from . import prokaryote_schema
 from . import util
 from wc_utils.util.string import indent_forest
 import Bio.SeqIO
@@ -33,11 +34,11 @@ class Writer(object):
         core.Compartment,
         core.MetaboliteSpeciesType,
         core.DnaSpeciesType,
-        core.PromoterLocus,
-        core.TranscriptionUnitLocus,
-        core.RnaSpeciesType,
-        core.GeneLocus,
-        core.ProteinSpeciesType,
+        prokaryote_schema.PromoterLocus,
+        prokaryote_schema.TranscriptionUnitLocus,
+        prokaryote_schema.RnaSpeciesType,
+        prokaryote_schema.GeneLocus,
+        prokaryote_schema.ProteinSpeciesType,
         core.ComplexSpeciesType,
         core.Reaction,
         core.RateLaw,

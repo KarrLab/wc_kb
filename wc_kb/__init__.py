@@ -14,14 +14,9 @@ from .core import (KnowledgeBaseObject,
                    PolymerSpeciesType,
                    ComplexSpeciesType,
                    DnaSpeciesType,
-                   RnaType,
-                   RnaSpeciesType,
-                   ProteinSpeciesType,
+                   RnaType,                   
                    PolymerLocus,
-                   GeneType,
-                   GeneLocus,
-                   PromoterLocus,
-                   TranscriptionUnitLocus,
+                   GeneType,                   
                    Reaction,
                    Species,
                    SpeciesCoefficient,
@@ -37,6 +32,10 @@ from .core import (KnowledgeBaseObject,
                    RateLawEquationAttribute,
                    RateLaw,
                    RateLawEquation)
-
+from .prokaryote_schema import (RnaSpeciesType,
+                                ProteinSpeciesType,
+                                GeneLocus,
+                                PromoterLocus,
+                                TranscriptionUnitLocus,)
 from . import io
 from . import util
