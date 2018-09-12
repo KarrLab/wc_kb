@@ -34,6 +34,7 @@ from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerA
                        InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
 from wc_utils.util.enumerate import CaseInsensitiveEnum
 from wc_utils.util.types import get_subclasses
+#import wc_kb.prokaryote_schema as prokaryote_schema
 
 with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
     wc_kb_version = file.read().strip()
@@ -481,10 +482,16 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
             spec_type_id = spec_coeff_match[5]
 
             try:
+                #if spec_type_id in objects[prokaryote_schema.ProteinSpeciesType]:
+                #    spec_type = objects[prokaryote_schema.ProteinSpeciesType][spec_type_id]
+                #elif spec_type_id in objects[prokaryote_schema.RnaSpeciesType]:
+                #    spec_type = objects[prokaryote_schema.RnaSpeciesType][spec_type_id]
+
                 if spec_type_id in objects[ProteinSpeciesType]:
                     spec_type = objects[ProteinSpeciesType][spec_type_id]
                 elif spec_type_id in objects[RnaSpeciesType]:
                     spec_type = objects[RnaSpeciesType][spec_type_id]
+
                 elif spec_type_id in objects[ComplexSpeciesType]:
                     spec_type = objects[ComplexSpeciesType][spec_type_id]
                 elif spec_type_id in objects[DnaSpeciesType]:
@@ -656,9 +663,9 @@ class DatabaseReference(obj_model.Model):
 class Reference(obj_model.Model):
     """ Reference to the literature
 
-    Attributes:        
-        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID  
-    """      
+    Attributes:
+        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
+    """
     standard_id = obj_model.StringAttribute()
 
     class Meta(obj_model.Model.Meta):
@@ -677,7 +684,7 @@ class KnowledgeBaseObject(obj_model.Model):
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
     comments = obj_model.StringAttribute()
-    
+
 
 class KnowledgeBase(KnowledgeBaseObject):
     """ A knowledge base
@@ -716,7 +723,7 @@ class Cell(KnowledgeBaseObject):
         knowledge_base (:obj:`KnowledgeBase`): knowledge base
         taxon (:obj:`int`): NCBI taxon identifier
 
-    Related attributes:        
+    Related attributes:
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
         observables (:obj:'list' or :obj: 'Observable') : observables
@@ -730,7 +737,7 @@ class Cell(KnowledgeBaseObject):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'taxon', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
-   
+
 
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
@@ -738,13 +745,13 @@ class Compartment(KnowledgeBaseObject):
     Attributes:
         cell (:obj:`Cell`): cell
         volumetric_fraction (:obj:`float`): average volumetric fraction relative to the cell volume
-        
+
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """
     cell = obj_model.ManyToOneAttribute(Cell, related_name='compartments')
     volumetric_fraction = obj_model.FloatAttribute(min=0., max=1.)
-    
+
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'volumetric_fraction', 'comments')
 
