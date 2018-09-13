@@ -650,22 +650,74 @@ class DatabaseReference(obj_model.Model):
     class Meta(obj_model.Model.Meta):
         tabular_orientation = TabularOrientation.inline
         unique_together = (('database', 'id'), )
-        ordering = ('database', 'id')
+        
+    def serialize(self):    
+        """ Generate string representation
+        
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        if self.id:            
+            return '{}:{}'.format(self.database, self.id)
+        else:
+            return self.database   
 
+    @classmethod
+    def deserialize(cls, value, objects):
+        """ Deserialize value
+
+        Args:            
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            
+        Returns:
+            :obj:`tuple` of `list` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        
+        if not value:
+            return ([], None)
+
+        errors = []
+        db_id_objs = []    
+        match
+        if match:
+            errors.append('Contain ')
+        else:
+            if ':' in value:
+                db_id_obj = 
+                db_id_objs = 
+            else:
+                db_id_objs =    
+            
+        if errors:        
+            return (None, InvalidAttribute(self, errors))
+        return (db_id_objs, None)        
+        """
+        pass
 
 class Reference(obj_model.Model):
     """ Reference to the literature
 
-    Attributes:        
-        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID  
+    Attributes:
+        id (:obj:`str`): identifier        
+        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
+
+    Related attributes:
+        compartments (:obj:`list` of :obj:`Compartment`): compartments    
+        species_types (:obj:`list` of :obj:`SpeciesType`): species_types
+        loci (:obj:`list` of :obj:`PolymerLocus`): loci   
+        properties (:obj:`list` of :obj:`Property`): properties
+        reactions (:obj:`list` of :obj:`Reaction`): reactions
+        rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
+        observables (:obj:`list` of :obj:`Observable`): observables
     """      
+    id = obj_model.StringAttribute(primary=True, unique=True)
     standard_id = obj_model.StringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        tabular_orientation = TabularOrientation.inline
-        ordering = ('standard_id', )
+        attribute_order = ('id', 'standard_id')
 
-
+    
 class KnowledgeBaseObject(obj_model.Model):
     """ Knowledge of a biological entity
 
@@ -676,7 +728,7 @@ class KnowledgeBaseObject(obj_model.Model):
     """
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
-    comments = obj_model.StringAttribute()
+    comments = obj_model.StringAttribute()    
     
 
 class KnowledgeBase(KnowledgeBaseObject):
@@ -738,15 +790,17 @@ class Compartment(KnowledgeBaseObject):
     Attributes:
         cell (:obj:`Cell`): cell
         volumetric_fraction (:obj:`float`): average volumetric fraction relative to the cell volume
+        references (:obj:`list` of :obj:`Reference`): references
         
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """
     cell = obj_model.ManyToOneAttribute(Cell, related_name='compartments')
     volumetric_fraction = obj_model.FloatAttribute(min=0., max=1.)
+    references = obj_model.ManyToManyAttribute(Reference, related_name='compartments')
     
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'volumetric_fraction', 'comments')
+        attribute_order = ('id', 'name', 'volumetric_fraction', 'comments', 'references')
 
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
@@ -756,6 +810,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
         cell (:obj:`Cell`): cell
         concentration (:obj:`float`): concentration (M)
         half_life  (:obj:`float`): half life (s)
+        references (:obj:`list` of :obj:`Reference`): references
 
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
@@ -764,10 +819,11 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     cell = obj_model.ManyToOneAttribute(Cell, related_name='species_types')
     concentration = obj_model.FloatAttribute(min=0)
     half_life = obj_model.FloatAttribute(min=0)
+    references = obj_model.ManyToManyAttribute(Reference, related_name='species_types')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'concentration',
-                           'half_life', 'comments')
+                           'half_life', 'comments', 'references')
 
     @abc.abstractmethod
     def get_empirical_formula(self):
@@ -1044,7 +1100,7 @@ class PolymerSpeciesType(SpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'circular', 'double_stranded',
-                           'concentration', 'half_life', 'comments')
+                           'concentration', 'half_life', 'comments', 'references')
 
     @abc.abstractmethod
     def get_seq(self):
@@ -1113,6 +1169,7 @@ class PolymerLocus(KnowledgeBaseObject):
         start (:obj:`int`): start position
         end (:obj:`int`): end position
         strand (:obj:`PolymerStrand`): strand
+        references (:obj:`list` of :obj:`Reference`): references
     """
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='loci')
@@ -1122,10 +1179,11 @@ class PolymerLocus(KnowledgeBaseObject):
         PolymerStrand, default=PolymerStrand.positive)
     start = obj_model.IntegerAttribute()
     end = obj_model.IntegerAttribute()
+    references = obj_model.ManyToManyAttribute(Reference, related_name='loci')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'polymer', 'strand',
-                           'start', 'end', 'comments')
+                           'start', 'end', 'comments', 'references')
 
     def get_seq(self):
         """ Get the sequence
@@ -1149,23 +1207,25 @@ class Observable(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowle
 
     Attributes:
         cell (:obj:'Cell'): The cell that the observable is in
-
-        species(:obj:`list` of :obj: `SpeciesCoefficient`): A list of the species and the coefficients to be included in the observable
-
-        observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables and their coefficients
+        species(:obj:`list` of :obj: `SpeciesCoefficient`): A list of the species and the 
+            coefficients to be included in the observable
+        observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables 
+            and their coefficients
+        references (:obj:`list` of :obj:`Reference`): references    
 
     Related Attributes:
         observable_coefficients (:obj:`list` of `ObservableCoefficient`): Participants in observables
 """
-    cell = ManyToOneAttribute(Cell, related_name="observables")
+    cell = ManyToOneAttribute(Cell, related_name='observables')
     species = ObservableSpeciesParticipantAttribute(
         'SpeciesCoefficient', related_name='observables')
     observables = ObservableObservableParticipantAttribute(
         'ObservableCoefficient', related_name='observables')
+    references = obj_model.ManyToManyAttribute(Reference, related_name='observables')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'cell', 'species',
-                           'observables', 'comments')
+                           'observables', 'comments', 'references')
 
 
 class ObservableCoefficient(obj_model.Model):
@@ -1278,7 +1338,7 @@ class MetaboliteSpeciesType(SpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'structure',
-                           'concentration', 'half_life', 'comments')
+                           'concentration', 'half_life', 'comments', 'references')
 
     def get_structure(self):
         """ Get the structure
@@ -1339,7 +1399,7 @@ class DnaSpeciesType(PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'seq', 'circular',
-                           'double_stranded', 'concentration', 'half_life', 'comments')
+                           'double_stranded', 'concentration', 'half_life', 'comments', 'references')
         verbose_name = 'DNA species type'
 
     def get_seq(self, start=None, end=None):
@@ -1452,7 +1512,8 @@ class ComplexSpeciesType(SpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'formation_process', 'subunits',
-                           'complex_type', 'binding', 'region', 'concentration', 'half_life', 'comments')
+                           'complex_type', 'binding', 'region', 'concentration', 
+                           'half_life', 'comments', 'references')
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -1554,6 +1615,8 @@ class RateLaw(obj_model.Model):
         k_cat (:obj:`float`): k_cat for law with Michaelis–Menten kinetics (units: 1/sec)
         k_m (:obj:`float`): K_m for law with Michaelis–Menten kinetics (units: mol/L)
         comments (:obj:`str`): comments
+        references (:obj:`list` of :obj:`Reference`): references
+
     """
 
     reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
@@ -1562,11 +1625,12 @@ class RateLaw(obj_model.Model):
     k_cat = FloatAttribute(min=0, nan=True)
     k_m = FloatAttribute(min=0, nan=True)
     comments = obj_model.StringAttribute()
+    references = obj_model.ManyToManyAttribute(Reference, related_name='rate_laws')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('reaction', 'direction',
                            'equation', 'k_cat', 'k_m',
-                           'comments')
+                           'comments', 'references')
         unique_together = (('reaction', 'direction'), )
         ordering = ('reaction', 'direction',)
 
@@ -1661,6 +1725,7 @@ class Reaction(KnowledgeBaseObject):
         cell (:obj:`Cell`): cell
         participants (:obj:`list` of :obj:`SpeciesCoefficient`): participants
         reversible (:obj:`boolean`): denotes whether reaction is reversible
+        references (:obj:`list` of :obj:`Reference`): references
 
     Related attributes:
         rate_laws (:obj:`list` of `RateLaw`): rate laws; if present, rate_laws[0] is the forward
@@ -1670,18 +1735,28 @@ class Reaction(KnowledgeBaseObject):
     cell = obj_model.ManyToOneAttribute(Cell, related_name='reactions')
     participants = ReactionParticipantAttribute(related_name='reactions')
     reversible = obj_model.BooleanAttribute()
+    references = obj_model.ManyToManyAttribute(Reference, related_name='reactions')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'participants',
-                           'reversible', 'comments')
+                           'reversible', 'comments', 'references')
 
 
 class Property(KnowledgeBaseObject):
-    """ Other properties of cells """
+    """ Other properties of cells 
+
+    Attributes:
+        cell (:obj:`Cell`): cell
+        value (:obj:`float`): value
+        units (:obj:`str`): units
+        references (:obj:`list` of :obj:`Reference`): references
+
+    """
     cell = obj_model.ManyToOneAttribute(Cell, related_name='properties')
     value = obj_model.FloatAttribute()
     units = obj_model.StringAttribute()
+    references = obj_model.ManyToManyAttribute(Reference, related_name='properties')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'value', 'units', 'comments')
+        attribute_order = ('id', 'name', 'value', 'units', 'comments', 'references')
         verbose_name_plural = 'Properties'

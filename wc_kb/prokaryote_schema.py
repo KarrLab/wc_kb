@@ -40,7 +40,7 @@ class RnaSpeciesType(schema_core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'transcription_units',
-                           'circular', 'double_stranded', 'concentration', 'half_life', 'comments')
+                           'circular', 'double_stranded', 'concentration', 'half_life', 'comments', 'references')
 
     def get_seq(self):
         """ Get the sequence
@@ -120,7 +120,7 @@ class ProteinSpeciesType(schema_core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'gene', 'rna', 'circular',
-                           'double_stranded', 'concentration', 'half_life', 'comments')
+                           'double_stranded', 'concentration', 'half_life', 'comments', 'references')
 
     def get_seq(self, cds=True):
         """ Get the sequence
@@ -235,7 +235,7 @@ class PromoterLocus(schema_core.PolymerLocus):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'pribnow_start',
-                           'pribnow_end', 'strand', 'start', 'end', 'comments')
+                           'pribnow_end', 'strand', 'start', 'end', 'comments', 'references')
 
 
 class TranscriptionUnitLocus(schema_core.PolymerLocus):
@@ -253,7 +253,7 @@ class TranscriptionUnitLocus(schema_core.PolymerLocus):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'strand',
-                           'promoter', 'start', 'end', 'genes', 'comments')
+                           'promoter', 'start', 'end', 'genes', 'comments', 'references')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -293,5 +293,5 @@ class GeneLocus(schema_core.PolymerLocus):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'symbol',
-                           'type', 'strand', 'start', 'end', 'comments')
+                           'type', 'strand', 'start', 'end', 'comments', 'references')
 

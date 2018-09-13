@@ -31,7 +31,9 @@ from .core import (KnowledgeBaseObject,
                    RateLawDirection,
                    RateLawEquationAttribute,
                    RateLaw,
-                   RateLawEquation)
+                   RateLawEquation,
+                   Reference,
+                   DatabaseReference)
 from .prokaryote_schema import (RnaSpeciesType,
                                 ProteinSpeciesType,
                                 GeneLocus,
