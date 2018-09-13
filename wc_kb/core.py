@@ -480,11 +480,12 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
 
             spec_type_id = spec_coeff_match[5]
 
-            try:
+            try:                
                 if spec_type_id in objects[ProteinSpeciesType]:
                     spec_type = objects[ProteinSpeciesType][spec_type_id]
                 elif spec_type_id in objects[RnaSpeciesType]:
                     spec_type = objects[RnaSpeciesType][spec_type_id]
+
                 elif spec_type_id in objects[ComplexSpeciesType]:
                     spec_type = objects[ComplexSpeciesType][spec_type_id]
                 elif spec_type_id in objects[DnaSpeciesType]:
@@ -728,8 +729,8 @@ class KnowledgeBaseObject(obj_model.Model):
     """
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
-    comments = obj_model.StringAttribute()    
-    
+    comments = obj_model.StringAttribute()
+
 
 class KnowledgeBase(KnowledgeBaseObject):
     """ A knowledge base
@@ -768,7 +769,7 @@ class Cell(KnowledgeBaseObject):
         knowledge_base (:obj:`KnowledgeBase`): knowledge base
         taxon (:obj:`int`): NCBI taxon identifier
 
-    Related attributes:        
+    Related attributes:
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
         observables (:obj:'list' or :obj: 'Observable') : observables
@@ -782,7 +783,7 @@ class Cell(KnowledgeBaseObject):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'taxon', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
-   
+
 
 class Compartment(KnowledgeBaseObject):
     """ Knowledge of a subcellular compartment
@@ -791,7 +792,7 @@ class Compartment(KnowledgeBaseObject):
         cell (:obj:`Cell`): cell
         volumetric_fraction (:obj:`float`): average volumetric fraction relative to the cell volume
         references (:obj:`list` of :obj:`Reference`): references
-        
+ 
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """

@@ -54,7 +54,7 @@ class Writer(object):
             knowledge_base (:obj:`core.KnowledgeBase`): knowledge base
             core_path (:obj:`str`): path to save core knowledge base
             seq_path (:obj:`str`): path to save genome sequence
-            set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL, 
+            set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
                 branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
 
         Raises:
@@ -119,7 +119,7 @@ class Writer(object):
 
     @classmethod
     def validate_implicit_relationships(cls):
-        """ Check that relationships to :obj:`core.KnowledgeBase` and :obj:`core.Cell` do not need to be explicitly written to 
+        """ Check that relationships to :obj:`core.KnowledgeBase` and :obj:`core.Cell` do not need to be explicitly written to
         workbooks because they can be inferred by :obj:`Reader.run`
 
         Raises:
@@ -150,13 +150,13 @@ class Writer(object):
 class Reader(object):
     """ Read knowledge base from file(s) """
 
-    @wc_utils.cache.memoize(filename_args=[1, 2])
+    #@wc_utils.cache.memoize(filename_args=[1, 2])
     def run(self, core_path, seq_path, strict=True):
         """ Read knowledge base from file(s)
 
         Args:
             core_path (:obj:`str`): path to core knowledge base
-            seq_path (:obj:`str`): path to genome sequence            
+            seq_path (:obj:`str`): path to genome sequence
             strict (:obj:`bool`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
                 :obj:`obj_model` serialization format:
 
@@ -171,7 +171,7 @@ class Reader(object):
             :obj:`core.KnowledgeBase`: knowledge base
 
         Raises:
-            :obj:`ValueError`: if :obj:`core_path` 
+            :obj:`ValueError`: if :obj:`core_path`
 
                 * Defines multiple knowledge bases or cells
                 * Represents objects that cannot be linked to a knowledge base and/or cell
@@ -284,7 +284,7 @@ def create_template(core_path, seq_path, set_repo_metadata_from_path=True):
     Args:
         core_path (:obj:`str`): path to save temploate of core knowledge base
         seq_path (:obj:`str`): path to save genome sequence
-        set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL, 
+        set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
             branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
     """
     kb = core.KnowledgeBase(

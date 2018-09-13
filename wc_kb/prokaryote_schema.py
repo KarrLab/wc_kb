@@ -294,4 +294,4 @@ class GeneLocus(schema_core.PolymerLocus):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'symbol',
                            'type', 'strand', 'start', 'end', 'comments', 'references')
-
+        
