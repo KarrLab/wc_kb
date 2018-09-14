@@ -43,7 +43,8 @@ class Writer(object):
         core.Reaction,
         core.RateLaw,
         core.Property,
-        core.Observable
+        core.Observable,
+        core.Reference
     )
 
     def run(self, knowledge_base, core_path, seq_path, set_repo_metadata_from_path=True):
