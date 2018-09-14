@@ -34,6 +34,7 @@ from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerA
                        InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
 from wc_utils.util.enumerate import CaseInsensitiveEnum
 from wc_utils.util.types import get_subclasses
+import wc_kb
 
 with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
     wc_kb_version = file.read().strip()
@@ -532,12 +533,11 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
 
             spec_type_id = spec_coeff_match[5]
 
-            try:                
-                if spec_type_id in objects[ProteinSpeciesType]:
-                    spec_type = objects[ProteinSpeciesType][spec_type_id]
-                elif spec_type_id in objects[RnaSpeciesType]:
-                    spec_type = objects[RnaSpeciesType][spec_type_id]
-
+            try:
+                if spec_type_id in objects[wc_kb.prokaryote_schema.ProteinSpeciesType]:
+                    spec_type = objects[wc_kb.prokaryote_schema.ProteinSpeciesType][spec_type_id]
+                elif spec_type_id in objects[wc_kb.prokaryote_schema.RnaSpeciesType]:
+                    spec_type = objects[wc_kb.prokaryote_schema.RnaSpeciesType][spec_type_id]
                 elif spec_type_id in objects[ComplexSpeciesType]:
                     spec_type = objects[ComplexSpeciesType][spec_type_id]
                 elif spec_type_id in objects[DnaSpeciesType]:
@@ -703,48 +703,48 @@ class DatabaseReference(obj_model.Model):
     class Meta(obj_model.Model.Meta):
         tabular_orientation = TabularOrientation.inline
         unique_together = (('database', 'id'), )
-        
-    def serialize(self):    
+
+    def serialize(self):
         """ Generate string representation
-        
+
         Returns:
             :obj:`str`: value of primary attribute
         """
-        if self.id:            
+        if self.id:
             return '{}:{}'.format(self.database, self.id)
         else:
-            return self.database   
+            return self.database
 
     @classmethod
     def deserialize(cls, value, objects):
         """ Deserialize value
 
-        Args:            
+        Args:
             value (:obj:`str`): String representation
             objects (:obj:`dict`): dictionary of objects, grouped by model
-            
+
         Returns:
             :obj:`tuple` of `list` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value
                 and cleaning error
-        
+
         if not value:
             return ([], None)
 
         errors = []
-        db_id_objs = []    
+        db_id_objs = []
         match
         if match:
             errors.append('Contain ')
         else:
             if ':' in value:
-                db_id_obj = 
-                db_id_objs = 
+                db_id_obj =
+                db_id_objs =
             else:
-                db_id_objs =    
-            
-        if errors:        
+                db_id_objs =
+
+        if errors:
             return (None, InvalidAttribute(self, errors))
-        return (db_id_objs, None)        
+        return (db_id_objs, None)
         """
         pass
 
@@ -752,11 +752,11 @@ class Reference(obj_model.Model):
     """ Reference to the literature
 
     Attributes:
-        id (:obj:`str`): identifier        
+        id (:obj:`str`): identifier
         standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
 
     Related attributes:
-        compartments (:obj:`list` of :obj:`Compartment`): compartments    
+        compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species_types
         concentrations (:obj:`list` of :obj:`Concentration`): concentrations
         loci (:obj:`list` of :obj:`PolymerLocus`): loci   
@@ -764,14 +764,14 @@ class Reference(obj_model.Model):
         reactions (:obj:`list` of :obj:`Reaction`): reactions
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
         observables (:obj:`list` of :obj:`Observable`): observables
-    """      
+    """
     id = obj_model.StringAttribute(primary=True, unique=True)
     standard_id = obj_model.StringAttribute()
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'standard_id')
 
-    
+
 class KnowledgeBaseObject(obj_model.Model):
     """ Knowledge of a biological entity
 
@@ -845,14 +845,14 @@ class Compartment(KnowledgeBaseObject):
         cell (:obj:`Cell`): cell
         volumetric_fraction (:obj:`float`): average volumetric fraction relative to the cell volume
         references (:obj:`list` of :obj:`Reference`): references
- 
+
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """
     cell = obj_model.ManyToOneAttribute(Cell, related_name='compartments')
     volumetric_fraction = obj_model.FloatAttribute(min=0., max=1.)
     references = obj_model.ManyToManyAttribute(Reference, related_name='compartments')
-    
+
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'volumetric_fraction', 'comments', 'references')
 
@@ -1288,11 +1288,11 @@ class Observable(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowle
 
     Attributes:
         cell (:obj:'Cell'): The cell that the observable is in
-        species(:obj:`list` of :obj: `SpeciesCoefficient`): A list of the species and the 
+        species(:obj:`list` of :obj: `SpeciesCoefficient`): A list of the species and the
             coefficients to be included in the observable
-        observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables 
+        observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables
             and their coefficients
-        references (:obj:`list` of :obj:`Reference`): references    
+        references (:obj:`list` of :obj:`Reference`): references
 
     Related Attributes:
         observable_coefficients (:obj:`list` of `ObservableCoefficient`): Participants in observables
@@ -1824,7 +1824,7 @@ class Reaction(KnowledgeBaseObject):
 
 
 class Property(KnowledgeBaseObject):
-    """ Other properties of cells 
+    """ Other properties of cells
 
     Attributes:
         cell (:obj:`Cell`): cell
