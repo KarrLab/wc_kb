@@ -825,6 +825,7 @@ class Cell(KnowledgeBaseObject):
     Related attributes:
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
+        concentrations (:obj:`list` of :obj:`Concentration`): concentrations
         observables (:obj:'list' or :obj: 'Observable') : observables
         loci (:obj:`list` of :obj:`PolymerLocus`): locus
         reactions (:obj:`list` of :obj:`Reaction`): reactions
@@ -1023,12 +1024,14 @@ class Concentration(obj_model.Model):
     """ Species concentration
 
     Attributes:
+        cell (:obj:`Cell`): cell
         species (:obj:`Species`): species
         value (:obj:`float`): value
         units (:obj:`str`): units; default units is 'M'
         comments (:obj:`str`): comments
         references (:obj:`list` of `Reference`): references
     """
+    cell = obj_model.ManyToOneAttribute(Cell, related_name='concentrations')
     species = OneToOneSpeciesAttribute(related_name='concentrations')
     value = FloatAttribute(min=0)
     units = EnumAttribute(ConcentrationUnit, default=ConcentrationUnit.M)
