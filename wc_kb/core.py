@@ -34,6 +34,7 @@ from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerA
                        InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
 from wc_utils.util.enumerate import CaseInsensitiveEnum
 from wc_utils.util.types import get_subclasses
+import wc_kb
 #import wc_kb.prokaryote_schema as prokaryote_schema
 
 with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
@@ -482,15 +483,15 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
             spec_type_id = spec_coeff_match[5]
 
             try:
-                #if spec_type_id in objects[prokaryote_schema.ProteinSpeciesType]:
-                #    spec_type = objects[prokaryote_schema.ProteinSpeciesType][spec_type_id]
-                #elif spec_type_id in objects[prokaryote_schema.RnaSpeciesType]:
-                #    spec_type = objects[prokaryote_schema.RnaSpeciesType][spec_type_id]
+                if spec_type_id in objects[wc_kb.prokaryote_schema.ProteinSpeciesType]:
+                    spec_type = objects[wc_kb.prokaryote_schema.ProteinSpeciesType][spec_type_id]
+                elif spec_type_id in objects[wc_kb.prokaryote_schema.RnaSpeciesType]:
+                    spec_type = objects[wc_kb.prokaryote_schema.RnaSpeciesType][spec_type_id]
 
-                if spec_type_id in objects[ProteinSpeciesType]:
-                    spec_type = objects[ProteinSpeciesType][spec_type_id]
-                elif spec_type_id in objects[RnaSpeciesType]:
-                    spec_type = objects[RnaSpeciesType][spec_type_id]
+                #if spec_type_id in objects[ProteinSpeciesType]:
+                #    spec_type = objects[ProteinSpeciesType][spec_type_id]
+                #elif spec_type_id in objects[RnaSpeciesType]:
+                #    spec_type = objects[RnaSpeciesType][spec_type_id]
 
                 elif spec_type_id in objects[ComplexSpeciesType]:
                     spec_type = objects[ComplexSpeciesType][spec_type_id]
