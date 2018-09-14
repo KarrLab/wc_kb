@@ -45,13 +45,12 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=15)
         rna1 = prokaryote_schema.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[
-                                   tu1], type=1, concentration=1, half_life=2)
+                                   tu1], type=1, half_life=2)
 
         self.assertEqual(rna1.id, 'rna1')
         self.assertEqual(rna1.name, 'rna1')
         self.assertEqual(rna1.transcription_units, [tu1])
         self.assertEqual(rna1.type, 1)
-        self.assertEqual(rna1.concentration, 1)
         self.assertEqual(rna1.half_life, 2)
 
     def test_get_empirical_formula(self):
@@ -181,12 +180,11 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     def test_constructor(self):
         protein = prokaryote_schema.ProteinSpeciesType(
-            id='prot1', name='prot1', concentration=1, half_life=2)
-        # attribute_order = ('id', 'cell', 'name', 'gene', 'rna', 'concentration', 'half_life', 'comments')
+            id='prot1', name='prot1', half_life=2)
+        # attribute_order = ('id', 'cell', 'name', 'gene', 'rna', 'half_life', 'comments')
 
         self.assertEqual(protein.id, 'prot1')
         self.assertEqual(protein.name, 'prot1')
-        self.assertEqual(protein.concentration, 1)
         self.assertEqual(protein.half_life, 2)
         self.assertEqual(protein.cell, None)
 

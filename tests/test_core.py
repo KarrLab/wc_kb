@@ -44,6 +44,13 @@ class TestCore(unittest.TestCase):
         self.assertEqual(core.GeneType.tRna.value, 3)
 
 
+class ReferenceTestCase(unittest.TestCase):
+    def test_constructor(self):
+        ref1 = core.Reference(id='ref1', standard_id='10.1000/xyz123')
+        self.assertEqual(ref1.id, 'ref1')
+        self.assertEqual(ref1.standard_id, '10.1000/xyz123')
+
+
 class KnowledgeBaseTestCase(unittest.TestCase):
     def test_constructor(self):
         kb = core.KnowledgeBase()
@@ -85,10 +92,9 @@ class SpeciesTypeTestCase(unittest.TestCase):
             def get_mol_wt(self): pass
 
         species_type = ConcreteSpeciesType(
-            id='species1', name='species1', concentration=2., half_life=3.)
+            id='species1', name='species1', half_life=3.)
         self.assertEqual(species_type.id, 'species1')
         self.assertEqual(species_type.name, 'species1')
-        self.assertEqual(species_type.concentration, 2.)
         self.assertEqual(species_type.half_life, 3.)
 
 
@@ -108,12 +114,11 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
                 'AAATGCCC', alphabet=Bio.Alphabet.DNAAlphabet())
 
         pst1 = ConcretePolymerSpeciesType(
-            id='pst1', name='pst1', concentration=1, half_life=2)
+            id='pst1', name='pst1', half_life=2)
 
         # Test constructor
         self.assertEqual(pst1.id, 'pst1')
         self.assertEqual(pst1.name, 'pst1')
-        self.assertEqual(pst1.concentration, 1)
         self.assertEqual(pst1.half_life, 2)
 
         # Test methods: linear, single stranded case
@@ -478,6 +483,19 @@ class SpeciesTestCase(unittest.TestCase):
             attr, 'met1[e]', objects)[1], None)
         self.assertNotEqual(core.Species.deserialize(
             attr, 'met1', objects)[1], None)
+
+
+class ConcentrationTestCase(unittest.TestCase):
+    def test_constructor(self):
+        comp = core.Compartment(id='c')
+        met = core.MetaboliteSpeciesType(id='met')
+        spec = core.Species(species_type=met, compartment=comp)
+
+        conc = core.Concentration(species=spec, value=0.2)
+
+        self.assertEqual(conc.serialize(), 'met[c]')
+        self.assertEqual(conc.value, 0.2)
+        self.assertEqual(conc.units, 2)
 
 
 class SpeciesCoefficientTestCase(unittest.TestCase):

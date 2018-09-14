@@ -40,7 +40,7 @@ class RnaSpeciesType(schema_core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'transcription_units',
-                           'circular', 'double_stranded', 'concentration', 'half_life', 'comments', 'references')
+                           'circular', 'double_stranded', 'half_life', 'comments', 'references')
 
     def get_seq(self):
         """ Get the sequence
@@ -120,7 +120,7 @@ class ProteinSpeciesType(schema_core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'gene', 'rna', 'circular',
-                           'double_stranded', 'concentration', 'half_life', 'comments', 'references')
+                           'double_stranded', 'half_life', 'comments', 'references')
 
     def get_seq(self, cds=True):
         """ Get the sequence
@@ -294,4 +294,3 @@ class GeneLocus(schema_core.PolymerLocus):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'symbol',
                            'type', 'strand', 'start', 'end', 'comments', 'references')
-        

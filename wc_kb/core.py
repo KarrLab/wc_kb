@@ -67,13 +67,13 @@ class GeneType(enum.Enum):
 
 
 class ComplexType(enum.Enum):
-    """ Type of gene """
+    """ Type of complex """
     tRnaSynthClassII = 0
     FattyAcylAcp = 1
 
 
 class ComplexFormationType(enum.Enum):
-    """ Type of gene """
+    """ Type of complex formation"""
     process_ChromosomeCondensation = 0
     process_FtsZPolymerization = 1
     process_MacromolecularComplexation = 2
@@ -84,6 +84,20 @@ class ComplexFormationType(enum.Enum):
     process_RibosomeAssembly = 7
     process_Transcription = 8
     process_Translation = 9
+
+
+ConcentrationUnit = enum.Enum('ConcentrationUnit', type=int, names=[
+    ('molecules', 1),
+    ('M', 2),
+    ('mM', 3),
+    ('uM', 4),
+    ('nM', 5),
+    ('pM', 6),
+    ('fM', 7),
+    ('aM', 8),
+    ('moles dm^-2', 9),
+])
+
 
 #####################
 #####################
@@ -224,6 +238,44 @@ class SubunitAttribute(ManyToManyAttribute):
         if errors:
             return (None, InvalidAttribute(self, errors))
         return (parts, None)
+
+
+class OneToOneSpeciesAttribute(OneToOneAttribute):
+    """ Species attribute """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(OneToOneSpeciesAttribute, self).__init__('Species',
+                                                       related_name=related_name, min_related=1, min_related_rev=0,
+                                                       verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+
+    def serialize(self, value, encoded=None):
+        """ Serialize related object
+        Args:
+            value (:obj:`Model`): Python representation
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        return value.serialize()
+
+    def deserialize(self, value, objects, decoded=None):
+        """ Deserialize value
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+        Returns:
+            :obj:`tuple` of :obj:`list` of :obj:`Species`, :obj:`InvalidAttribute` or :obj:`None`: :obj:`tuple` of cleaned value
+                and cleaning error
+        """
+        return Species.deserialize(self, value, objects)
 
 
 class ReactionParticipantAttribute(ManyToManyAttribute):
@@ -706,6 +758,7 @@ class Reference(obj_model.Model):
     Related attributes:
         compartments (:obj:`list` of :obj:`Compartment`): compartments    
         species_types (:obj:`list` of :obj:`SpeciesType`): species_types
+        concentrations (:obj:`list` of :obj:`Concentration`): concentrations
         loci (:obj:`list` of :obj:`PolymerLocus`): loci   
         properties (:obj:`list` of :obj:`Property`): properties
         reactions (:obj:`list` of :obj:`Reaction`): reactions
@@ -729,7 +782,7 @@ class KnowledgeBaseObject(obj_model.Model):
     """
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
-    comments = obj_model.StringAttribute()
+    comments = obj_model.LongStringAttribute()
 
 
 class KnowledgeBase(KnowledgeBaseObject):
@@ -809,7 +862,6 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
 
     Attributes:
         cell (:obj:`Cell`): cell
-        concentration (:obj:`float`): concentration (M)
         half_life  (:obj:`float`): half life (s)
         references (:obj:`list` of :obj:`Reference`): references
 
@@ -818,13 +870,11 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     """
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='species_types')
-    concentration = obj_model.FloatAttribute(min=0)
     half_life = obj_model.FloatAttribute(min=0)
     references = obj_model.ManyToManyAttribute(Reference, related_name='species_types')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'concentration',
-                           'half_life', 'comments', 'references')
+        attribute_order = ('id', 'name', 'half_life', 'comments', 'references')
 
     @abc.abstractmethod
     def get_empirical_formula(self):
@@ -860,16 +910,16 @@ class Species(obj_model.Model):
     Attributes:
         species_type (:obj:`SpeciesType`): species type
         compartment (:obj:`Compartment`): compartment
-
+        
     Related attributes:
+        concentration (:obj:`Concentration`): concentration
         species_coefficients (:obj:`list` of `SpeciesCoefficient`): participations in reactions and observables
     """
-
     species_type = ManyToOneAttribute(
         SpeciesType, related_name='species', min_related=1)
     compartment = ManyToOneAttribute(
         Compartment, related_name='species', min_related=1)
-
+    
     class Meta(obj_model.Model.Meta):
         attribute_order = ('species_type', 'compartment')
         frozen_columns = 1
@@ -967,6 +1017,36 @@ class Species(obj_model.Model):
                 return (obj, None)
 
         return (None, InvalidAttribute(attribute, ['Invalid species']))
+
+
+class Concentration(obj_model.Model):
+    """ Species concentration
+
+    Attributes:
+        species (:obj:`Species`): species
+        value (:obj:`float`): value
+        units (:obj:`str`): units; default units is 'M'
+        comments (:obj:`str`): comments
+        references (:obj:`list` of `Reference`): references
+    """
+    species = OneToOneSpeciesAttribute(related_name='concentrations')
+    value = FloatAttribute(min=0)
+    units = EnumAttribute(ConcentrationUnit, default=ConcentrationUnit.M)
+    comments = LongStringAttribute()
+    references = ManyToManyAttribute(Reference, related_name='concentrations')
+
+    class Meta(obj_model.Model.Meta):
+        unique_together = (('species', ), )
+        attribute_order = ('species', 'value', 'units', 'comments', 'references')
+        frozen_columns = 1
+        ordering = ('species',)
+
+    def serialize(self):
+        """ Generate string representation
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return self.species.serialize()
 
 
 class SpeciesCoefficient(obj_model.Model):
@@ -1101,7 +1181,7 @@ class PolymerSpeciesType(SpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'circular', 'double_stranded',
-                           'concentration', 'half_life', 'comments', 'references')
+                           'half_life', 'comments', 'references')
 
     @abc.abstractmethod
     def get_seq(self):
@@ -1339,7 +1419,7 @@ class MetaboliteSpeciesType(SpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'structure',
-                           'concentration', 'half_life', 'comments', 'references')
+                           'half_life', 'comments', 'references')
 
     def get_structure(self):
         """ Get the structure
@@ -1400,7 +1480,7 @@ class DnaSpeciesType(PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'seq', 'circular',
-                           'double_stranded', 'concentration', 'half_life', 'comments', 'references')
+                           'double_stranded', 'half_life', 'comments', 'references')
         verbose_name = 'DNA species type'
 
     def get_seq(self, start=None, end=None):
@@ -1513,7 +1593,7 @@ class ComplexSpeciesType(SpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'formation_process', 'subunits',
-                           'complex_type', 'binding', 'region', 'concentration', 
+                           'complex_type', 'binding', 'region', 
                            'half_life', 'comments', 'references')
 
     def get_empirical_formula(self):

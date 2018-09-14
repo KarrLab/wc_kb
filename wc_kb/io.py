@@ -40,6 +40,7 @@ class Writer(object):
         prokaryote_schema.GeneLocus,
         prokaryote_schema.ProteinSpeciesType,
         core.ComplexSpeciesType,
+        core.Concentration,
         core.Reaction,
         core.RateLaw,
         core.Property,
