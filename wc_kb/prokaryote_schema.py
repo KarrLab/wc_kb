@@ -39,8 +39,8 @@ class RnaSpeciesType(schema_core.PolymerSpeciesType):
     type = obj_model.EnumAttribute(schema_core.RnaType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'type', 'transcription_units',
-                           'circular', 'double_stranded', 'half_life', 'comments', 'references')
+        attribute_order = ('id', 'name', 'type', 'transcription_units', 'circular', 
+                           'double_stranded', 'half_life', 'comments', 'references', 'database_references')
 
     def get_seq(self):
         """ Get the sequence
@@ -119,8 +119,8 @@ class ProteinSpeciesType(schema_core.PolymerSpeciesType):
         'RnaSpeciesType', related_name='proteins')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'rna', 'circular',
-                           'double_stranded', 'half_life', 'comments', 'references')
+        attribute_order = ('id', 'name', 'gene', 'rna', 'circular', 'double_stranded', 
+                           'half_life', 'comments', 'references', 'database_references')
 
     def get_seq(self, cds=True):
         """ Get the sequence
@@ -234,8 +234,8 @@ class PromoterLocus(schema_core.PolymerLocus):
     pribnow_end = obj_model.IntegerAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'pribnow_start',
-                           'pribnow_end', 'strand', 'start', 'end', 'comments', 'references')
+        attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 
+                           'strand', 'start', 'end', 'comments', 'references', 'database_references')
 
 
 class TranscriptionUnitLocus(schema_core.PolymerLocus):
@@ -252,8 +252,8 @@ class TranscriptionUnitLocus(schema_core.PolymerLocus):
         'GeneLocus', related_name='transcription_units')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'strand',
-                           'promoter', 'start', 'end', 'genes', 'comments', 'references')
+        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end', 
+                           'genes', 'comments', 'references', 'database_references')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -292,5 +292,5 @@ class GeneLocus(schema_core.PolymerLocus):
     type = obj_model.EnumAttribute(schema_core.GeneType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'symbol',
-                           'type', 'strand', 'start', 'end', 'comments', 'references')
+        attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 
+                           'end', 'comments', 'references', 'database_references')

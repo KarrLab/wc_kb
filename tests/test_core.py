@@ -44,6 +44,13 @@ class TestCore(unittest.TestCase):
         self.assertEqual(core.GeneType.tRna.value, 3)
 
 
+class DatabaseReferenceTestCase(unittest.TestCase):
+    def test_constructor(self):
+        db_ref1 = core.DatabaseReference(database='Sabio-Rk', id='123456')
+        self.assertEqual(db_ref1.database, 'Sabio-Rk')
+        self.assertEqual(db_ref1.id, '123456')
+
+
 class ReferenceTestCase(unittest.TestCase):
     def test_constructor(self):
         ref1 = core.Reference(id='ref1', standard_id='10.1000/xyz123')
