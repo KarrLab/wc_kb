@@ -126,27 +126,42 @@ class Writer(object):
         Raises:
             :obj:`Exception`: if the Excel serialization involves an unsupported implicit relationship
         """
-        for attr in core.KnowledgeBase.Meta.attributes.values():
+        for name, attr in core.KnowledgeBase.Meta.attributes.items():
             if isinstance(attr, obj_model.RelatedAttribute):
                 raise Exception(
-                    'Relationships from `KnowledgeBase` not supported')
+                    "Relationships from `KnowledgeBase` not supported: {}.{} to {}".format(
+                        'KnowledgeBase', name, attr.related_class.__name__))
 
-        for attr in core.KnowledgeBase.Meta.related_attributes.values():
-            if attr.primary_class != core.Cell or not isinstance(attr, obj_model.OneToOneAttribute):
+        for name, attr in core.KnowledgeBase.Meta.related_attributes.items():
+            if not isinstance(attr, obj_model.OneToOneAttribute):
                 raise Exception(
-                    'Only one-to-one relationships to `KnowledgeBase` from `Cell` are supported')
+                    "Relationships to `KnowledgeBase` that are not one-to-one are prohibited: {}.{} to {}".format(
+                        attr.related_class.__name__, name, 'KnowledgeBase'))
 
-        for attr in core.Cell.Meta.attributes.values():
-            if isinstance(attr, obj_model.RelatedAttribute) and \
-                    (not isinstance(attr, obj_model.OneToOneAttribute) or attr.related_class != core.KnowledgeBase):
-                raise Exception(
-                    'Only one-to-one relationships from `Cell` to `KnowledgeBase` are supported')
+        for name, attr in core.Cell.Meta.attributes.items():
+            if isinstance(attr, obj_model.RelatedAttribute):
+                if not isinstance(attr, obj_model.OneToOneAttribute):
+                    raise Exception(
+                        "Relationships from `Cell` to `KnowledgeBase` that are not one-to-one are prohibited: {}.{} to {}".format(
+                            'Cell', name, 'KnowledgeBase'))
+                if attr.related_class != core.KnowledgeBase:
+                    raise Exception(
+                        "Relationships from `Cell` to classes other than `KnowledgeBase` are prohibited: {}.{} to {}".format(
+                            'Cell', name, attr.related_class.__name__))
 
         for attr in core.Cell.Meta.related_attributes.values():
             if not isinstance(attr, (obj_model.OneToOneAttribute, obj_model.ManyToOneAttribute)):
                 raise Exception(
-                    'Only one-to-one and many-to-one relationships are supported to `Cell`')
+                    "Relationships to `Cell` that are not one-to-one or many-to-one are prohibited: {}.{} to {}".format(
+                        attr.related_class.__name__, attr.related_name, 'Cell'))
 
+        for name, attr in core.KnowledgeBase.Meta.related_attributes.items():
+            if attr.primary_class != core.Cell:
+                raise Exception(
+                    "Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited: {}.{} to {}".format(
+                        attr.related_class.__name__, name, 'KnowledgeBase'))
+
+        return None # pragma: no cover; avoids missing branch coverage on previous for loop
 
 class Reader(object):
     """ Read knowledge base from file(s) """
