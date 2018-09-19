@@ -38,10 +38,5 @@ from .core import (KnowledgeBaseObject,
                    Reference,
                    DatabaseReference)
 
-from .prokaryote_schema import (RnaSpeciesType,
-                                ProteinSpeciesType,
-                                GeneLocus,
-                                PromoterLocus,
-                                TranscriptionUnitLocus,)
 from . import io
 from . import util

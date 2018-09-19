@@ -67,6 +67,16 @@ class GeneType(enum.Enum):
     tRna = 3
 
 
+class RegulatoryElementType(enum.Enum):
+    """ Type of regulatory element """
+    promoter = 1
+    promoter_flanking_region = 2
+    enhancer = 3
+    CTCF_binding_site = 4
+    TF_binding_site = 5
+    open_chromatin_region = 6
+    
+
 class ComplexType(enum.Enum):
     """ Type of complex """
     tRnaSynthClassII = 0
@@ -290,7 +300,7 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
             verbose_related_name (:obj:`str`, optional): verbose related name
             help (:obj:`str`, optional): help message
         """
-        super(DatabaseReferenceAttribute, self).__init__('DatabaseReference',
+        super(DatabaseReferenceAttribute, self).__init__(DatabaseReference,
                                                        related_name=related_name, min_related=0, min_related_rev=0,
                                                        verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
 
@@ -1260,8 +1270,8 @@ class PolymerSpeciesType(SpeciesType):
             :obj:`Bio.Seq.Seq`: sequence
 
         Raises:
-            :obj:`ValueError`: if the polymer is linear and the start or end coordinates are less than 1 or greater than the length
-                of the sequence
+            :obj:`ValueError`: if the polymer is linear and the start or end coordinates 
+                are less than 1 or greater than the length of the sequence
         """
         seq = self.get_seq()
         seq_len = len(seq)
@@ -1633,7 +1643,8 @@ class ComplexSpeciesType(SpeciesType):
     Attributes:
         complex_type (:obj:`ComplexType`): type of complex
         formation_process (:obj:`ComplexFormationType`): type of formation process
-        biosynthesis (:obj:`string`): eq governing the formaiton of complex
+        binding (:obj:`str`): strand of DNA bound if involved 
+        region (:obj:`str`): region where DNA is bound if involved
     """
 
     complex_type = obj_model.StringAttribute()  # EnumAttribute(ComplexType)
