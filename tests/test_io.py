@@ -248,22 +248,49 @@ class TestIO(unittest.TestCase):
         class TestModel(obj_model.Model):
             id = obj_model.StringAttribute(primary=True, unique=True)
 
-        core.KnowledgeBase.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='a')
-        with self.assertRaisesRegexp(Exception, 'Relationships from `KnowledgeBase` not supported'):
-            io.Writer.validate_implicit_relationships()
-        core.KnowledgeBase.Meta.attributes.pop('test')
+        try:
+            core.KnowledgeBase.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='a')
+            with self.assertRaisesRegexp(Exception, 'Relationships from `KnowledgeBase` not supported:'):
+                io.Writer.validate_implicit_relationships()
+        finally:
+            core.KnowledgeBase.Meta.attributes.pop('test')
 
-        core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='b')
-        with self.assertRaisesRegexp(Exception, 'Only one-to-one relationships to `KnowledgeBase` from `Cell` are supported'):
-            io.Writer.validate_implicit_relationships()
-        core.KnowledgeBase.Meta.related_attributes.pop('test')
+        try:
+            core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(core.Cell, related_name='c')
+            with self.assertRaisesRegexp(Exception,
+                'Relationships to `KnowledgeBase` that are not one-to-one are prohibited'):
+                io.Writer.validate_implicit_relationships()
+        finally:
+            core.KnowledgeBase.Meta.related_attributes.pop('test')
 
-        core.Cell.Meta.attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='c')
-        with self.assertRaisesRegexp(Exception, 'Only one-to-one relationships from `Cell` to `KnowledgeBase` are supported'):
-            io.Writer.validate_implicit_relationships()
-        core.Cell.Meta.attributes.pop('test')
+        try:
+            core.Cell.Meta.attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='c')
+            with self.assertRaisesRegexp(Exception,
+                'Relationships from `Cell` to `KnowledgeBase` that are not one-to-one are prohibited:'):
+                io.Writer.validate_implicit_relationships()
+        finally:
+            core.Cell.Meta.attributes.pop('test')
 
-        core.Cell.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='d')
-        with self.assertRaisesRegexp(Exception, 'Only one-to-one and many-to-one relationships are supported to `Cell`'):
-            io.Writer.validate_implicit_relationships()
-        core.Cell.Meta.related_attributes.pop('test')
+        try:
+            core.Cell.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='d')
+            with self.assertRaisesRegexp(Exception,
+                'Relationships from `Cell` to classes other than `KnowledgeBase` are prohibited:'):
+                io.Writer.validate_implicit_relationships()
+        finally:
+            core.Cell.Meta.attributes.pop('test')
+
+        try:
+            core.Cell.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='d')
+            with self.assertRaisesRegexp(Exception,
+                'Relationships to `Cell` that are not one-to-one or many-to-one are prohibited: '):
+                io.Writer.validate_implicit_relationships()
+        finally:
+            core.Cell.Meta.related_attributes.pop('test')
+
+        try:
+            core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='b')
+            with self.assertRaisesRegexp(Exception,
+                'Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited'):
+                io.Writer.validate_implicit_relationships()
+        finally:
+            core.KnowledgeBase.Meta.related_attributes.pop('test')
