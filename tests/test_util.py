@@ -40,7 +40,7 @@ class TestUtil(unittest.TestCase):
         kb = core.KnowledgeBase()
         self.assertEqual(kb.url, '')
 
-        with self.assertRaisesRegexp(ValueError, 'is not a Git repository'):
+        with self.assertRaisesRegex(ValueError, 'is not a Git repository'):
             util.set_git_repo_metadata_from_path(kb, path=tempdir)
         self.assertEqual(kb.url, '')
 

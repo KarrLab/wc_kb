@@ -62,7 +62,7 @@ class TestCli(unittest.TestCase):
         filename_seq = path.join(self.tempdir, 'seq.fna')
         io.Writer().run(kb, filename_core, filename_seq, set_repo_metadata_from_path=False)
 
-        with self.assertRaisesRegexp(ValueError, '^Knowledge base is invalid: '):
+        with self.assertRaisesRegex(ValueError, '^Knowledge base is invalid: '):
             with __main__.App(argv=['validate', filename_core, filename_seq]) as app:
                 app.run()
 
@@ -186,9 +186,9 @@ class TestCli(unittest.TestCase):
         with mock.patch('sys.argv', ['wc_kb', '--help']):
             with self.assertRaises(SystemExit) as context:
                 __main__.main()
-                self.assertRegexpMatches(context.Exception, 'usage: wc_kb')
+                self.assertRegex(context.Exception, 'usage: wc_kb')
 
         with mock.patch('sys.argv', ['wc_kb']):
             with CaptureOutput() as capturer:
                 __main__.main()
-                self.assertRegexpMatches(capturer.get_text(), 'usage: wc_kb')
+                self.assertRegex(capturer.get_text(), 'usage: wc_kb')

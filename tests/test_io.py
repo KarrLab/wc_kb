@@ -115,7 +115,7 @@ class TestIO(unittest.TestCase):
         trn.cell = None
 
         writer = io.Writer()
-        with self.assertRaisesRegexp(ValueError, 'must be set to the instance of `Cell`'):
+        with self.assertRaisesRegex(ValueError, 'must be set to the instance of `Cell`'):
             writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=False)
 
     def test_write_read_sloppy(self):
@@ -131,7 +131,7 @@ class TestIO(unittest.TestCase):
         wc_utils.workbook.io.write(core_path, wb)
 
         reader = io.Reader()
-        with self.assertRaisesRegexp(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
+        with self.assertRaisesRegex(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
             kb = reader.run(core_path, seq_path)
         kb = reader.run(core_path, seq_path, strict=False)
 
@@ -149,7 +149,7 @@ class TestIO(unittest.TestCase):
         self.assertEqual(kb, None)
 
         obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.Writer.model_order, include_all_attributes=False)
-        with self.assertRaisesRegexp(ValueError, 'cannot contain instances'):
+        with self.assertRaisesRegex(ValueError, 'cannot contain instances'):
             io.Reader().run(core_path, seq_path)
 
     def test_reader_error_multiple_kbs(self):
@@ -163,7 +163,7 @@ class TestIO(unittest.TestCase):
         with open(seq_path, 'w') as file:
             pass
 
-        with self.assertRaisesRegexp(ValueError, ' should define one knowledge base'):
+        with self.assertRaisesRegex(ValueError, ' should define one knowledge base'):
             io.Reader().run(core_path, seq_path)
 
     def test_reader_error_no_cell(self):
@@ -177,7 +177,7 @@ class TestIO(unittest.TestCase):
         with open(seq_path, 'w') as file:
             pass
 
-        with self.assertRaisesRegexp(ValueError, 'cannot contain instances'):
+        with self.assertRaisesRegex(ValueError, 'cannot contain instances'):
             io.Reader().run(core_path, seq_path)
 
     def test_reader_error_multiple_cells(self):
@@ -192,7 +192,7 @@ class TestIO(unittest.TestCase):
         with open(seq_path, 'w') as file:
             pass
 
-        with self.assertRaisesRegexp(ValueError, ' should define one cell'):
+        with self.assertRaisesRegex(ValueError, ' should define one cell'):
             io.Reader().run(core_path, seq_path)
 
     def test_convert(self):
@@ -228,7 +228,7 @@ class TestIO(unittest.TestCase):
         wb['Knowledge base'].insert(1, row)
         wc_utils.workbook.io.write(path_core_1, wb)
 
-        with self.assertRaisesRegexp(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
+        with self.assertRaisesRegex(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
             io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
         io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2, strict=False)
         kb = io.Reader().run(path_core_2, path_seq_2)
@@ -250,14 +250,14 @@ class TestIO(unittest.TestCase):
 
         try:
             core.KnowledgeBase.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='a')
-            with self.assertRaisesRegexp(Exception, 'Relationships from `KnowledgeBase` not supported:'):
+            with self.assertRaisesRegex(Exception, 'Relationships from `KnowledgeBase` not supported:'):
                 io.Writer.validate_implicit_relationships()
         finally:
             core.KnowledgeBase.Meta.attributes.pop('test')
 
         try:
             core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(core.Cell, related_name='c')
-            with self.assertRaisesRegexp(Exception,
+            with self.assertRaisesRegex(Exception,
                 'Relationships to `KnowledgeBase` that are not one-to-one are prohibited'):
                 io.Writer.validate_implicit_relationships()
         finally:
@@ -265,7 +265,7 @@ class TestIO(unittest.TestCase):
 
         try:
             core.Cell.Meta.attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='c')
-            with self.assertRaisesRegexp(Exception,
+            with self.assertRaisesRegex(Exception,
                 'Relationships from `Cell` to `KnowledgeBase` that are not one-to-one are prohibited:'):
                 io.Writer.validate_implicit_relationships()
         finally:
@@ -273,7 +273,7 @@ class TestIO(unittest.TestCase):
 
         try:
             core.Cell.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='d')
-            with self.assertRaisesRegexp(Exception,
+            with self.assertRaisesRegex(Exception,
                 'Relationships from `Cell` to classes other than `KnowledgeBase` are prohibited:'):
                 io.Writer.validate_implicit_relationships()
         finally:
@@ -281,7 +281,7 @@ class TestIO(unittest.TestCase):
 
         try:
             core.Cell.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='d')
-            with self.assertRaisesRegexp(Exception,
+            with self.assertRaisesRegex(Exception,
                 'Relationships to `Cell` that are not one-to-one or many-to-one are prohibited: '):
                 io.Writer.validate_implicit_relationships()
         finally:
@@ -289,7 +289,7 @@ class TestIO(unittest.TestCase):
 
         try:
             core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='b')
-            with self.assertRaisesRegexp(Exception,
+            with self.assertRaisesRegex(Exception,
                 'Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited'):
                 io.Writer.validate_implicit_relationships()
         finally:

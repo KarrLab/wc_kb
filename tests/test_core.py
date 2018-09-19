@@ -88,7 +88,7 @@ class CompartmentTestCase(unittest.TestCase):
 
 class SpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
-        with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
+        with self.assertRaisesRegex(TypeError, 'Can\'t instantiate abstract class'):
             core.SpeciesType()
 
         class ConcreteSpeciesType(core.SpeciesType):
@@ -107,7 +107,7 @@ class SpeciesTypeTestCase(unittest.TestCase):
 
 class PolymerSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
-        with self.assertRaisesRegexp(TypeError, 'Can\'t instantiate abstract class'):
+        with self.assertRaisesRegex(TypeError, 'Can\'t instantiate abstract class'):
             core.PolymerSpeciesType()
 
         class ConcretePolymerSpeciesType(core.PolymerSpeciesType):
@@ -136,7 +136,7 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(pst1.get_subseq(1, 3), 'AAA')
         self.assertEqual(pst1.get_subseq(2, 4), 'AAT')
 
-        with self.assertRaisesRegexp(ValueError, 'Start and end coordinates'):
+        with self.assertRaisesRegex(ValueError, 'Start and end coordinates'):
             self.assertEqual(pst1.get_subseq(-1, 3), 'AAA')
 
         # Test methods: circular, single stranded case
@@ -437,9 +437,9 @@ class SpeciesTestCase(unittest.TestCase):
 
         self.assertEqual(core.Species.gen_id(met1, comp1), 'met1[c]')
         self.assertEqual(core.Species.gen_id('met1', 'c'), 'met1[c]')
-        with self.assertRaisesRegexp(ValueError, 'incorrect species type'):
+        with self.assertRaisesRegex(ValueError, 'incorrect species type'):
             core.Species.gen_id(None, 'c')
-        with self.assertRaisesRegexp(ValueError, 'incorrect compartment type'):
+        with self.assertRaisesRegex(ValueError, 'incorrect compartment type'):
             core.Species.gen_id('met1', None)
 
         self.assertEqual(species1.id(), 'met1[c]')
