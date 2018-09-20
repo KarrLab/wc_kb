@@ -272,7 +272,7 @@ def convert(source_core, source_seq, dest_core, dest_seq, strict=True):
     """ Convert among Excel (.xlsx), comma separated (.csv), and tab separated (.tsv) file formats
 
     Read a knowledge base from the `source` files(s) and write it to the `destination` files(s). A path to a
-    delimiter separated set of knowledge base files must be represented by a Unix glob pattern (with a \*) that
+    delimiter separated set of knowledge base files must be represented by a Unix glob pattern (with a \\*) that
     matches all delimiter separated files.
 
     Args:

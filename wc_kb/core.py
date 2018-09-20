@@ -172,14 +172,14 @@ class SubunitAttribute(ManyToManyAttribute):
     def deserialize(self, value, objects, decoded=None):
         parts = []
         errors = []
-        id = '[a-z][a-z0-9_]*'
-        stoch = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = '({} )*({})'.format(stoch, id)
-        lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
-        gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
-        lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
-        gbl_pattern = '^\[({})\]: ({})$'.format(id, gbl_side)
-        lcl_pattern = '^({})$'.format(lcl_side)
+        id = r'[a-z][a-z0-9_]*'
+        stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        gbl_part = r'({} )*({})'.format(stoch, id)
+        lcl_part = r'({} )*({}\[{}\])'.format(stoch, id, id)
+        gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)
+        lcl_side = r'{}( \+ {})*'.format(lcl_part, lcl_part)
+        gbl_pattern = r'^\[({})\]: ({})$'.format(id, gbl_side)
+        lcl_pattern = r'^({})$'.format(lcl_side)
 
         global_match = re.match(gbl_pattern, value, flags=re.I)
         local_match = re.match(lcl_pattern, value, flags=re.I)
@@ -201,7 +201,7 @@ class SubunitAttribute(ManyToManyAttribute):
         else:
             return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
 
-        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*',
+        for part in re.findall(r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*',
                                subunits_str, flags=re.I):
 
             species_type = None
@@ -330,7 +330,7 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
         if not value:
             return ([], None)
 
-        pattern = '([a-z][a-z0-9_]*)\:([a-z0-9_]*)'
+        pattern = r'([a-z][a-z0-9_]*)\:([a-z0-9_]*)'
         if not re.match(pattern, value, flags=re.I): 
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of database references: {}'.format(value)]))   
                 
@@ -422,15 +422,15 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         """
         errors = []
 
-        id = '[a-z][a-z0-9_]*'
-        stoch = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = '({} )*({})'.format(stoch, id)
-        lcl_part = '({} )*({}\[{}\])'.format(stoch, id, id)
-        gbl_side = '{}( \+ {})*'.format(gbl_part, gbl_part)
-        lcl_side = '{}( \+ {})*'.format(lcl_part, lcl_part)
-        gbl_pattern = '^\[({})\]: ({}) ==> ({})$'.format(
+        id = r'[a-z][a-z0-9_]*'
+        stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        gbl_part = r'({} )*({})'.format(stoch, id)
+        lcl_part = r'({} )*({}\[{}\])'.format(stoch, id, id)
+        gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)
+        lcl_side = r'{}( \+ {})*'.format(lcl_part, lcl_part)
+        gbl_pattern = r'^\[({})\]: ({}) ==> ({})$'.format(
             id, gbl_side, gbl_side)
-        lcl_pattern = '^({}) ==> ({})$'.format(lcl_side, lcl_side)
+        lcl_pattern = r'^({}) ==> ({})$'.format(lcl_side, lcl_side)
 
         global_match = re.match(gbl_pattern, value, flags=re.I)
         local_match = re.match(lcl_pattern, value, flags=re.I)
@@ -482,7 +482,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         parts = []
         errors = []
 
-        for part in re.findall('(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
+        for part in re.findall(r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
             part_errors = []
 
             species_type = None
@@ -591,10 +591,10 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
         if not value:
             return ([], None)
 
-        pat_id = '([a-z][a-z0-9_]*)'
-        pat_coeff = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        pat_spec_coeff = '({} )*({}\[{}\])'.format(pat_coeff, pat_id, pat_id)
-        pat_observable = '^{}( \+ {})*$'.format(pat_spec_coeff, pat_spec_coeff)
+        pat_id = r'([a-z][a-z0-9_]*)'
+        pat_coeff = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        pat_spec_coeff = r'({} )*({}\[{}\])'.format(pat_coeff, pat_id, pat_id)
+        pat_observable = r'^{}( \+ {})*$'.format(pat_spec_coeff, pat_spec_coeff)
         if not re.match(pat_observable, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted observable: {}'.format(value)]))
 
@@ -717,10 +717,10 @@ class ObservableObservableParticipantAttribute(ManyToManyAttribute):
         if not value:
             return ([], None)
 
-        pat_id = '([a-z][a-z0-9_]*)'
-        pat_coeff = '\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        pat_obs_coeff = '({} )*({})'.format(pat_coeff, pat_id, pat_id)
-        pat_observable = '^{}( \+ {})*$'.format(pat_obs_coeff, pat_obs_coeff)
+        pat_id = r'([a-z][a-z0-9_]*)'
+        pat_coeff = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        pat_obs_coeff = r'({} )*({})'.format(pat_coeff, pat_id, pat_id)
+        pat_observable = r'^{}( \+ {})*$'.format(pat_obs_coeff, pat_obs_coeff)
         if not re.match(pat_observable, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted observable: {}'.format(value)]))
 
@@ -851,11 +851,11 @@ class KnowledgeBase(KnowledgeBaseObject):
     """
     translation_table = obj_model.IntegerAttribute()
     version = RegexAttribute(
-        min_length=1, pattern='^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I)
+        min_length=1, pattern=r'^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I)
     url = obj_model.StringAttribute(verbose_name='URL')
     branch = obj_model.StringAttribute()
     revision = obj_model.StringAttribute()
-    wc_kb_version = RegexAttribute(min_length=1, pattern='^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I,
+    wc_kb_version = RegexAttribute(min_length=1, pattern=r'^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I,
                                    default=wc_kb_version, verbose_name='wc_kb version')
 
     class Meta(obj_model.Model.Meta):
@@ -875,7 +875,7 @@ class Cell(KnowledgeBaseObject):
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
         concentrations (:obj:`list` of :obj:`Concentration`): concentrations
-        observables (:obj:'list' or :obj: 'Observable') : observables
+        observables (:obj:`list` or :obj:`Observable`) : observables
         loci (:obj:`list` of :obj:`PolymerLocus`): locus
         reactions (:obj:`list` of :obj:`Reaction`): reactions
     """
@@ -1042,7 +1042,7 @@ class Species(obj_model.Model):
             return (objects[cls][value], None)
 
         match = re.match(
-            '^([a-z][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
+            r'^([a-z][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
         if match:
             errors = []
 
@@ -1188,9 +1188,9 @@ class SpeciesCoefficient(obj_model.Model):
         errors = []
 
         if compartment:
-            pattern = '^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
+            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
         else:
-            pattern = '^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*\[[a-z][a-z0-9_]*\])$'
+            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*\[[a-z][a-z0-9_]*\])$'
 
         match = re.match(pattern, value, flags=re.I)
         if match:
@@ -1347,8 +1347,8 @@ class Observable(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowle
     """Knowledge of an observable to include in a model
 
     Attributes:
-        cell (:obj:'Cell'): The cell that the observable is in
-        species(:obj:`list` of :obj: `SpeciesCoefficient`): A list of the species and the
+        cell (:obj:`Cell`): The cell that the observable is in
+        species (:obj:`list` of :obj:`SpeciesCoefficient`): A list of the species and the
             coefficients to be included in the observable
         observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables
             and their coefficients
@@ -1433,7 +1433,7 @@ class ObservableCoefficient(obj_model.Model):
         """
         errors = []
 
-        pattern = '^(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
+        pattern = r'^(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
 
         match = re.match(pattern, value, flags=re.I)
         if match:
@@ -1833,7 +1833,7 @@ class RateLawEquation(obj_model.Model):
         """
         modifiers = []
         errors = []
-        modifier_pattern = '(^|[^a-z0-9_])({}\[{}\])([^a-z0-9_]|$)'.format(SpeciesType.id.pattern[1:-1],
+        modifier_pattern = r'(^|[^a-z0-9_])({}\[{}\])([^a-z0-9_]|$)'.format(SpeciesType.id.pattern[1:-1],
                                                                            Compartment.id.pattern[1:-1])
 
         try:
