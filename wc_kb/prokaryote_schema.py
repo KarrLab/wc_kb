@@ -225,6 +225,9 @@ class PromoterLocus(schema_core.PolymerLocus):
     Attributes:
         pribnow_start (:obj:`int`): Pribnow box start coordinate
         pribnow_end (:obj:`int`): Pribnow box end coordinate
+        up_35_start (:obj:`int`): -35 promoter start coordinate
+        up_35_end (:obj:`int`): -35 promoter  end coordinate
+
 
     Related attributes:
         transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`)
@@ -232,6 +235,8 @@ class PromoterLocus(schema_core.PolymerLocus):
     """
     pribnow_start = obj_model.IntegerAttribute()
     pribnow_end = obj_model.IntegerAttribute()
+    up_35_start = obj_model.IntegerAttribute()
+    up_35_end = obj_model.IntegerAttribute()
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 
