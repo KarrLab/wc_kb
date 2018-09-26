@@ -75,7 +75,7 @@ class RegulatoryElementType(enum.Enum):
     CTCF_binding_site = 4
     TF_binding_site = 5
     open_chromatin_region = 6
-    
+
 
 class ComplexType(enum.Enum):
     """ Type of complex """
@@ -331,9 +331,9 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
             return ([], None)
 
         pattern = r'([a-z][a-z0-9_]*)\:([a-z0-9_]*)'
-        if not re.match(pattern, value, flags=re.I): 
-            return (None, InvalidAttribute(self, ['Incorrectly formatted list of database references: {}'.format(value)]))   
-                
+        if not re.match(pattern, value, flags=re.I):
+            return (None, InvalidAttribute(self, ['Incorrectly formatted list of database references: {}'.format(value)]))
+
         objs = []
         for pat_match in re.findall(pattern, value, flags=re.I):
             match = re.match(pattern, value, flags=re.I)
@@ -346,10 +346,10 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
                 obj = objects[self.related_class][serialized_value]
             else:
                 obj = self.related_class(database=database_name, id=data_id)
-                objects[self.related_class][serialized_value] = obj 
-            objs.append(obj)               
-        return (objs, None) 
-       
+                objects[self.related_class][serialized_value] = obj
+            objs.append(obj)
+        return (objs, None)
+
 
 class ReactionParticipantAttribute(ManyToManyAttribute):
     """ Reaction participants """
@@ -773,7 +773,7 @@ class DatabaseReference(obj_model.Model):
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species_types
         concentrations (:obj:`list` of :obj:`Concentration`): concentrations
-        loci (:obj:`list` of :obj:`PolymerLocus`): loci   
+        loci (:obj:`list` of :obj:`PolymerLocus`): loci
         properties (:obj:`list` of :obj:`Property`): properties
         reactions (:obj:`list` of :obj:`Reaction`): reactions
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
@@ -795,7 +795,7 @@ class DatabaseReference(obj_model.Model):
             :obj:`str`: value of primary attribute
         """
         return '{}:{}'.format(self.database, self.id)
-    
+
 
 class Reference(obj_model.Model):
     """ Reference to the literature
@@ -808,7 +808,7 @@ class Reference(obj_model.Model):
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species_types
         concentrations (:obj:`list` of :obj:`Concentration`): concentrations
-        loci (:obj:`list` of :obj:`PolymerLocus`): loci   
+        loci (:obj:`list` of :obj:`PolymerLocus`): loci
         properties (:obj:`list` of :obj:`Property`): properties
         reactions (:obj:`list` of :obj:`Reaction`): reactions
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
@@ -905,9 +905,9 @@ class Compartment(KnowledgeBaseObject):
     references = obj_model.ManyToManyAttribute(Reference, related_name='compartments')
     database_references = DatabaseReferenceAttribute(related_name='compartments')
 
-    class Meta(obj_model.Model.Meta):        
+    class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'volumetric_fraction', 'comments', 'references', 'database_references')
-           
+
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
     """ Knowledge of a molecular species
@@ -964,7 +964,7 @@ class Species(obj_model.Model):
     Attributes:
         species_type (:obj:`SpeciesType`): species type
         compartment (:obj:`Compartment`): compartment
-        
+
     Related attributes:
         concentration (:obj:`Concentration`): concentration
         species_coefficients (:obj:`list` of `SpeciesCoefficient`): participations in reactions and observables
@@ -973,7 +973,7 @@ class Species(obj_model.Model):
         SpeciesType, related_name='species', min_related=1)
     compartment = ManyToOneAttribute(
         Compartment, related_name='species', min_related=1)
-    
+
     class Meta(obj_model.Model.Meta):
         attribute_order = ('species_type', 'compartment')
         frozen_columns = 1
@@ -1270,7 +1270,7 @@ class PolymerSpeciesType(SpeciesType):
             :obj:`Bio.Seq.Seq`: sequence
 
         Raises:
-            :obj:`ValueError`: if the polymer is linear and the start or end coordinates 
+            :obj:`ValueError`: if the polymer is linear and the start or end coordinates
                 are less than 1 or greater than the length of the sequence
         """
         seq = self.get_seq()
@@ -1643,7 +1643,7 @@ class ComplexSpeciesType(SpeciesType):
     Attributes:
         complex_type (:obj:`ComplexType`): type of complex
         formation_process (:obj:`ComplexFormationType`): type of formation process
-        binding (:obj:`str`): strand of DNA bound if involved 
+        binding (:obj:`str`): strand of DNA bound if involved
         region (:obj:`str`): region where DNA is bound if involved
     """
 
@@ -1656,7 +1656,7 @@ class ComplexSpeciesType(SpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'formation_process', 'subunits',
-                           'complex_type', 'binding', 'region', 
+                           'complex_type', 'binding', 'region',
                            'half_life', 'comments', 'references', 'database_references')
 
     def get_empirical_formula(self):
@@ -1867,6 +1867,7 @@ class Reaction(KnowledgeBaseObject):
 
     Attributes:
         cell (:obj:`Cell`): cell
+        submodel (:obj:`str`): submodel where reaction belongs to 
         participants (:obj:`list` of :obj:`SpeciesCoefficient`): participants
         reversible (:obj:`boolean`): denotes whether reaction is reversible
         references (:obj:`list` of :obj:`Reference`): references
@@ -1879,12 +1880,13 @@ class Reaction(KnowledgeBaseObject):
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='reactions')
     participants = ReactionParticipantAttribute(related_name='reactions')
+    submodel   = obj_model.StringAttribute()
     reversible = obj_model.BooleanAttribute()
     references = obj_model.ManyToManyAttribute(Reference, related_name='reactions')
     database_references = DatabaseReferenceAttribute(related_name='reactions')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'participants', 'reversible', 
+        attribute_order = ('id', 'name', 'submodel', 'participants', 'reversible',
                            'comments', 'references', 'database_references')
 
 
@@ -1906,6 +1908,6 @@ class Property(KnowledgeBaseObject):
     database_references = DatabaseReferenceAttribute(related_name='properties')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'value', 'units', 'comments', 
+        attribute_order = ('id', 'name', 'value', 'units', 'comments',
                            'references', 'database_references')
         verbose_name_plural = 'Properties'
