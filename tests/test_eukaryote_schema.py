@@ -29,17 +29,17 @@ class CellTestCase(unittest.TestCase):
         self.assertEqual(cell.loci, [])
 
         self.assertEqual(cell.species_types.get(
-            __type=eukaryote_schema.RnaSpeciesType), [])
+            __type=eukaryote_schema.PreRnaSpeciesType), [])
         self.assertEqual(cell.loci.get(__type=eukaryote_schema.RegulatoryElementLocus), [])
 
 
-class RnaSpeciesTypeTestCase(unittest.TestCase):
+class PreRnaSpeciesTypeTestCase(unittest.TestCase):
 
     def test_constructor(self):
         dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
             'ACGTACGTACGTACGTTTT', alphabet=Bio.Alphabet.DNAAlphabet()))
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=15)
-        rna1 = eukaryote_schema.RnaSpeciesType(id='rna1', name='rna1', gene=gene1, 
+        rna1 = eukaryote_schema.PreRnaSpeciesType(id='rna1', name='rna1', gene=gene1, 
         	type=1, half_life=2)
 
         self.assertEqual(rna1.id, 'rna1')
@@ -56,29 +56,29 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
             'ACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=1)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         self.assertEqual(rna1.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O7P'))
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=2, end=2)
-        rna2 = eukaryote_schema.RnaSpeciesType(gene=gene2)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         self.assertEqual(rna2.get_empirical_formula(),
                          chem.EmpiricalFormula('C9H12N3O8P'))
 
         gene3 = eukaryote_schema.GeneLocus(polymer=dna1, start=3, end=3)
-        rna3 = eukaryote_schema.RnaSpeciesType(gene=gene3)
+        rna3 = eukaryote_schema.PreRnaSpeciesType(gene=gene3)
         self.assertEqual(rna3.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O8P'))
 
         gene4 = eukaryote_schema.GeneLocus(polymer=dna1, start=4, end=4)
-        rna4 = eukaryote_schema.RnaSpeciesType(gene=gene4)
+        rna4 = eukaryote_schema.PreRnaSpeciesType(gene=gene4)
         self.assertEqual(rna4.get_empirical_formula(),
                          chem.EmpiricalFormula('C9H11N2O9P'))
 
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
         gene5 = eukaryote_schema.GeneLocus(polymer=dna2, start=1, end=2)
-        rna5 = eukaryote_schema.RnaSpeciesType(gene=gene5)
+        rna5 = eukaryote_schema.PreRnaSpeciesType(gene=gene5)
         self.assertEqual(rna5.get_empirical_formula(),
                          chem.EmpiricalFormula('C20H23N10O13P2'))
 
@@ -87,11 +87,11 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
             'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=1)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         self.assertEqual(rna1.get_charge(), -2)
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=2, end=3)
-        rna2 = eukaryote_schema.RnaSpeciesType(gene=gene2)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         self.assertEqual(rna2.get_charge(), -3)
 
     def test_get_mol_wt(self):
@@ -99,21 +99,21 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
             'AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=1)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(rna1.get_seq()) \
             - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
         self.assertAlmostEqual(rna1.get_mol_wt(), exp_mol_wt, places=1)
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=3, end=3)
-        rna2 = eukaryote_schema.RnaSpeciesType(gene=gene2)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(rna2.get_seq()) \
             - (rna2.get_len() + 1) * mendeleev.element('H').atomic_weight
         self.assertAlmostEqual(rna2.get_mol_wt(), exp_mol_wt, places=1)
 
         gene3 = eukaryote_schema.GeneLocus(polymer=dna1, start=5, end=5)
-        rna3 = eukaryote_schema.RnaSpeciesType(gene=gene3)
+        rna3 = eukaryote_schema.PreRnaSpeciesType(gene=gene3)
         exp_mol_wt = \
             + Bio.SeqUtils.molecular_weight(rna3.get_seq()) \
             - (rna3.get_len() + 1) * mendeleev.element('H').atomic_weight
@@ -126,7 +126,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'ACGTACGTACGTACGTTTT', alphabet=Bio.Alphabet.DNAAlphabet()))
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=15)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
 
         transcript1 = eukaryote_schema.TranscriptSpeciesType(
         	id='t1', name='transcript1', rna=rna1, half_life=2)
@@ -140,11 +140,20 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(transcript1.references, [])
         self.assertEqual(transcript1.database_references, [])
 
+        exon1 = eukaryote_schema.ExonLocus(start=1, end=1)
+        exon2 = eukaryote_schema.ExonLocus(start=2, end=2)
+        transcript1.exons = [exon1, exon2]
+        transcript2 = eukaryote_schema.TranscriptSpeciesType(
+            id='t2', name='transcript2', rna=rna1, exons=[exon2])
+
+        self.assertEqual(transcript1.exons, [exon1, exon2])
+        self.assertEqual(transcript2.exons, [exon2])
+
     def test_get_empirical_formula(self):
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'ACGT', alphabet=Bio.Alphabet.DNAAlphabet()))        
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=4)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         
         exon1 = eukaryote_schema.ExonLocus(start=1, end=1)
         transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])        
@@ -169,7 +178,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'ATAT', alphabet=Bio.Alphabet.DNAAlphabet()))
         gene2 = eukaryote_schema.GeneLocus(polymer=dna2, start=1, end=4)
-        rna2 = eukaryote_schema.RnaSpeciesType(gene=gene2)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exon5_1 = eukaryote_schema.ExonLocus(start=1, end=1)
         exon5_2 = eukaryote_schema.ExonLocus(start=3, end=3)
         transcript5 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon5_1, exon5_2])        
@@ -181,13 +190,13 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
             'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))        
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=1)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         exon1 = eukaryote_schema.ExonLocus(start=1, end=1)
         transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])
         self.assertEqual(transcript1.get_charge(), -2)
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=2, end=4)
-        rna2 = eukaryote_schema.RnaSpeciesType(gene=gene2)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exon2_1 = eukaryote_schema.ExonLocus(start=2, end=2)
         exon2_2 = eukaryote_schema.ExonLocus(start=4, end=4)
         transcript2 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon2_1, exon2_2])        
@@ -197,7 +206,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=6)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
 
         exon1 = eukaryote_schema.ExonLocus(start=1, end=1)
         transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])        
@@ -230,7 +239,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         cell1 = dna1.cell = core.Cell()
 
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=36)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         exon1 = eukaryote_schema.ExonLocus(start=4, end=36)
         transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])        
         self.prot1 = eukaryote_schema.ProteinSpeciesType(id='prot1', name='protein1', 
@@ -238,7 +247,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1,
             start=37, end=75, strand=core.PolymerStrand.negative)
-        rna2 = eukaryote_schema.RnaSpeciesType(gene=gene2)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exon2 = eukaryote_schema.ExonLocus(start=40, end=72)
         transcript2 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon2])        
         self.prot2 = eukaryote_schema.ProteinSpeciesType(id='prot2', name='protein2', 
@@ -291,7 +300,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
 
         # Protein subunit 1
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=36)
-        rna1 = eukaryote_schema.RnaSpeciesType(gene=gene1)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         exon1 = eukaryote_schema.ExonLocus(start=4, end=36)
         transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])        
         prot1 = eukaryote_schema.ProteinSpeciesType(transcript=transcript1)
@@ -299,7 +308,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         # Protein subunit 2
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, 
                     start=37, end=75, strand=core.PolymerStrand.negative)
-        rna2 = eukaryote_schema.RnaSpeciesType(gene=gene2)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exon2 = eukaryote_schema.ExonLocus(start=40, end=72)
         transcript2 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon2])        
         prot2 = eukaryote_schema.ProteinSpeciesType(transcript=transcript2)
@@ -367,17 +376,22 @@ class RegulatoryElementLocusTestCase(unittest.TestCase):
 
 class RegulatoryModuleTestCase(unittest.TestCase):
     def test_constructor(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACGTACGTACGTACG', 
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACGTACGTACGTACGATAT', 
                                     alphabet=Bio.Alphabet.DNAAlphabet()),
                                     circular=False, double_stranded=False)
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=9, end=15)
+        gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=17, end=18)
 
         promoter = eukaryote_schema.RegulatoryElementLocus(polymer=dna1, start=6, end=8)
         enhancer = eukaryote_schema.RegulatoryElementLocus(polymer=dna1, start=2, end=4)
 
         reg_module1 = eukaryote_schema.RegulatoryModule(gene=gene1, 
             regulatory_elements=[promoter, enhancer])
-
+        reg_module2 = eukaryote_schema.RegulatoryModule(gene=gene2, 
+            regulatory_elements=[enhancer])
+         
         self.assertEqual(reg_module1.gene, gene1)
         self.assertEqual(reg_module1.regulatory_elements, [promoter, enhancer])
+        self.assertEqual(reg_module2.gene, gene2)
+        self.assertEqual(reg_module2.regulatory_elements, [enhancer])

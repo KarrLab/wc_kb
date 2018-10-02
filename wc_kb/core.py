@@ -8,9 +8,6 @@
 :Date: 2018-02-07
 :Copyright: 2018, Karr Lab
 :License: MIT
-
-TODO:
-ProteinSpeciesType.get_seq() => cds=True (complete coding sequence) causes errors, talk to J
 """
 
 from natsort import natsorted, ns
@@ -34,7 +31,6 @@ from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerA
                        InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
 from wc_utils.util.enumerate import CaseInsensitiveEnum
 from wc_utils.util.types import get_subclasses
-import wc_kb
 
 with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
     wc_kb_version = file.read().strip()
@@ -330,7 +326,7 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
         if not value:
             return ([], None)
 
-        pattern = r'([a-z][a-z0-9_]*)\:([a-z0-9_]*)'
+        pattern = r'([a-z][a-z0-9_\-]*)\:([a-z0-9_]*)'
         if not re.match(pattern, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of database references: {}'.format(value)]))
 
@@ -602,26 +598,18 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
         errors = []
         for spec_coeff_match in re.findall(pat_spec_coeff, value, flags=re.I):
             spec_type_errors = []
-
+            
             spec_type_id = spec_coeff_match[5]
-
-            try:
-                if spec_type_id in objects[wc_kb.prokaryote_schema.ProteinSpeciesType]:
-                    spec_type = objects[wc_kb.prokaryote_schema.ProteinSpeciesType][spec_type_id]
-                elif spec_type_id in objects[wc_kb.prokaryote_schema.RnaSpeciesType]:
-                    spec_type = objects[wc_kb.prokaryote_schema.RnaSpeciesType][spec_type_id]
-                elif spec_type_id in objects[ComplexSpeciesType]:
-                    spec_type = objects[ComplexSpeciesType][spec_type_id]
-                elif spec_type_id in objects[DnaSpeciesType]:
-                    spec_type = objects[DnaSpeciesType][spec_type_id]
-                elif spec_type_id in objects[MetaboliteSpeciesType]:
-                    spec_type = objects[MetaboliteSpeciesType][spec_type_id]
-                else:
-                    spec_type_errors.append(
-                        'Undefined species type "{}"'.format(spec_type_id))
-            except KeyError:
-                pass
-
+            
+            spec_type = None
+            for species_type_cls in get_subclasses(SpeciesType):
+                if species_type_cls in objects and spec_type_id in objects[species_type_cls]:
+                    spec_type = objects[species_type_cls][spec_type_id]
+                    break
+            if not spec_type:
+                spec_type_errors.append(
+                    'Undefined species type "{}"'.format(spec_type_id))            
+            
             compartment_id = spec_coeff_match[6]
             if compartment_id in objects[Compartment]:
                 compartment = objects[Compartment][compartment_id]

@@ -35,15 +35,17 @@ class GeneLocus(schema_core.PolymerLocus):
 
     Attributes:
         symbol (:obj:`str`): symbol
+        type (:obj:`GeneType`): type of gene
 
     Related attributes:
-        rna (:obj:`list` of :obj:`RnaSpeciesType`): rna
+        rna (:obj:`list` of :obj:`PreRnaSpeciesType`): rna
         regulatory_modules (:obj:`RegulatoryModule`): regulatory_modules
     """
     symbol = obj_model.StringAttribute()
+    type = obj_model.EnumAttribute(schema_core.GeneType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'symbol', 'strand', 'start', 
+        attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 
                            'end', 'comments', 'references', 'database_references')
 
 
@@ -72,7 +74,7 @@ class RegulatoryElementLocus(schema_core.PolymerLocus):
     activity = obj_model.EnumAttribute(ActivityLevel)
     
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'type', 'activity', 'strand', 
+        attribute_order = ('id', 'polymer', 'name', 'type', 'activity', 
                            'start', 'end', 'comments', 'references', 'database_references')
 
 
@@ -87,7 +89,7 @@ class RegulatoryModule(obj_model.Model):
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
     """
     gene = obj_model.OneToOneAttribute(GeneLocus, related_name='regulatory_modules')
-    regulatory_elements = obj_model.OneToManyAttribute(
+    regulatory_elements = obj_model.ManyToManyAttribute(
         RegulatoryElementLocus, related_name='regulatory_modules')
     comments = obj_model.LongStringAttribute()
     references = obj_model.ManyToManyAttribute(schema_core.Reference, related_name='regulatory_modules')
@@ -102,7 +104,7 @@ class RegulatoryModule(obj_model.Model):
 # Species types
 
 
-class RnaSpeciesType(schema_core.PolymerSpeciesType):
+class PreRnaSpeciesType(schema_core.PolymerSpeciesType):
     """ Knowledge of a transcribed RNA species before splicing
 
     Attributes:
@@ -119,6 +121,7 @@ class RnaSpeciesType(schema_core.PolymerSpeciesType):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'gene', 'circular', 'double_stranded', 
                            'half_life', 'comments', 'references', 'database_references')
+        verbose_name = 'pre-RNA species type'
 
     def get_seq(self):
         """ Get the sequence
@@ -194,8 +197,8 @@ class TranscriptSpeciesType(schema_core.PolymerSpeciesType):
     Related attributes:
         protein (:obj:`ProteinSpeciesType`): protein    
     """
-    rna = obj_model.ManyToOneAttribute(RnaSpeciesType, related_name='transcripts')
-    exons = obj_model.OneToManyAttribute(ExonLocus, related_name='transcripts')
+    rna = obj_model.ManyToOneAttribute(PreRnaSpeciesType, related_name='transcripts')
+    exons = obj_model.ManyToManyAttribute(ExonLocus, related_name='transcripts')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'rna', 'exons', 'half_life', 

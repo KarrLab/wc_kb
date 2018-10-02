@@ -13,6 +13,7 @@ Supported file types:
 """
 
 from . import core
+from . import eukaryote_schema
 from . import prokaryote_schema
 from . import util
 from wc_utils.util.string import indent_forest
@@ -25,42 +26,71 @@ import wc_utils.cache
 import wc_kb
 
 
+PROKARYOTE_MODEL_ORDER = (
+    core.KnowledgeBase,
+    core.Cell,
+    core.Compartment,
+    core.MetaboliteSpeciesType,
+    core.DnaSpeciesType,
+    prokaryote_schema.PromoterLocus,
+    prokaryote_schema.TranscriptionUnitLocus,
+    prokaryote_schema.RnaSpeciesType,
+    prokaryote_schema.GeneLocus,
+    prokaryote_schema.ProteinSpeciesType,
+    core.ComplexSpeciesType,
+    core.Concentration,
+    core.Reaction,
+    core.RateLaw,
+    core.Property,
+    core.Observable,
+    core.Reference
+    )   
+
+EUKARYOTE_MODEL_ORDER = (
+    core.KnowledgeBase,
+    core.Cell,
+    core.Compartment,
+    core.MetaboliteSpeciesType,
+    core.DnaSpeciesType,
+    eukaryote_schema.GeneLocus,
+    eukaryote_schema.RegulatoryElementLocus,
+    eukaryote_schema.RegulatoryModule,    
+    eukaryote_schema.PreRnaSpeciesType,    
+    eukaryote_schema.TranscriptSpeciesType,
+    eukaryote_schema.ExonLocus,
+    eukaryote_schema.ProteinSpeciesType,
+    core.ComplexSpeciesType,
+    core.Concentration,
+    core.Observable,
+    core.Reaction,
+    core.RateLaw,
+    core.Property,    
+    core.Reference
+    ) 
+
+
 class Writer(object):
     """ Write knowledge base to file(s) """
 
-    model_order = (
-        core.KnowledgeBase,
-        core.Cell,
-        core.Compartment,
-        core.MetaboliteSpeciesType,
-        core.DnaSpeciesType,
-        prokaryote_schema.PromoterLocus,
-        prokaryote_schema.TranscriptionUnitLocus,
-        prokaryote_schema.RnaSpeciesType,
-        prokaryote_schema.GeneLocus,
-        prokaryote_schema.ProteinSpeciesType,
-        core.ComplexSpeciesType,
-        core.Concentration,
-        core.Reaction,
-        core.RateLaw,
-        core.Property,
-        core.Observable,
-        core.Reference
-    )
-
-    def run(self, knowledge_base, core_path, seq_path, set_repo_metadata_from_path=True):
+    def run(self, knowledge_base, core_path, seq_path, schema=True, set_repo_metadata_from_path=True):
         """ Write knowledge base to file(s)
 
         Args:
             knowledge_base (:obj:`core.KnowledgeBase`): knowledge base
             core_path (:obj:`str`): path to save core knowledge base
             seq_path (:obj:`str`): path to save genome sequence
+            schema (:obj:`bool`, optional): if :obj:`True`, use model order for prokaryote, else use model order for eukaryote
             set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
                 branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
 
         Raises:
             :obj:`ValueError`: if any of the relationships with knowledge bases and cells are not set
         """
+        if schema:
+            self.model_order = PROKARYOTE_MODEL_ORDER
+        else:
+            self.model_order = EUKARYOTE_MODEL_ORDER            
+
         self.validate_implicit_relationships()
 
         # check that there is only 1 :obj:`KnowledgeBase` and <= 1 :obj:`Cell` and that each relationship
@@ -167,12 +197,13 @@ class Reader(object):
     """ Read knowledge base from file(s) """
 
     #@wc_utils.cache.memoize(filename_args=[1, 2])
-    def run(self, core_path, seq_path, strict=True):
+    def run(self, core_path, seq_path, schema=True, strict=True):
         """ Read knowledge base from file(s)
 
         Args:
             core_path (:obj:`str`): path to core knowledge base
             seq_path (:obj:`str`): path to genome sequence
+            schema (:obj:`bool`, optional): if :obj:`True`, use model order for prokaryote, else use model order for eukaryote
             strict (:obj:`bool`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
                 :obj:`obj_model` serialization format:
 
@@ -194,6 +225,11 @@ class Reader(object):
         """
         Writer.validate_implicit_relationships()
 
+        if schema:
+            model_order = PROKARYOTE_MODEL_ORDER
+        else:
+            model_order = EUKARYOTE_MODEL_ORDER      
+
         # read core objects from file
         _, ext = os.path.splitext(core_path)
         reader = obj_model.io.get_reader(ext)()
@@ -207,10 +243,10 @@ class Reader(object):
                 kwargs['ignore_sheet_order'] = True
                 kwargs['ignore_missing_attributes'] = True
                 kwargs['ignore_extra_attributes'] = True
-                kwargs['ignore_attribute_order'] = True
+                kwargs['ignore_attribute_order'] = True          
 
         objects = reader.run(
-            core_path, models=Writer.model_order, validate=False, **kwargs)
+            core_path, models=model_order, validate=False, **kwargs)
 
         # check that file has 0 or 1 knowledge bases
         if not objects[core.KnowledgeBase]:

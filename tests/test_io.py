@@ -66,22 +66,40 @@ class TestIO(unittest.TestCase):
 
         self.assertTrue(self.kb.is_equal(kb))
 
-    def test_read_write(self):
+    def test_read_write_prokaryote(self):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         core_path = os.path.join(fixtures, 'core.xlsx')
         seq_path = os.path.join(fixtures, 'seq.fna')
-
+        
         reader = io.Reader()
         kb = reader.run(core_path, seq_path)
-
+        
         tmp_core_path = os.path.join(self.dir, 'tmp_core.xlsx')
         tmp_seq_path = os.path.join(self.dir, 'tmp_seq.fna')
-
+        
         writer = io.Writer()
         writer.run(kb, tmp_core_path, tmp_seq_path, set_repo_metadata_from_path=False)
-
+        
         tmp_kb = reader.run(tmp_core_path, tmp_seq_path)
+        
+        self.assertTrue(kb.is_equal(tmp_kb))
 
+    def test_read_write_eukaryote(self):
+        fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
+        core_path = os.path.join(fixtures, 'eukaryote_core.xlsx')
+        seq_path = os.path.join(fixtures, 'eukaryote_seq.fna')
+        
+        reader = io.Reader()
+        kb = reader.run(core_path, seq_path, schema=False)
+        
+        tmp_core_path = os.path.join(self.dir, 'tmp_eukaryote_core.xlsx')
+        tmp_seq_path = os.path.join(self.dir, 'tmp_eukaryote_seq.fna')
+
+        writer = io.Writer()
+        writer.run(kb, tmp_core_path, tmp_seq_path, schema=False, set_repo_metadata_from_path=False)
+        
+        tmp_kb = reader.run(tmp_core_path, tmp_seq_path, schema=False)
+        
         self.assertTrue(kb.is_equal(tmp_kb))
 
     def test_write_with_repo_md(self):
@@ -139,7 +157,7 @@ class TestIO(unittest.TestCase):
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [], io.Writer.model_order, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'seq.fna')
         with open(seq_path, 'w') as file:
@@ -148,7 +166,7 @@ class TestIO(unittest.TestCase):
         kb = io.Reader().run(core_path, seq_path)
         self.assertEqual(kb, None)
 
-        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.Writer.model_order, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
         with self.assertRaisesRegex(ValueError, 'cannot contain instances'):
             io.Reader().run(core_path, seq_path)
 
@@ -157,7 +175,7 @@ class TestIO(unittest.TestCase):
         kb2 = core.KnowledgeBase(id='kb2', name='kb2', version='0.0.1')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.Writer.model_order, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'seq.fna')
         with open(seq_path, 'w') as file:
@@ -171,7 +189,7 @@ class TestIO(unittest.TestCase):
         dna = core.DnaSpeciesType(id='chr')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.Writer.model_order, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'seq.fna')
         with open(seq_path, 'w') as file:
@@ -186,7 +204,7 @@ class TestIO(unittest.TestCase):
         cell2 = core.Cell(id='cell2', name='cell2')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.Writer.model_order, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'seq.fna')
         with open(seq_path, 'w') as file:
