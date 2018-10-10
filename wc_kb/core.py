@@ -785,30 +785,6 @@ class DatabaseReference(obj_model.Model):
         return '{}:{}'.format(self.database, self.id)
 
 
-class Reference(obj_model.Model):
-    """ Reference to the literature
-
-    Attributes:
-        id (:obj:`str`): identifier
-        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
-
-    Related attributes:
-        compartments (:obj:`list` of :obj:`Compartment`): compartments
-        species_types (:obj:`list` of :obj:`SpeciesType`): species_types
-        concentrations (:obj:`list` of :obj:`Concentration`): concentrations
-        loci (:obj:`list` of :obj:`PolymerLocus`): loci
-        properties (:obj:`list` of :obj:`Property`): properties
-        reactions (:obj:`list` of :obj:`Reaction`): reactions
-        rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
-        observables (:obj:`list` of :obj:`Observable`): observables
-    """
-    id = obj_model.StringAttribute(primary=True, unique=True)
-    standard_id = obj_model.StringAttribute()
-
-    class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'standard_id')
-
-
 class KnowledgeBaseObject(obj_model.Model):
     """ Knowledge of a biological entity
 
@@ -860,6 +836,7 @@ class Cell(KnowledgeBaseObject):
         taxon (:obj:`int`): NCBI taxon identifier
 
     Related attributes:
+        references (:obj:`list` of :obj:`Reference`): references
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species types
         concentrations (:obj:`list` of :obj:`Concentration`): concentrations
@@ -874,6 +851,32 @@ class Cell(KnowledgeBaseObject):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'taxon', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
+
+
+class Reference(obj_model.Model):
+    """ Reference to the literature
+
+    Attributes:
+        id (:obj:`str`): identifier     
+        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
+        cell (:obj:`Cell`): cell
+
+    Related attributes:
+        compartments (:obj:`list` of :obj:`Compartment`): compartments
+        species_types (:obj:`list` of :obj:`SpeciesType`): species_types
+        concentrations (:obj:`list` of :obj:`Concentration`): concentrations
+        loci (:obj:`list` of :obj:`PolymerLocus`): loci
+        properties (:obj:`list` of :obj:`Property`): properties
+        reactions (:obj:`list` of :obj:`Reaction`): reactions
+        rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
+        observables (:obj:`list` of :obj:`Observable`): observables
+    """
+    id = obj_model.SlugAttribute(primary=True, unique=True)    
+    standard_id = obj_model.StringAttribute()
+    cell = obj_model.ManyToOneAttribute(Cell, related_name='references')
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'standard_id')        
 
 
 class Compartment(KnowledgeBaseObject):
