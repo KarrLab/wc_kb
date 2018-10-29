@@ -411,16 +411,13 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
             structure='InChI=1S/Zn/q+2')
 
-        # Test adding formation reaction
-        # Add formation reaction: [c]: (2) cofactor1 + (3) cofactor2 ==> complex1
-        comp1 = core.Compartment(id='comp1')
-        species1 = core.Species(species_type=cofactor1, compartment=comp1)
-        species2 = core.Species(species_type=cofactor2, compartment=comp1)
-        species_coeff1 = core.SpeciesCoefficient(
-            species=species1, coefficient=2)
-        species_coeff2 = core.SpeciesCoefficient(
-            species=species2, coefficient=3)
-        complex1.subunits = [species_coeff1, species_coeff2]
+        # Test adding subunit composition 
+        # Add subunit composition: (2) cofactor1 + (3) cofactor2 ==> complex1        
+        species_type_coeff1 = core.SpeciesTypeCoefficient(
+            species_type=cofactor1, coefficient=2)
+        species_type_coeff2 = core.SpeciesTypeCoefficient(
+            species_type=cofactor2, coefficient=3)
+        complex1.subunits = [species_type_coeff1, species_type_coeff2]
 
         self.assertEqual(complex1.get_charge(), 6)
         self.assertAlmostEqual(complex1.get_mol_wt(),
@@ -512,6 +509,10 @@ class SpeciesCoefficientTestCase(unittest.TestCase):
 
         spec = core.Species(species_type=met, compartment=comp)
         spec_coeff = core.SpeciesCoefficient(species=spec, coefficient=3)
+
+        self.assertEqual(spec_coeff.species.species_type.id, 'met')
+        self.assertEqual(spec_coeff.species.compartment.id, 'c')
+        self.assertEqual(spec_coeff.coefficient, 3)
 
     def test_serialize(self):
         comp = core.Compartment(id='c')
@@ -626,40 +627,55 @@ class SpeciesCoefficientTestCase(unittest.TestCase):
         self.assertEqual(result[1], None)
 
 
+class SpeciesTypeCoefficientTestCase(unittest.TestCase):
+    def test_constructor(self):
+        
+        met = core.MetaboliteSpeciesType(id='met')
+        species_type_coeff = core.SpeciesTypeCoefficient(species_type=met, coefficient=3)
+
+        self.assertEqual(species_type_coeff.species_type.id, 'met')
+        self.assertEqual(species_type_coeff.coefficient, 3)
+
+    def test_serialize(self):
+        
+        met = core.MetaboliteSpeciesType(id='met')
+        species_type_coeff = core.SpeciesTypeCoefficient(species_type=met, coefficient=3)
+
+        self.assertEqual(species_type_coeff.serialize(), '(3) met')
+        self.assertEqual(core.SpeciesTypeCoefficient._serialize(
+            species_type=met, coefficient=3), '(3) met')
+        self.assertEqual(core.SpeciesTypeCoefficient._serialize(
+            species_type=met, coefficient=1), 'met')
+        self.assertEqual(core.SpeciesTypeCoefficient._serialize(
+            species_type=met, coefficient=2000), '(2.000000e+03) met')        
+        
+            
 class SubunitAttributeTestCase(unittest.TestCase):
     def test_SubunitAttribute(self):
         compart1 = core.Compartment(id='c')
-        compart2 = core.Compartment(id='m')
-
+        
         met1 = core.MetaboliteSpeciesType(id='met1')
         dna1 = core.DnaSpeciesType(id='dna1')
         complex1 = core.ComplexSpeciesType(id='complex1')
 
-        species1 = core.Species(species_type=met1, compartment=compart1)
-        species2 = core.Species(species_type=dna1, compartment=compart1)
-        species3 = core.Species(species_type=complex1, compartment=compart1)
-        species4 = core.Species(species_type=complex1, compartment=compart2)
-
-        species_coeff1 = core.SpeciesCoefficient(
-            species=species1, coefficient=2)
-        species_coeff2 = core.SpeciesCoefficient(
-            species=species2, coefficient=3)
-        species_coeff3 = core.SpeciesCoefficient(
-            species=species3, coefficient=5)
-        species_coeff4 = core.SpeciesCoefficient(
-            species=species4, coefficient=7)
-
+        species1 = core.Species(species_type=complex1, compartment=compart1)
+        
+        species_type_coeff1 = core.SpeciesTypeCoefficient(
+            species_type=met1, coefficient=2)
+        species_type_coeff2 = core.SpeciesTypeCoefficient(
+            species_type=dna1, coefficient=3)
+        species_type_coeff3 = core.SpeciesTypeCoefficient(
+            species_type=complex1, coefficient=5)
+        
         self.assertEqual(
-            core.SubunitAttribute().serialize(participants=[]), '')
-        self.assertEqual(core.SubunitAttribute().serialize(participants=[species_coeff1]),
-                         '[c]: (2) met1')
-        self.assertEqual(core.SubunitAttribute().serialize(participants=[species_coeff1, species_coeff2]),
-                         '[c]: (3) dna1 + (2) met1')
-        self.assertEqual(core.SubunitAttribute().serialize(participants=[species_coeff1, species_coeff2, species_coeff3]),
-                         '[c]: (5) complex1 + (3) dna1 + (2) met1')
-        self.assertEqual(core.SubunitAttribute().serialize(participants=[species_coeff1, species_coeff2, species_coeff4]),
-                         '(7) complex1[m] + (3) dna1[c] + (2) met1[c]')
-
+            core.SubunitAttribute().serialize(subunits=[]), '')
+        self.assertEqual(core.SubunitAttribute().serialize(subunits=[species_type_coeff1]),
+                         '(2) met1')
+        self.assertEqual(core.SubunitAttribute().serialize(subunits=[species_type_coeff1, species_type_coeff2]),
+                         '(3) dna1 + (2) met1')
+        self.assertEqual(core.SubunitAttribute().serialize(subunits=[species_type_coeff1, species_type_coeff2, species_type_coeff3]),
+                         '(5) complex1 + (3) dna1 + (2) met1')
+        
         objects = {
             core.DnaSpeciesType: {
                 'dna1': dna1
@@ -670,42 +686,27 @@ class SubunitAttributeTestCase(unittest.TestCase):
             core.ComplexSpeciesType: {
                 'complex1': complex1
             },
-            core.Compartment: {
-                'c': compart1, 'm': compart2
-            },            
-            core.Species: {
-                'met1[c]': species1, 'dna1[c]': species2, 'complex1[c]': species3, 'complex[m]': species4
-            },
         }
 
         result = core.SubunitAttribute().deserialize(
-            value='[c]: met1 + (2) dna1', objects=objects)
-        self.assertEqual(result[0][0].species.species_type, met1)
-        self.assertEqual(result[0][1].species.species_type, dna1)
+            value='met1 + (2) dna1', objects=objects)
+        self.assertEqual(result[0][0].species_type, met1)
+        self.assertEqual(result[0][1].species_type, dna1)
         self.assertEqual(result[0][0].coefficient, 1)
         self.assertEqual(result[0][1].coefficient, 2)
-        self.assertEqual(result[0][0].species.compartment, compart1)
-        self.assertEqual(result[0][1].species.compartment, compart1)
-        self.assertEqual(result[0][0].species.id(), 'met1[c]')
-        self.assertEqual(result[0][1].species.id(), 'dna1[c]')
+        self.assertEqual(result[0][0].species_type.id, 'met1')
+        self.assertEqual(result[0][1].species_type.id, 'dna1')
         self.assertEqual(result[1], None)
 
         result = core.SubunitAttribute().deserialize(
-            value='(2) met1[c] + (7) complex1[m]', objects=objects)
-        self.assertEqual(result[0][0].species.species_type, met1)
-        self.assertEqual(result[0][1].species.species_type, complex1)
+            value='(2) met1 + (7) complex1', objects=objects)
+        self.assertEqual(result[0][0].species_type, met1)
+        self.assertEqual(result[0][1].species_type, complex1)
         self.assertEqual(result[0][0].coefficient, 2)
         self.assertEqual(result[0][1].coefficient, 7)
-        self.assertEqual(result[0][0].species.compartment, compart1)
-        self.assertEqual(result[0][1].species.compartment, compart2)
-        self.assertEqual(result[0][0].species.id(), 'met1[c]')
-        self.assertEqual(result[0][1].species.id(), 'complex1[m]')
+        self.assertEqual(result[0][0].species_type.id, 'met1')
+        self.assertEqual(result[0][1].species_type.id, 'complex1')
         self.assertEqual(result[1], None)
-
-        result = core.SubunitAttribute().deserialize(
-            value='[e]: met1 + (2) dna1', objects=objects)
-        self.assertEqual(result[0], None)
-        self.assertEqual(result[1].messages[0], 'Undefined compartment "e"')
 
         result = core.SubunitAttribute().deserialize(
             value='[c]met1 + (2) dna1', objects=objects)

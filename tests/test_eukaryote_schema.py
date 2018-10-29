@@ -313,14 +313,11 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         transcript2 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon2])        
         prot2 = eukaryote_schema.ProteinSpeciesType(transcript=transcript2)
 
-        # Complex formation: [c]: (2) prot1 + (3) prot2 ==> complex1  
-        comp1 = core.Compartment(id='cytosol')
-        species1 = core.Species(species_type=prot1, compartment=comp1)
-        species2 = core.Species(species_type=prot2, compartment=comp1)
-        species_coeff1 = core.SpeciesCoefficient(
-            species=species1, coefficient=2)
-        species_coeff2 = core.SpeciesCoefficient(
-            species=species2, coefficient=3)
+        # Complex formation: (2) prot1 + (3) prot2 ==> complex1  
+        species_coeff1 = core.SpeciesTypeCoefficient(
+            species_type=prot1, coefficient=2)
+        species_coeff2 = core.SpeciesTypeCoefficient(
+            species_type=prot2, coefficient=3)
         complex1 = core.ComplexSpeciesType(
             subunits = [species_coeff1, species_coeff2])
 

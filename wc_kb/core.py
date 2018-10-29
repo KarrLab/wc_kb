@@ -123,128 +123,46 @@ class SubunitAttribute(ManyToManyAttribute):
             help (:obj:`str`, optional): help message
         """
 
-        super(SubunitAttribute, self).__init__('SpeciesCoefficient',
+        super(SubunitAttribute, self).__init__('SpeciesTypeCoefficient',
                                                related_name=related_name,
                                                verbose_name=verbose_name,
                                                verbose_related_name=verbose_related_name,
                                                help=help)
 
-    def serialize(self, participants, encoded=None):
+    def serialize(self, subunits, encoded=None):
         """ Serialize related object
 
         Args:
-            participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
+            subunits (:obj:`list` of `SpeciesTypeCoefficient`): Python representation of subunits
             encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
 
         Returns:
             :obj:`str`: simple Python representation
         """
-        if not participants:
+        if not subunits:
             return ''
 
-        comps = set([part.species.compartment for part in participants])
-        if len(comps) == 1:
-            global_comp = comps.pop()
-        else:
-            global_comp = None
-
-        if global_comp:
-            participants = natsorted(
-                participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
-        else:
-            participants = natsorted(participants, lambda part: (
-                part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
+        subunits = natsorted(subunits, lambda unit: (
+                unit.species_type.id), alg=ns.IGNORECASE)
 
         lhs = []
-        for part in participants:
-            lhs.append(part.serialize(
-                show_compartment=global_comp is None, show_coefficient_sign=False))
+        for unit in subunits:
+            lhs.append(unit.serialize())
 
-        if global_comp:
-            return '[{}]: {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs))
-        else:
-            return '{}'.format(' + '.join(lhs))
+        return '{}'.format(' + '.join(lhs))
 
     def deserialize(self, value, objects, decoded=None):
-        parts = []
-        errors = []
-        id = r'[a-z][a-z0-9_]*'
-        stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = r'({} )*({})'.format(stoch, id)
-        lcl_part = r'({} )*({}\[{}\])'.format(stoch, id, id)
-        gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)
-        lcl_side = r'{}( \+ {})*'.format(lcl_part, lcl_part)
-        gbl_pattern = r'^\[({})\]: ({})$'.format(id, gbl_side)
-        lcl_pattern = r'^({})$'.format(lcl_side)
+        """ Deserialize value
 
-        global_match = re.match(gbl_pattern, value, flags=re.I)
-        local_match = re.match(lcl_pattern, value, flags=re.I)
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
 
-        if global_match:
-            if global_match.group(1) in objects[Compartment]:
-                global_comp = objects[Compartment][global_match.group(1)]
-            else:
-                global_comp = None
-                errors.append('Undefined compartment "{}"'.format(
-                    global_match.group(1)))
-
-            subunits_str = global_match.group(2)
-
-        elif local_match:
-            global_comp = None
-            subunits_str = local_match.group(1)
-
-        else:
-            return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
-
-        for part in re.findall(r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*',
-                               subunits_str, flags=re.I):
-
-            species_type = None
-            for species_type_cls in get_subclasses(SpeciesType):
-                if species_type_cls in objects and part[4] in objects[species_type_cls]:
-                    species_type = objects[species_type_cls][part[4]]
-                    break
-
-            if not species_type:
-                errors.append('Undefined species type "{}"'.format(part[4]))
-
-            if global_comp:
-                compartment = global_comp
-            elif part[6] in objects[Compartment]:
-                compartment = objects[Compartment][part[6]]
-            else:
-                errors.append('Undefined compartment "{}"'.format(part[6]))
-
-            coefficient = float(part[1] or 1.)
-
-            if not errors:
-                spec_primary_attribute = Species.gen_id(
-                    species_type.get_primary_attribute(), compartment.get_primary_attribute())
-                species, error = Species.deserialize(
-                    self, spec_primary_attribute, objects)
-
-                if error:
-                    raise ValueError('Invalid species "{}"'.format(
-                        spec_primary_attribute))
-                    # pragma: no cover # unreachable due to error checking above
-
-                if coefficient != 0:
-                    if SpeciesCoefficient not in objects:
-                        objects[SpeciesCoefficient] = {}
-                    serialized_value = SpeciesCoefficient._serialize(
-                        species, coefficient)
-                    if serialized_value in objects[SpeciesCoefficient]:
-                        rxn_part = objects[SpeciesCoefficient][serialized_value]
-                    else:
-                        rxn_part = SpeciesCoefficient(
-                            species=species, coefficient=coefficient)
-                        objects[SpeciesCoefficient][serialized_value] = rxn_part
-                    parts.append(rxn_part)
-
-        if errors:
-            return (None, InvalidAttribute(self, errors))
-        return (parts, None)
+        Returns:
+            :obj:`tuple` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value and cleaning error
+        """
+        return SpeciesTypeCoefficient.deserialize(self, value, objects)
 
 
 class OneToOneSpeciesAttribute(OneToOneAttribute):
@@ -1098,6 +1016,117 @@ class Concentration(obj_model.Model):
         return self.species.serialize()
 
 
+class SpeciesTypeCoefficient(obj_model.Model):
+    """ A tuple of a species type and a coefficient
+
+    Attributes:
+        species_type (:obj:`SpeciesType`): species_type
+        coefficient (:obj:`float`): coefficient
+
+    Related attributes:
+        complex (:obj:`ComplexSpeciesType`): complex
+    """
+
+    species_type = ManyToOneAttribute(SpeciesType, related_name='species_type_coefficients')
+    coefficient = FloatAttribute(min=0., nan=False)
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('species_type', 'coefficient')
+        frozen_columns = 1
+        tabular_orientation = TabularOrientation.inline
+        ordering = ('species_type',)
+
+    def serialize(self):
+        """ Serialize related object
+
+        Returns:
+            :obj:`str`: string representation of a species type and a coefficient
+        """
+        return self._serialize(self.species_type, self.coefficient)
+
+    @staticmethod
+    def _serialize(species_type, coefficient):
+        """ Serialize values
+
+        Args:
+            species_type (:obj:`SpeciesType`): species_type
+            coefficient (:obj:`float`): coefficient
+            
+        Returns:
+            :obj:`str`: string representation of a species type and a coefficient
+        """
+        coefficient = float(coefficient)
+
+        if coefficient == 1:
+            coefficient_str = ''
+        elif coefficient % 1 == 0 and abs(coefficient) < 1000:
+            coefficient_str = '({:.0f}) '.format(coefficient)
+        else:
+            coefficient_str = '({:e}) '.format(coefficient)
+
+        return '{}{}'.format(coefficient_str, species_type.get_primary_attribute())
+
+    @classmethod
+    def deserialize(cls, attribute, value, objects):
+        """ Deserialize value
+
+        Args:
+            attribute (:obj:`Attribute`): attribute
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            
+        Returns:
+            :obj:`tuple` of `list` of `SpeciesTypeCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        parts = []
+        errors = []
+        id = r'[a-z][a-z0-9_]*'
+        stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
+        gbl_part = r'({} )*({})'.format(stoch, id)        
+        gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)        
+        gbl_pattern = r'^({})$'.format(gbl_side)
+        
+        global_match = re.match(gbl_pattern, value, flags=re.I)
+        
+        if global_match:           
+            subunits_str = global_match.group(1)
+        else:
+            attr = cls.Meta.attributes['species_type']
+            return (None, InvalidAttribute(attr, ['Incorrectly formatted participants: {}'.format(value)]))
+
+        for part in re.findall(r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)',
+                               subunits_str, flags=re.I):
+
+            species_type = None
+            for species_type_cls in get_subclasses(SpeciesType):
+                if species_type_cls in objects and part[4] in objects[species_type_cls]:
+                    species_type = objects[species_type_cls][part[4]]
+                    break
+
+            if not species_type:
+                errors.append('Undefined species type "{}"'.format(part[4]))            
+
+            coefficient = float(part[1] or 1.)
+
+            if not errors:          
+
+                if coefficient != 0:
+                    if cls not in objects:
+                        objects[cls] = {}
+                    serialized_value = cls._serialize(species_type, coefficient)
+                    if serialized_value in objects[cls]:
+                        subunit_part = objects[cls][serialized_value]
+                    else:
+                        subunit_part = cls(species_type=species_type, coefficient=coefficient)
+                        objects[cls][serialized_value] = subunit_part
+                    parts.append(subunit_part)
+
+        if errors:
+            return (None, InvalidAttribute(cls, errors))
+        return (parts, None)
+
+    
 class SpeciesCoefficient(obj_model.Model):
     """ A tuple of a species and a coefficient
 
@@ -1632,18 +1661,19 @@ class ComplexSpeciesType(SpeciesType):
     """ Knowledge of a protein complex
 
     Attributes:
-        complex_type (:obj:`ComplexType`): type of complex
         formation_process (:obj:`ComplexFormationType`): type of formation process
+        subunits (:obj:`list` of `SpeciesTypeCoefficient`): subunits
+        complex_type (:obj:`ComplexType`): type of complex        
         binding (:obj:`str`): strand of DNA bound if involved
         region (:obj:`str`): region where DNA is bound if involved
+
     """
 
-    complex_type = obj_model.StringAttribute()  # EnumAttribute(ComplexType)
     formation_process = obj_model.EnumAttribute(ComplexFormationType)
-    binding = obj_model.StringAttribute()
-    region = obj_model.StringAttribute()
-
     subunits = SubunitAttribute(related_name='complex')
+    complex_type = obj_model.StringAttribute()  # EnumAttribute(ComplexType)
+    binding = obj_model.StringAttribute()
+    region = obj_model.StringAttribute()    
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'formation_process', 'subunits',
@@ -1660,7 +1690,7 @@ class ComplexSpeciesType(SpeciesType):
         formula = chem.EmpiricalFormula()
         for subunit in self.subunits:
             for coeff in range(0, abs(int(subunit.coefficient))):
-                formula = formula + subunit.species.species_type.get_empirical_formula()
+                formula = formula + subunit.species_type.get_empirical_formula()
 
         return formula
 
@@ -1672,7 +1702,7 @@ class ComplexSpeciesType(SpeciesType):
         """
         charge = 0
         for subunit in self.subunits:
-            charge += abs(subunit.coefficient)*subunit.species.species_type.get_charge()
+            charge += abs(subunit.coefficient)*subunit.species_type.get_charge()
 
         return charge
 
@@ -1684,7 +1714,7 @@ class ComplexSpeciesType(SpeciesType):
         """
         weight = 0
         for subunit in self.subunits:
-            weight += abs(subunit.coefficient)*subunit.species.species_type.get_mol_wt()
+            weight += abs(subunit.coefficient)*subunit.species_type.get_mol_wt()
 
         return weight
 

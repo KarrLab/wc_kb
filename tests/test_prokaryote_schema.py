@@ -298,15 +298,12 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         prot2 = prokaryote_schema.ProteinSpeciesType(
             id='prot2', gene=gene2, cell=cell1)
 
-        # Test adding formation reaction
-        # Add formation reaction: [c]: (2) prot1 + (3) prot2 ==> complex1
-        comp1 = core.Compartment(id='comp1')
-        species1 = core.Species(species_type=prot1, compartment=comp1)
-        species2 = core.Species(species_type=prot2, compartment=comp1)
-        species_coeff1 = core.SpeciesCoefficient(
-            species=species1, coefficient=2)
-        species_coeff2 = core.SpeciesCoefficient(
-            species=species2, coefficient=3)
+        # Test adding complexation
+        # Add formation reaction: (2) prot1 + (3) prot2 ==> complex1
+        species_coeff1 = core.SpeciesTypeCoefficient(
+            species_type=prot1, coefficient=2)
+        species_coeff2 = core.SpeciesTypeCoefficient(
+            species_type=prot2, coefficient=3)
         complex1.subunits = [species_coeff1, species_coeff2]
 
         self.assertEqual(complex1.get_charge(), 38)
