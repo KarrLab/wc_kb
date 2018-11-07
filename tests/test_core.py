@@ -403,6 +403,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(complex1.region, '')
         self.assertEqual(complex1.binding, '')
         self.assertEqual(complex1.complex_type, '')
+        self.assertEqual(complex1.composition_in_uniprot, '')
         self.assertEqual(complex1.formation_process, None)
         self.assertEqual(complex1.subunits, [])
 

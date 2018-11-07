@@ -244,7 +244,7 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
         if not value:
             return ([], None)
 
-        pattern = r'([a-z][a-z0-9_\-]*)\:([a-z0-9_]*)'
+        pattern = r'([a-z][a-z0-9_\-]*)\:([a-z0-9_\-]*)'
         if not re.match(pattern, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of database references: {}'.format(value)]))
 
@@ -1663,6 +1663,7 @@ class ComplexSpeciesType(SpeciesType):
     Attributes:
         formation_process (:obj:`ComplexFormationType`): type of formation process
         subunits (:obj:`list` of `SpeciesTypeCoefficient`): subunits
+        composition_in_uniprot (:obj:`str`): protein subunit composition in uniprot IDs 
         complex_type (:obj:`ComplexType`): type of complex        
         binding (:obj:`str`): strand of DNA bound if involved
         region (:obj:`str`): region where DNA is bound if involved
@@ -1671,13 +1672,14 @@ class ComplexSpeciesType(SpeciesType):
 
     formation_process = obj_model.EnumAttribute(ComplexFormationType)
     subunits = SubunitAttribute(related_name='complex')
+    composition_in_uniprot = obj_model.StringAttribute()
     complex_type = obj_model.StringAttribute()  # EnumAttribute(ComplexType)
     binding = obj_model.StringAttribute()
     region = obj_model.StringAttribute()    
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'formation_process', 'subunits',
-                           'complex_type', 'binding', 'region',
+                           'composition_in_uniprot', 'complex_type', 'binding', 'region',
                            'half_life', 'comments', 'references', 'database_references')
 
     def get_empirical_formula(self):
