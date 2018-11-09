@@ -8,9 +8,6 @@
 :Date: 2018-09-10
 :Copyright: 2018, Karr Lab
 :License: MIT
-
-TODO:
-ProteinSpeciesType.get_seq() => cds=True (complete coding sequence) causes errors, talk to J
 """
 
 from wc_utils.util import chem
@@ -39,7 +36,7 @@ class RnaSpeciesType(schema_core.PolymerSpeciesType):
     type = obj_model.EnumAttribute(schema_core.RnaType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'type', 'transcription_units', 'circular', 
+        attribute_order = ('id', 'name', 'type', 'transcription_units', 'circular',
                            'double_stranded', 'half_life', 'comments', 'references', 'database_references')
 
     def get_seq(self):
@@ -119,10 +116,10 @@ class ProteinSpeciesType(schema_core.PolymerSpeciesType):
         'RnaSpeciesType', related_name='proteins')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'rna', 'circular', 'double_stranded', 
+        attribute_order = ('id', 'name', 'gene', 'rna', 'circular', 'double_stranded',
                            'half_life', 'comments', 'references', 'database_references')
 
-    def get_seq(self, cds=True):
+    def get_seq(self, cds=False):
         """ Get the sequence
 
         Returns:
@@ -130,7 +127,7 @@ class ProteinSpeciesType(schema_core.PolymerSpeciesType):
         """
         return self.gene.get_seq().translate(table=self.cell.knowledge_base.translation_table, cds=cds)
 
-    def get_empirical_formula(self, cds=True):
+    def get_empirical_formula(self, cds=False):
         """ Get the empirical formula
 
         Returns:
@@ -189,7 +186,7 @@ class ProteinSpeciesType(schema_core.PolymerSpeciesType):
         formula.S = n_c + n_m
         return formula
 
-    def get_charge(self, cds=True):
+    def get_charge(self, cds=False):
         """ Get the charge at physiological pH
 
         Returns:
@@ -205,7 +202,7 @@ class ProteinSpeciesType(schema_core.PolymerSpeciesType):
 
         return (n_r + n_h + n_k) - (n_d + n_e)
 
-    def get_mol_wt(self, cds=True):
+    def get_mol_wt(self, cds=False):
         """ Get the molecular weight
 
         Returns:
@@ -239,7 +236,7 @@ class PromoterLocus(schema_core.PolymerLocus):
     up_35_end = obj_model.IntegerAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end', 
+        attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end',
                            'strand', 'start', 'end', 'comments', 'references', 'database_references')
 
 
@@ -257,7 +254,7 @@ class TranscriptionUnitLocus(schema_core.PolymerLocus):
         'GeneLocus', related_name='transcription_units')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end', 
+        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end',
                            'genes', 'comments', 'references', 'database_references')
 
     def get_3_prime(self):
@@ -297,5 +294,5 @@ class GeneLocus(schema_core.PolymerLocus):
     type = obj_model.EnumAttribute(schema_core.GeneType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 
+        attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start',
                            'end', 'comments', 'references', 'database_references')

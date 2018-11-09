@@ -201,17 +201,16 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def test_get_empirical_formula(self):
         # MPN001
         self.assertEqual(self.prot1.get_empirical_formula(),
-                         chem.EmpiricalFormula('C1980H3146N510O596S7'))
+                         chem.EmpiricalFormula('C1980H3144N510O595S7'))
         # MPN011
         self.assertEqual(self.prot2.get_empirical_formula(),
-                         chem.EmpiricalFormula('C1246H1928N306O352S3'))
+                         chem.EmpiricalFormula('C1246H1926N306O351S3'))
 
     def test_get_mol_wt(self):
-
         # MPN001
-        self.assertAlmostEqual(self.prot1.get_mol_wt(), 43856.113, delta=0.3)
+        self.assertAlmostEqual(self.prot1.get_mol_wt(), 43838.327, delta=0.3)
         # MNP011
-        self.assertAlmostEqual(self.prot2.get_mol_wt(), 26922.957, delta=0.3)
+        self.assertAlmostEqual(self.prot2.get_mol_wt(), 26905.085, delta=0.3)
 
     def test_get_charge(self):
         self.assertEqual(self.prot1.get_charge(), 1)
@@ -272,7 +271,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
 
         # Test constructor
         complex1 = core.ComplexSpeciesType()
-        
+
         # Generate test proteins from  Mycoplasma Genintalium Genome
         records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
         dna_seq = next(records).seq
@@ -310,5 +309,4 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.assertAlmostEqual(complex1.get_mol_wt(),
                                (2*prot1.get_mol_wt() + 3 * prot2.get_mol_wt()))
         self.assertEqual(complex1.get_empirical_formula(),
-                         chem.EmpiricalFormula('C7698H12076N1938O2248S23'))
-        
+                         chem.EmpiricalFormula('C7698H12066N1938O2243S23'))
