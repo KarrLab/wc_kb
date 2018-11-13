@@ -17,6 +17,7 @@ import Bio.Seq
 import Bio.SeqIO
 import Bio.SeqUtils
 import mendeleev
+import numpy
 import unittest
 
 
@@ -312,7 +313,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
 
     def setUp(self):
         self.cell_1 = cell_1 = core.Cell()
-        self.compartment_1 = compartment_1 = core.Compartment(cell=cell_1, id='compartment_1')
+        self.compartment_1 = compartment_1 = core.Compartment(cell=cell_1, id='c')
         self.species_type_1 = species_type_1 = core.MetaboliteSpeciesType(id='species_type_1')
         self.species_type_2 = species_type_2 = core.MetaboliteSpeciesType(id='species_type_2')
         self.species_1 = species_1 = core.Species(
@@ -343,10 +344,58 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             equation=rate_law_equation_1
         )
 
+        self.reaction_2 = reaction_2 = core.Reaction(
+            id='reaction_2',
+            name='test_reaction2',
+            cell=cell_1,
+            participants=[participant_1, participant_2],
+            reversible=False)
+
+        self.parameter_1 = parameter_1 = core.Parameter(
+            id='p1',
+            name='test_parameter1',
+            value=0.7,
+            error=0.01,
+            units='s^-1'
+        )
+
+        self.parameter_2 = parameter_2 = core.Parameter(
+            id='p2',
+            name='test_parameter2',
+            value=2.,
+            error=0.1,
+            units='M'
+        )
+
+        self.parameter_3 = parameter_3 = core.Parameter(
+            id='p3',
+            name='test_parameter3',
+            value=2.3,
+            error=0.15,
+            units='M'
+        )
+
+        self.rate_law_equation_2 = rate_law_equation_2 = core.RateLawEquation(
+            expression='p1*species_type_1[c]*species_type_2[c]/(p2+species_type_2[c]+(species_type_2[c]^2/p3))', 
+            modifiers=[species_1, species_2], 
+            parameters=[parameter_1, parameter_2]
+        )
+
+        self.rate_law_2 = rate_law_2 = core.RateLaw(
+            reaction=reaction_2,
+            direction=core.RateLawDirection.backward,
+            equation=rate_law_equation_2
+        )
+
         self.objects = {
             core.Species: {
                 species_1.id(): species_1,
                 species_2.id(): species_2
+            },
+            core.Parameter: {
+                parameter_1.id: parameter_1,
+                parameter_2.id: parameter_2,
+                parameter_3.id: parameter_3
             }
         }
 
@@ -368,6 +417,22 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         self.assertIn(self.reaction_1.id, self.rate_law_1.serialize())
         self.assertIn('forward', self.rate_law_1.serialize())
 
+        self.assertEqual(self.rate_law_2.direction, core.RateLawDirection.backward)
+        self.assertEqual(self.rate_law_2.equation, self.rate_law_equation_2)
+        self.assertEqual(numpy.isnan(self.rate_law_2.k_m), True)
+        self.assertEqual(numpy.isnan(self.rate_law_2.k_cat), True)
+        self.assertIn(self.reaction_2.id, self.rate_law_2.serialize())
+        self.assertIn('backward', self.rate_law_2.serialize())
+
+    def test_Parameter(self):
+        self.assertEqual(self.parameter_1.id, 'p1')
+        self.assertEqual(self.parameter_2.name, 'test_parameter2')
+        self.assertEqual(self.parameter_3.value, 2.3)
+        self.assertEqual(self.parameter_3.error, 0.15)
+        self.assertEqual(self.parameter_3.units, 'M')
+        self.assertEqual(self.parameter_3.references, [])
+        self.assertEqual(self.parameter_3.database_references, [])                                                
+
     def test_deserialize_RateLawEquation(self):
         attr = core.RateLawEquation.expression
 
@@ -375,12 +440,17 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         rle_1, error = core.RateLawEquation.deserialize(attr, self.species_1.id(), self.objects)
         self.assertTrue(error is None)
         self.assertEqual(rle_1.modifiers, [self.species_1])
+        rle_2, error = core.RateLawEquation.deserialize(attr, 
+            'p1*species_type_1[c]*species_type_2[c]/(p2+species_type_2[c]+(species_type_2[c]^2/p3))', self.objects)
+        self.assertTrue(error is None)
+        self.assertEqual(rle_2.modifiers, [self.species_1, self.species_2])
+        self.assertEqual(rle_2.parameters, [self.parameter_1, self.parameter_2, self.parameter_3])
 
         # RateLawEquation is in self.objects, and value is in self.objects[RateLawEquation]
-        rle_2, error = core.RateLawEquation.deserialize(attr, self.species_1.id(), self.objects)
+        rle_3, error = core.RateLawEquation.deserialize(attr, self.species_1.id(), self.objects)
         self.assertTrue(error is None)
-        self.assertEqual(rle_2.modifiers, [self.species_1])
-        self.assertEqual(rle_1, rle_2)
+        self.assertEqual(rle_3.modifiers, [self.species_1])
+        self.assertEqual(rle_1, rle_3)
 
         # serialization errors
         # value not string; re.findall raises exception
