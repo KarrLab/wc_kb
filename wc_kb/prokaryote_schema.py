@@ -12,7 +12,7 @@
 
 from wc_utils.util import chem
 import obj_model
-import wc_kb.core as schema_core
+from wc_kb import core
 
 
 #####################
@@ -20,7 +20,7 @@ import wc_kb.core as schema_core
 # Species types
 
 
-class RnaSpeciesType(schema_core.PolymerSpeciesType):
+class RnaSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of an RNA species
 
     Attributes:
@@ -33,7 +33,7 @@ class RnaSpeciesType(schema_core.PolymerSpeciesType):
 
     transcription_units = obj_model.ManyToManyAttribute(
         'TranscriptionUnitLocus', related_name='rna')
-    type = obj_model.EnumAttribute(schema_core.RnaType)
+    type = obj_model.EnumAttribute(core.RnaType)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'transcription_units', 'circular',
@@ -103,7 +103,7 @@ class RnaSpeciesType(schema_core.PolymerSpeciesType):
         return self.get_empirical_formula().get_molecular_weight()
 
 
-class ProteinSpeciesType(schema_core.PolymerSpeciesType):
+class ProteinSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a protein monomer
 
     Attributes:
@@ -216,7 +216,7 @@ class ProteinSpeciesType(schema_core.PolymerSpeciesType):
 # Locus types
 
 
-class PromoterLocus(schema_core.PolymerLocus):
+class PromoterLocus(core.PolymerLocus):
     """ Knowledge of a promoter for a transcription unit
 
     Attributes:
@@ -240,7 +240,7 @@ class PromoterLocus(schema_core.PolymerLocus):
                            'strand', 'start', 'end', 'comments', 'references', 'database_references')
 
 
-class TranscriptionUnitLocus(schema_core.PolymerLocus):
+class TranscriptionUnitLocus(core.PolymerLocus):
     """ Knowledge about an open reading frame
 
     Attributes:
@@ -263,7 +263,7 @@ class TranscriptionUnitLocus(schema_core.PolymerLocus):
         Returns:
             :obj:`int`: 3' coordinate
         """
-        if self.strand == schema_core.PolymerStrand.positive:
+        if self.strand == core.PolymerStrand.positive:
             return self.end
         else:
             return self.start
@@ -274,13 +274,13 @@ class TranscriptionUnitLocus(schema_core.PolymerLocus):
         Returns:
             :obj:`int`: 5' coordinate
         """
-        if self.strand == schema_core.PolymerStrand.positive:
+        if self.strand == core.PolymerStrand.positive:
             return self.start
         else:
             return self.end
 
 
-class GeneLocus(schema_core.PolymerLocus):
+class GeneLocus(core.PolymerLocus):
     """ Knowledge of a gene
 
     Attributes:
@@ -291,7 +291,7 @@ class GeneLocus(schema_core.PolymerLocus):
     """
 
     symbol = obj_model.StringAttribute()
-    type = obj_model.EnumAttribute(schema_core.GeneType)
+    type = obj_model.EnumAttribute(core.GeneType)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start',

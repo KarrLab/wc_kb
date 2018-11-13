@@ -9,7 +9,7 @@
 from wc_utils.util import chem
 import enum
 import obj_model
-import wc_kb.core as schema_core
+from wc_kb import core
 
 
 #####################
@@ -30,7 +30,7 @@ class ActivityLevel(enum.Enum):
 # Locus types
 
 
-class GeneLocus(schema_core.PolymerLocus):
+class GeneLocus(core.PolymerLocus):
     """ Knowledge of a gene
 
     Attributes:
@@ -42,14 +42,14 @@ class GeneLocus(schema_core.PolymerLocus):
         regulatory_modules (:obj:`RegulatoryModule`): regulatory_modules
     """
     symbol = obj_model.StringAttribute()
-    type = obj_model.EnumAttribute(schema_core.GeneType)
+    type = obj_model.EnumAttribute(core.GeneType)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 
                            'end', 'comments', 'references', 'database_references')
 
 
-class ExonLocus(schema_core.PolymerLocus):
+class ExonLocus(core.PolymerLocus):
     """ Knowledge of an exon
 
     Related attributes:
@@ -60,7 +60,7 @@ class ExonLocus(schema_core.PolymerLocus):
                            'comments', 'references', 'database_references')
 
 
-class RegulatoryElementLocus(schema_core.PolymerLocus):
+class RegulatoryElementLocus(core.PolymerLocus):
     """ Knowledge of a regulatory element of a gene
 
     Attributes:
@@ -70,7 +70,7 @@ class RegulatoryElementLocus(schema_core.PolymerLocus):
     Related attributes:
         regulatory_modules (:obj:`list` of :obj:`RegulatoryModule`): regulatory_modules
     """
-    type = obj_model.EnumAttribute(schema_core.RegulatoryElementType)
+    type = obj_model.EnumAttribute(core.RegulatoryElementType)
     activity = obj_model.EnumAttribute(ActivityLevel)
     
     class Meta(obj_model.Model.Meta):
@@ -92,8 +92,8 @@ class RegulatoryModule(obj_model.Model):
     regulatory_elements = obj_model.ManyToManyAttribute(
         RegulatoryElementLocus, related_name='regulatory_modules')
     comments = obj_model.LongStringAttribute()
-    references = obj_model.ManyToManyAttribute(schema_core.Reference, related_name='regulatory_modules')
-    database_references = schema_core.DatabaseReferenceAttribute(related_name='regulatory_modules')    
+    references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
+    database_references = core.DatabaseReferenceAttribute(related_name='regulatory_modules')    
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('gene', 'regulatory_elements', 'comments', 'references', 'database_references')
@@ -104,7 +104,7 @@ class RegulatoryModule(obj_model.Model):
 # Species types
 
 
-class PreRnaSpeciesType(schema_core.PolymerSpeciesType):
+class PreRnaSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a transcribed RNA species before splicing
 
     Attributes:
@@ -116,7 +116,7 @@ class PreRnaSpeciesType(schema_core.PolymerSpeciesType):
     """
     gene = obj_model.OneToOneAttribute(
         'GeneLocus', related_name='rna')
-    type = obj_model.EnumAttribute(schema_core.RnaType)
+    type = obj_model.EnumAttribute(core.RnaType)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'gene', 'circular', 'double_stranded', 
@@ -187,7 +187,7 @@ class PreRnaSpeciesType(schema_core.PolymerSpeciesType):
         return self.get_empirical_formula().get_molecular_weight()
 
 
-class TranscriptSpeciesType(schema_core.PolymerSpeciesType):
+class TranscriptSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a transcript (spliced RNA) species
 
     Attributes:
@@ -270,7 +270,7 @@ class TranscriptSpeciesType(schema_core.PolymerSpeciesType):
         return self.get_empirical_formula().get_molecular_weight()    
 
 
-class ProteinSpeciesType(schema_core.PolymerSpeciesType):
+class ProteinSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a protein monomer
 
     Attributes:
