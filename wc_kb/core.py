@@ -1390,7 +1390,7 @@ class Observable(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowle
         attribute_order = ('id', 'name', 'cell', 'species',
                            'observables', 'comments', 'references', 'database_references')
 
-
+    
 class ObservableCoefficient(obj_model.Model):
     """ A tuple of observable and coefficient
 
@@ -1816,23 +1816,28 @@ class RateLawEquation(obj_model.Model):
     Attributes:
         expression (:obj:`str`): mathematical expression of the rate law
         modifiers (:obj:`list` of `Species`): species whose concentrations are used in the rate law
+        parameters (:obj:`list` of `Parameter`): parameters whose values are used in the rate law
 
     Related attributes:
         rate_law (:obj:`RateLaw`): the `RateLaw` which uses this `RateLawEquation`
     """
     expression = LongStringAttribute(primary=True, unique=True)
     modifiers = ManyToManyAttribute(Species, related_name='rate_law_equations')
+    parameters = ManyToManyAttribute('Parameter', related_name='rate_law_equations')
 
     class Meta(obj_model.Model.Meta):
         """
         Attributes:
             valid_functions (:obj:`tuple` of `builtin_function_or_method`): tuple of functions that
                 can be used in a `RateLawEquation`s `expression`
+            valid_used_models (:obj:`tuple` of `str`): names of `obj_model.Model`s in this module that a
+                `RateLawEquation` is allowed to reference in its `expression`    
         """
-        attribute_order = ('expression', 'modifiers')
+        attribute_order = ('expression', 'modifiers', 'parameters')
         tabular_orientation = TabularOrientation.inline
         ordering = ('rate_law',)
         valid_functions = (ceil, floor, exp, pow, log, log10, min, max)
+        valid_used_models = ('Species', 'Parameter')
 
     def serialize(self):
         """ Generate string representation
@@ -1855,9 +1860,13 @@ class RateLawEquation(obj_model.Model):
             :obj:`tuple` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value and cleaning error
         """
         modifiers = []
+        parameters = []
         errors = []
         modifier_pattern = r'(^|[^a-z0-9_])({}\[{}\])([^a-z0-9_]|$)'.format(SpeciesType.id.pattern[1:-1],
                                                                            Compartment.id.pattern[1:-1])
+        parameter_pattern = r'(^|[^a-z0-9_\[\]])({})([^a-z0-9_\[\]]|$)'.format(Parameter.id.pattern[1:-1])
+
+        reserved_names = set([func.__name__ for func in RateLawEquation.Meta.valid_functions] + ['k_cat', 'k_m'])
 
         try:
             for match in re.findall(modifier_pattern, value, flags=re.I):
@@ -1866,6 +1875,13 @@ class RateLawEquation(obj_model.Model):
                     errors += error.messages
                 else:
                     modifiers.append(species)
+            for match in re.findall(parameter_pattern, value, flags=re.I):
+                if match[1] not in reserved_names:
+                    parameter, error = Parameter.deserialize(match[1], objects)
+                    if error:
+                        errors += error.messages
+                    else:
+                        parameters.append(parameter)        
         except Exception as e:
             errors += ["deserialize fails on '{}': {}".format(value, str(e))]
 
@@ -1880,7 +1896,7 @@ class RateLawEquation(obj_model.Model):
         if serialized_val in objects[cls]:
             obj = objects[cls][serialized_val]
         else:
-            obj = cls(expression=value, modifiers=det_dedupe(modifiers))
+            obj = cls(expression=value, modifiers=det_dedupe(modifiers), parameters=det_dedupe(parameters))
             objects[cls][serialized_val] = obj
         return (obj, None)
 
@@ -1911,6 +1927,31 @@ class Reaction(KnowledgeBaseObject):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'submodel', 'participants', 'reversible',
                            'comments', 'references', 'database_references')
+
+
+class Parameter(KnowledgeBaseObject):
+    """ Knowledge of parameters
+
+    Attributes:
+        value (:obj:`float`): value
+        error (:obj:`float`): measurement error
+        units (:obj:`str`): units of value
+        references (:obj:`list` of :obj:`Reference`): references
+        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
+    
+    Related attributes:
+        rate_law_equations (:obj:`list` of `RateLawEquation`): rate law equations that use a Parameter
+    """
+    
+    value = FloatAttribute(min=0)
+    error = FloatAttribute(min=0)
+    units = StringAttribute()
+    references = obj_model.ManyToManyAttribute(Reference, related_name='parameters')
+    database_references = DatabaseReferenceAttribute(related_name='parameters')
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'name', 'value', 'error', 'units', 'comments', 
+                            'references', 'database_references')
 
 
 class Property(KnowledgeBaseObject):

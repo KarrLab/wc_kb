@@ -41,6 +41,7 @@ PROKARYOTE_MODEL_ORDER = (
     core.Concentration,
     core.Reaction,
     core.RateLaw,
+    core.Parameter,
     core.Property,
     core.Observable,
     core.Reference
@@ -64,6 +65,7 @@ EUKARYOTE_MODEL_ORDER = (
     core.Observable,
     core.Reaction,
     core.RateLaw,
+    core.Parameter,
     core.Property,    
     core.Reference
     ) 
