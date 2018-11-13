@@ -995,7 +995,7 @@ class Concentration(obj_model.Model):
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
     """
     cell = obj_model.ManyToOneAttribute(Cell, related_name='concentrations')
-    species = OneToOneSpeciesAttribute(related_name='concentrations')
+    species = OneToOneSpeciesAttribute(related_name='concentration')
     value = FloatAttribute(min=0)
     units = EnumAttribute(ConcentrationUnit, default=ConcentrationUnit.M)
     comments = LongStringAttribute()
