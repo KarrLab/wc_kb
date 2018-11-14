@@ -119,22 +119,22 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         attribute_order = ('id', 'name', 'gene', 'rna', 'circular', 'double_stranded',
                            'half_life', 'comments', 'references', 'database_references')
 
-    def get_seq(self, cds=False):
+    def get_seq(self, cds=True):
         """ Get the sequence
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        return self.gene.get_seq().translate(table=self.cell.knowledge_base.translation_table, cds=cds)
+        seq = self.gene.get_seq().translate(table=self.cell.knowledge_base.translation_table, cds=cds)
+        return seq
 
-    def get_empirical_formula(self, cds=False):
+    def get_empirical_formula(self, cds=True):
         """ Get the empirical formula
 
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-
-        seq = self.get_seq(cds)
+        seq = self.get_seq(cds=cds)
         l = len(seq)
 
         n_a = seq.count('A')  # Ala: Alanine (C3 H7 N O2)
@@ -186,13 +186,13 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         formula.S = n_c + n_m
         return formula
 
-    def get_charge(self, cds=False):
+    def get_charge(self, cds=True):
         """ Get the charge at physiological pH
 
         Returns:
             :obj:`int`: charge
         """
-        seq = self.get_seq(cds)
+        seq = self.get_seq(cds=cds)
 
         n_r = seq.count('R')
         n_h = seq.count('H')
@@ -202,13 +202,13 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
         return (n_r + n_h + n_k) - (n_d + n_e)
 
-    def get_mol_wt(self, cds=False):
+    def get_mol_wt(self, cds=True):
         """ Get the molecular weight
 
         Returns:
             :obj:`float`: molecular weight
         """
-        return self.get_empirical_formula(cds).get_molecular_weight()
+        return self.get_empirical_formula(cds=cds).get_molecular_weight()
 
 
 #####################
