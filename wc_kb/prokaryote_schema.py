@@ -125,7 +125,8 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        seq = self.gene.get_seq().translate(table=self.cell.knowledge_base.translation_table, cds=cds)
+        table = self.cell.knowledge_base.translation_table
+        seq = self.gene.get_seq().translate(table=table, cds=cds)
         return seq
 
     def get_empirical_formula(self, cds=True):
