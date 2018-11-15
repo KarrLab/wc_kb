@@ -102,7 +102,7 @@ ConcentrationUnit = enum.Enum('ConcentrationUnit', type=int, names=[
     ('pM', 6),
     ('fM', 7),
     ('aM', 8),
-    ('moles dm^-2', 9),
+    ('mol dm^-2', 9),
 ])
 
 
