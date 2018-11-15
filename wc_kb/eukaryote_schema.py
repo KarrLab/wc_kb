@@ -83,9 +83,9 @@ class RegulatoryModule(obj_model.Model):
 
     Attributes:        
         gene (:obj:`GeneLocus`): gene
-        regulatory_elements (:obj:`list` of `RegulatoryElementLocus`): regulatory elements
+        regulatory_elements (:obj:`list` of :obj:`RegulatoryElementLocus`): regulatory elements
         comments (:obj:`str`): comments
-        references (:obj:`list` of `Reference`): references
+        references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
     """
     gene = obj_model.OneToOneAttribute(GeneLocus, related_name='regulatory_modules')

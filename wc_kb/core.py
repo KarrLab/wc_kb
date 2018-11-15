@@ -133,7 +133,7 @@ class SubunitAttribute(ManyToManyAttribute):
         """ Serialize related object
 
         Args:
-            subunits (:obj:`list` of `SpeciesTypeCoefficient`): Python representation of subunits
+            subunits (:obj:`list` of :obj:`SpeciesTypeCoefficient`): Python representation of subunits
             encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
 
         Returns:
@@ -285,7 +285,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         """ Serialize related object
 
         Args:
-            participants (:obj:`list` of `SpeciesCoefficient`): Python representation of reaction participants
+            participants (:obj:`list` of :obj:`SpeciesCoefficient`): Python representation of reaction participants
             encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
 
         Returns:
@@ -473,7 +473,7 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
         """ Serialize related object
 
         Args:
-            spec_coeffs (:obj:`list` of `Model`): Python representation of species and their coefficients
+            spec_coeffs (:obj:`list` of :obj:`Model`): Python representation of species and their coefficients
             encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
 
         Returns:
@@ -592,7 +592,7 @@ class ObservableObservableParticipantAttribute(ManyToManyAttribute):
         """ Serialize related object
 
         Args:
-            obs_coeffs (:obj:`list` of `Model`): Python representation of observables and their coefficients
+            obs_coeffs (:obj:`list` of :obj:`Model`): Python representation of observables and their coefficients
             encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
 
         Returns:
@@ -876,7 +876,7 @@ class Species(obj_model.Model):
 
     Related attributes:
         concentration (:obj:`Concentration`): concentration
-        species_coefficients (:obj:`list` of `SpeciesCoefficient`): participations in reactions and observables
+        species_coefficients (:obj:`list` of :obj:`SpeciesCoefficient`): participations in reactions and observables
     """
     species_type = ManyToOneAttribute(
         SpeciesType, related_name='species', min_related=1)
@@ -991,7 +991,7 @@ class Concentration(obj_model.Model):
         value (:obj:`float`): value
         units (:obj:`str`): units; default units is 'M'
         comments (:obj:`str`): comments
-        references (:obj:`list` of `Reference`): references
+        references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
     """
     cell = obj_model.ManyToOneAttribute(Cell, related_name='concentrations')
@@ -1376,7 +1376,7 @@ class Observable(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowle
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
 
     Related Attributes:
-        observable_coefficients (:obj:`list` of `ObservableCoefficient`): Participants in observables
+        observable_coefficients (:obj:`list` of :obj:`ObservableCoefficient`): Participants in observables
 """
     cell = ManyToOneAttribute(Cell, related_name='observables')
     species = ObservableSpeciesParticipantAttribute(
@@ -1662,7 +1662,7 @@ class ComplexSpeciesType(SpeciesType):
 
     Attributes:
         formation_process (:obj:`ComplexFormationType`): type of formation process
-        subunits (:obj:`list` of `SpeciesTypeCoefficient`): subunits
+        subunits (:obj:`list` of :obj:`SpeciesTypeCoefficient`): subunits
         composition_in_uniprot (:obj:`str`): protein subunit composition in uniprot IDs 
         complex_type (:obj:`ComplexType`): type of complex        
         binding (:obj:`str`): strand of DNA bound if involved
@@ -1815,8 +1815,8 @@ class RateLawEquation(obj_model.Model):
 
     Attributes:
         expression (:obj:`str`): mathematical expression of the rate law
-        modifiers (:obj:`list` of `Species`): species whose concentrations are used in the rate law
-        parameters (:obj:`list` of `Parameter`): parameters whose values are used in the rate law
+        modifiers (:obj:`list` of :obj:`Species`): species whose concentrations are used in the rate law
+        parameters (:obj:`list` of :obj:`Parameter`): parameters whose values are used in the rate law
 
     Related attributes:
         rate_law (:obj:`RateLaw`): the `RateLaw` which uses this `RateLawEquation`
@@ -1913,7 +1913,7 @@ class Reaction(KnowledgeBaseObject):
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
 
     Related attributes:
-        rate_laws (:obj:`list` of `RateLaw`): rate laws; if present, rate_laws[0] is the forward
+        rate_laws (:obj:`list` of :obj:`RateLaw`): rate laws; if present, rate_laws[0] is the forward
             rate law, and rate_laws[1] is the backward rate law
     """
 
@@ -1940,7 +1940,7 @@ class Parameter(KnowledgeBaseObject):
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
     
     Related attributes:
-        rate_law_equations (:obj:`list` of `RateLawEquation`): rate law equations that use a Parameter
+        rate_law_equations (:obj:`list` of :obj:`RateLawEquation`): rate law equations that use a Parameter
     """
     
     value = FloatAttribute(min=0)
