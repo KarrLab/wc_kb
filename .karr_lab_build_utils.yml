@@ -4,10 +4,9 @@ downstream_dependencies:
   - rand_wc_model_gen
   - wc
   - wc_analysis
+  - wc_kb_gen
   - wc_model_gen
   - wc_test
-  - wc_sim
-  - wc_kb_gen
 email_notifications:
   - jonrkarr@gmail.com
   - balazs.szigeti@mssm.edu
