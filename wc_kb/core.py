@@ -1830,14 +1830,14 @@ class RateLawEquation(obj_model.Model):
         Attributes:
             valid_functions (:obj:`tuple` of `builtin_function_or_method`): tuple of functions that
                 can be used in a `RateLawEquation`s `expression`
-            valid_used_models (:obj:`tuple` of `str`): names of `obj_model.Model`s in this module that a
+            valid_models (:obj:`tuple` of `str`): names of `obj_model.Model`s in this module that a
                 `RateLawEquation` is allowed to reference in its `expression`    
         """
         attribute_order = ('expression', 'modifiers', 'parameters')
         tabular_orientation = TabularOrientation.inline
         ordering = ('rate_law',)
         valid_functions = (ceil, floor, exp, pow, log, log10, min, max)
-        valid_used_models = ('Species', 'Parameter')
+        valid_models = ('Species', 'Parameter')
 
     def serialize(self):
         """ Generate string representation
