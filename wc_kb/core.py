@@ -1258,7 +1258,7 @@ class PolymerSpeciesType(SpeciesType):
     double_stranded = obj_model.BooleanAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'circular', 'double_stranded',
+        attribute_order = ('id', 'name', 'circular', 'double_stranded', 
                            'half_life', 'comments', 'references', 'database_references')
 
     @abc.abstractmethod
@@ -1559,10 +1559,11 @@ class DnaSpeciesType(PolymerSpeciesType):
     """
 
     seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
+    ploidy = obj_model.IntegerAttribute(min=0)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'seq', 'circular',
-                           'double_stranded', 'half_life', 'comments', 'references', 'database_references')
+        attribute_order = ('id', 'name', 'seq', 'circular', 'double_stranded', 
+            'ploidy', 'half_life', 'comments', 'references', 'database_references')
         verbose_name = 'DNA species type'
 
     def get_seq(self, start=None, end=None):

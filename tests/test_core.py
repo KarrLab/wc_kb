@@ -167,12 +167,13 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
 class DnaSpeciesTypeTestCase(unittest.TestCase):
     def test(self):
         dna = core.DnaSpeciesType(id='dna1', name='dna1', seq=Bio.Seq.Seq('ACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()),
-                                  circular=False, double_stranded=False)
+                                  circular=False, double_stranded=False, ploidy=2)
 
         self.assertEqual(dna.id, 'dna1')
         self.assertEqual(dna.name, 'dna1')
         self.assertEqual(dna.circular, False)
         self.assertEqual(dna.double_stranded, False)
+        self.assertEqual(dna.ploidy, 2)
 
         L = dna.get_len()
         self.assertEqual(dna.get_empirical_formula(),
