@@ -241,23 +241,31 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=36)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         exon1 = eukaryote_schema.ExonLocus(start=4, end=36)
-        transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])        
+        transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])
+        cds1 = eukaryote_schema.CdsLocus(id='cds1', start=4, end=36)        
         self.prot1 = eukaryote_schema.ProteinSpeciesType(id='prot1', name='protein1', 
-            uniprot='Q12X34', transcript=transcript1, half_life=0.35)
+            uniprot='Q12X34', transcript=transcript1, coding_region=cds1, half_life=0.35)
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1,
-            start=37, end=75, strand=core.PolymerStrand.negative)
+            start=30, end=75, strand=core.PolymerStrand.negative)
         rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
-        exon2 = eukaryote_schema.ExonLocus(start=40, end=72)
-        transcript2 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon2])        
+        exon2_1 = eukaryote_schema.ExonLocus(start=32, end=35)
+        exon2_2 = eukaryote_schema.ExonLocus(start=38, end=45)
+        exon2_3 = eukaryote_schema.ExonLocus(start=49, end=54)
+        exon2_4 = eukaryote_schema.ExonLocus(start=55, end=72)
+        exon2_5 = eukaryote_schema.ExonLocus(start=73, end=74)
+        transcript2 = eukaryote_schema.TranscriptSpeciesType(
+            rna=rna2, exons=[exon2_1, exon2_2, exon2_3, exon2_4, exon2_5])
+        cds2 = eukaryote_schema.CdsLocus(id='cds2', start=40, end=72)        
         self.prot2 = eukaryote_schema.ProteinSpeciesType(id='prot2', name='protein2', 
-            uniprot='P12345', cell=cell1, transcript=transcript2)
+            uniprot='P12345', cell=cell1, transcript=transcript2, coding_region=cds2)
 
     def test_constructor(self):
         
         self.assertEqual(self.prot1.id, 'prot1')
         self.assertEqual(self.prot1.name, 'protein1')
         self.assertEqual(self.prot1.uniprot, 'Q12X34')
+        self.assertEqual(self.prot1.coding_region.id, 'cds1')
         self.assertEqual(self.prot1.half_life, 0.35)
         self.assertEqual(self.prot1.comments, '')
         self.assertEqual(self.prot1.references, [])
@@ -268,7 +276,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         # Default translation table used is 1 (standard)
         self.assertEqual(self.prot1.get_seq(), 'MKVLINKNEL')
-        self.assertEqual(self.prot2.get_seq(), 'MKFKFLLTPL')
+        self.assertEqual(self.prot2.get_seq(), 'MKKFLLTPL')
 
     def test_get_empirical_formula(self):
 
@@ -276,13 +284,13 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(self.prot1.get_empirical_formula(),
                          chem.EmpiricalFormula('C53H96N14O15S1'))
         self.assertEqual(self.prot2.get_empirical_formula(),
-                         chem.EmpiricalFormula('C62H100N12O12S1'))
+                         chem.EmpiricalFormula('C53H91N11O11S1'))
 
     def test_get_mol_wt(self):
 
         # Default translation table used is 1 (standard)
         self.assertAlmostEqual(self.prot1.get_mol_wt(), 1201.49, delta=0.3)
-        self.assertAlmostEqual(self.prot2.get_mol_wt(), 1237.61, delta=0.3)
+        self.assertAlmostEqual(self.prot2.get_mol_wt(), 1090.43, delta=0.3)
 
     def test_get_charge(self):
 
@@ -302,16 +310,18 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=36)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         exon1 = eukaryote_schema.ExonLocus(start=4, end=36)
-        transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])        
-        prot1 = eukaryote_schema.ProteinSpeciesType(transcript=transcript1)
+        transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])
+        cds1 = eukaryote_schema.CdsLocus(start=4, end=36)        
+        prot1 = eukaryote_schema.ProteinSpeciesType(transcript=transcript1, coding_region=cds1)
 
         # Protein subunit 2
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, 
                     start=37, end=75, strand=core.PolymerStrand.negative)
         rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exon2 = eukaryote_schema.ExonLocus(start=40, end=72)
-        transcript2 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon2])        
-        prot2 = eukaryote_schema.ProteinSpeciesType(transcript=transcript2)
+        transcript2 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon2])
+        cds2 = eukaryote_schema.CdsLocus(start=40, end=72)        
+        prot2 = eukaryote_schema.ProteinSpeciesType(transcript=transcript2, coding_region=cds2)
 
         # Complex formation: (2) prot1 + (3) prot2 ==> complex1  
         species_coeff1 = core.SpeciesTypeCoefficient(
@@ -354,6 +364,19 @@ class ExonLocusTestCase(unittest.TestCase):
         self.assertEqual(exon.comments, 'No comment')
         self.assertEqual(exon.references, [])
         self.assertEqual(exon.database_references, [])
+
+
+class CdsLocusTestCase(unittest.TestCase):
+    def test_constructor(self):
+        cds1 = eukaryote_schema.CdsLocus(id='c1', name='cds1', start=21, end=30, 
+            comments='No comment')
+        self.assertEqual(cds1.id, 'c1')
+        self.assertEqual(cds1.name, 'cds1')
+        self.assertEqual(cds1.start, 21)
+        self.assertEqual(cds1.end, 30)
+        self.assertEqual(cds1.comments, 'No comment')
+        self.assertEqual(cds1.references, [])
+        self.assertEqual(cds1.database_references, [])
 
 
 class RegulatoryElementLocusTestCase(unittest.TestCase):

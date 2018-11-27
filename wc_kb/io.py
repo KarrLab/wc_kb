@@ -60,6 +60,7 @@ EUKARYOTE_MODEL_ORDER = (
     eukaryote_schema.TranscriptSpeciesType,
     eukaryote_schema.ExonLocus,
     eukaryote_schema.ProteinSpeciesType,
+    eukaryote_schema.CdsLocus,
     core.ComplexSpeciesType,
     core.Concentration,
     core.Observable,

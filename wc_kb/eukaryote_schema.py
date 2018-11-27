@@ -59,6 +59,17 @@ class ExonLocus(core.PolymerLocus):
         attribute_order = ('id', 'polymer', 'name', 'start', 'end', 
                            'comments', 'references', 'database_references')
 
+class CdsLocus(core.PolymerLocus):
+    """ Knowledge of an coding region
+
+    Related attributes:
+        protein (:obj:`ProteinSpeciesType`): protein
+    """        
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'polymer', 'name', 'start', 'end', 
+                           'comments', 'references', 'database_references')
+        verbose_name = 'CDS loci'                           
+
 
 class RegulatoryElementLocus(core.PolymerLocus):
     """ Knowledge of a regulatory element of a gene
@@ -276,12 +287,15 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     Attributes:
         uniprot (:obj:`str`): uniprot id
         transcript (:obj:`TranscriptSpeciesType`): transcript
+        coding_region (:obj:`CdsLocus`): CDS Locus
     """
+
     uniprot = obj_model.StringAttribute()
     transcript = obj_model.OneToOneAttribute(TranscriptSpeciesType, related_name='protein')
-
+    coding_region = obj_model.OneToOneAttribute(CdsLocus, related_name='protein')
+    
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'uniprot', 'transcript', 'half_life', 
+        attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_region', 'half_life', 
                            'comments', 'references', 'database_references')
 
     def get_seq(self, table=1, cds=True):
@@ -295,7 +309,19 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        return self.transcript.get_seq().translate(table=table, cds=cds)
+        dna_seq = ''
+        for exon in self.transcript.exons:
+            if exon.start<=self.coding_region.start<=exon.end:
+                dna_seq += self.transcript.rna.gene.polymer.get_subseq(
+                            start=self.coding_region.start, end=exon.end) 
+            elif self.coding_region.start<=exon.start and self.coding_region.end>=exon.end:
+                dna_seq += self.transcript.rna.gene.polymer.get_subseq(
+                            start=exon.start, end=exon.end)
+            elif exon.start<=self.coding_region.end<=exon.end:
+                dna_seq += self.transcript.rna.gene.polymer.get_subseq(
+                            start=exon.start, end=self.coding_region.end)
+                        
+        return dna_seq.transcribe().translate(table=table, cds=cds)
 
     def get_empirical_formula(self, table=1, cds=True):
         """ Get the empirical formula
