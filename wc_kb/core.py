@@ -1556,6 +1556,7 @@ class DnaSpeciesType(PolymerSpeciesType):
 
     Attributes:
         seq (:obj:`Bio.Seq.Seq`): sequence
+        ploidy (:obj:`int`): ploidy
     """
 
     seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
