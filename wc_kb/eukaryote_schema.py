@@ -16,6 +16,15 @@ from wc_kb import core
 #####################
 # Enumeration classes
 
+class RegulatoryElementType(enum.Enum):
+    """ Type of regulatory element """
+    promoter = 1
+    promoter_flanking_region = 2
+    enhancer = 3
+    CTCF_binding_site = 4
+    TF_binding_site = 5
+    open_chromatin_region = 6
+
 
 class ActivityLevel(enum.Enum):
     active = 1
@@ -81,7 +90,7 @@ class RegulatoryElementLocus(core.PolymerLocus):
     Related attributes:
         regulatory_modules (:obj:`list` of :obj:`RegulatoryModule`): regulatory_modules
     """
-    type = obj_model.EnumAttribute(core.RegulatoryElementType)
+    type = obj_model.EnumAttribute(RegulatoryElementType)
     activity = obj_model.EnumAttribute(ActivityLevel)
     
     class Meta(obj_model.Model.Meta):

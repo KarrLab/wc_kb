@@ -16,6 +16,24 @@ import mendeleev
 import unittest
 
 
+class TestCore(unittest.TestCase):
+    
+    def test_RegulatoryElementType(self):
+        self.assertEqual(eukaryote_schema.RegulatoryElementType.promoter.value, 1)
+        self.assertEqual(eukaryote_schema.RegulatoryElementType.promoter_flanking_region.value, 2)
+        self.assertEqual(eukaryote_schema.RegulatoryElementType.enhancer.value, 3)
+        self.assertEqual(eukaryote_schema.RegulatoryElementType.CTCF_binding_site.value, 4)
+        self.assertEqual(eukaryote_schema.RegulatoryElementType.TF_binding_site.value, 5)
+        self.assertEqual(eukaryote_schema.RegulatoryElementType.open_chromatin_region.value, 6)
+
+    def test_ActivityLevel(self):
+        self.assertEqual(eukaryote_schema.ActivityLevel.active.value, 1)
+        self.assertEqual(eukaryote_schema.ActivityLevel.poised.value, 2)
+        self.assertEqual(eukaryote_schema.ActivityLevel.repressed.value, 3)
+        self.assertEqual(eukaryote_schema.ActivityLevel.inactive.value, 4)
+        self.assertEqual(eukaryote_schema.ActivityLevel.na.value, 5)
+
+
 class CellTestCase(unittest.TestCase):
     def test_constructor(self):
         cell = core.Cell(taxon=9606)
@@ -382,12 +400,12 @@ class CdsLocusTestCase(unittest.TestCase):
 class RegulatoryElementLocusTestCase(unittest.TestCase):
     def test_constructor(self):
         promoter = eukaryote_schema.RegulatoryElementLocus(id='p1', name='promoter1', 
-            type=core.RegulatoryElementType.promoter, 
+            type=eukaryote_schema.RegulatoryElementType.promoter, 
             activity=eukaryote_schema.ActivityLevel.active, 
             strand=core.PolymerStrand.positive, start=2, end=10)
         self.assertEqual(promoter.id, 'p1')
         self.assertEqual(promoter.name, 'promoter1')
-        self.assertEqual(promoter.type, core.RegulatoryElementType.promoter)
+        self.assertEqual(promoter.type, eukaryote_schema.RegulatoryElementType.promoter)
         self.assertEqual(promoter.activity, eukaryote_schema.ActivityLevel.active)
         self.assertEqual(promoter.strand, core.PolymerStrand.positive)
         self.assertEqual(promoter.start, 2)

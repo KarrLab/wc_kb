@@ -63,16 +63,6 @@ class GeneType(enum.Enum):
     tRna = 3
 
 
-class RegulatoryElementType(enum.Enum):
-    """ Type of regulatory element """
-    promoter = 1
-    promoter_flanking_region = 2
-    enhancer = 3
-    CTCF_binding_site = 4
-    TF_binding_site = 5
-    open_chromatin_region = 6
-
-
 class ComplexType(enum.Enum):
     """ Type of complex """
     tRnaSynthClassII = 0
