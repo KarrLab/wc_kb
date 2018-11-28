@@ -398,11 +398,13 @@ class CdsLocusTestCase(unittest.TestCase):
 
 
 class RegulatoryElementLocusTestCase(unittest.TestCase):
-    def test_constructor(self):
+    def test_constructor(self):        
+        
         promoter = eukaryote_schema.RegulatoryElementLocus(id='p1', name='promoter1', 
             type=eukaryote_schema.RegulatoryElementType.promoter, 
             activity=eukaryote_schema.ActivityLevel.active, 
             strand=core.PolymerStrand.positive, start=2, end=10)
+
         self.assertEqual(promoter.id, 'p1')
         self.assertEqual(promoter.name, 'promoter1')
         self.assertEqual(promoter.type, eukaryote_schema.RegulatoryElementType.promoter)
@@ -410,6 +412,19 @@ class RegulatoryElementLocusTestCase(unittest.TestCase):
         self.assertEqual(promoter.strand, core.PolymerStrand.positive)
         self.assertEqual(promoter.start, 2)
         self.assertEqual(promoter.end, 10)
+
+        tf1 = eukaryote_schema.ProteinSpeciesType(id='TF1')
+        
+        TF_binding_site = eukaryote_schema.RegulatoryElementLocus( 
+            type=eukaryote_schema.RegulatoryElementType.TF_binding_site, 
+            start=2, end=10, bound_start=3, bound_end=8, motif_features=[tf1])
+        
+        self.assertEqual(TF_binding_site.type.value, 5)
+        self.assertEqual(TF_binding_site.start, 2)
+        self.assertEqual(TF_binding_site.end, 10)
+        self.assertEqual(TF_binding_site.bound_start, 3)
+        self.assertEqual(TF_binding_site.bound_end, 8)
+        self.assertEqual(TF_binding_site.motif_features[0].id, 'TF1')
 
 
 class RegulatoryModuleTestCase(unittest.TestCase):

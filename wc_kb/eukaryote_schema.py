@@ -68,6 +68,7 @@ class ExonLocus(core.PolymerLocus):
         attribute_order = ('id', 'polymer', 'name', 'start', 'end', 
                            'comments', 'references', 'database_references')
 
+
 class CdsLocus(core.PolymerLocus):
     """ Knowledge of an coding region
 
@@ -86,16 +87,23 @@ class RegulatoryElementLocus(core.PolymerLocus):
     Attributes:
         type (:obj:`RegulatoryElementType`): type of regulatory element
         activity (:obj:`ActivityLevel`): cell-type specific activity level
+        bound_start (:obj:`int`): start coordinate of binding
+        bound_end (:obj:`int`): end coordinate of binding
+        motif_features (:obj:`list` of :obj:`ProteinSpeciesType`): proteins that bind to the site
         
     Related attributes:
         regulatory_modules (:obj:`list` of :obj:`RegulatoryModule`): regulatory_modules
     """
     type = obj_model.EnumAttribute(RegulatoryElementType)
     activity = obj_model.EnumAttribute(ActivityLevel)
+    bound_start = obj_model.PositiveIntegerAttribute()
+    bound_end = obj_model.PositiveIntegerAttribute()
+    motif_features = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_elements')
     
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'type', 'activity', 
-                           'start', 'end', 'comments', 'references', 'database_references')
+                           'start', 'end', 'bound_start', 'bound_end', 'motif_features', 
+                           'comments', 'references', 'database_references')
 
 
 class RegulatoryModule(obj_model.Model):
@@ -297,6 +305,9 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         uniprot (:obj:`str`): uniprot id
         transcript (:obj:`TranscriptSpeciesType`): transcript
         coding_region (:obj:`CdsLocus`): CDS Locus
+
+    Related attributes:
+        regulatory_elements (:obj:`RegulatoryElementLocus`): protein binding sites    
     """
 
     uniprot = obj_model.StringAttribute()
