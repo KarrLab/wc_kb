@@ -152,16 +152,21 @@ class PreRnaSpeciesType(core.PolymerSpeciesType):
         verbose_name = 'pre-RNA species type'
 
     def get_seq(self):
-        """ Get the sequence
+        """ Get the 5' to 3' sequence
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        transcription_start = self.gene.start
-        transcription_end = self.gene.end
+        
         dna_seq = self.gene.polymer.get_subseq(
-            start=transcription_start, end=transcription_end)
-        return dna_seq.transcribe()
+            start=self.gene.start, end=self.gene.end)
+
+        if self.gene.strand==core.PolymerStrand.positive:
+            five_to_three_seq = dna_seq.transcribe()
+        else:
+            five_to_three_seq = dna_seq.reverse_complement().transcribe()
+
+        return five_to_three_seq    
 
     def get_empirical_formula(self):
         """ Get the empirical formula for a transcribed RNA species before splicing with
@@ -233,7 +238,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
                            'comments', 'references', 'database_references')
 
     def get_seq(self):
-        """ Get the sequence
+        """ Get the 5' to 3' sequence
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
@@ -244,7 +249,13 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
             exon_end = exon.end
             dna_seq += self.rna.gene.polymer.get_subseq(
                             start=exon_start, end=exon_end)
-        return dna_seq.transcribe()
+        
+        if self.rna.gene.strand==core.PolymerStrand.positive:
+            five_to_three_seq = dna_seq.transcribe()
+        else:
+            five_to_three_seq = dna_seq.reverse_complement().transcribe()
+
+        return five_to_three_seq    
 
     def get_empirical_formula(self):
         """ Get the empirical formula for a transcript (spliced RNA) species with
@@ -319,7 +330,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
                            'comments', 'references', 'database_references')
 
     def get_seq(self, table=1, cds=True):
-        """ Get the sequence
+        """ Get the 5' to 3' sequence
 
         Args:
             table (:obj:`int`, optional): NCBI identifier for translation table 
@@ -340,8 +351,15 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
             elif exon.start<=self.coding_region.end<=exon.end:
                 dna_seq += self.transcript.rna.gene.polymer.get_subseq(
                             start=exon.start, end=self.coding_region.end)
-                        
-        return dna_seq.transcribe().translate(table=table, cds=cds)
+        
+        if self.transcript.rna.gene.strand==core.PolymerStrand.positive:
+            five_to_three_seq = dna_seq.transcribe().translate(
+                table=table, cds=cds)
+        else:
+            five_to_three_seq = dna_seq.reverse_complement().transcribe().translate(
+                table=table, cds=cds)
+
+        return five_to_three_seq                        
 
     def get_empirical_formula(self, table=1, cds=True):
         """ Get the empirical formula

@@ -69,6 +69,21 @@ class PreRnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.references, [])
         self.assertEqual(rna1.database_references, [])
 
+    def test_get_seq(self):
+        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
+            'ACTGAGTTACGTACGTTTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        
+        gene1 = eukaryote_schema.GeneLocus(
+            polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
+
+        gene2 = eukaryote_schema.GeneLocus(
+            polymer=dna1, start=4, end=18, strand=core.PolymerStrand.negative)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)            
+
+        self.assertEqual(rna1.get_seq(), 'ACUGAGUUACGUACG')
+        self.assertEqual(rna2.get_seq(), 'AAACGUACGUAACUC')       
+
     def test_get_empirical_formula(self):
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'ACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
@@ -167,6 +182,31 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(transcript1.exons, [exon1, exon2])
         self.assertEqual(transcript2.exons, [exon2])
 
+    def test_get_seq(self):
+        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
+            'ACTGAGTTACGTACGTTTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        
+        gene1 = eukaryote_schema.GeneLocus(
+            polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
+        
+        exon1 = eukaryote_schema.ExonLocus(start=1, end=4)
+        exon2 = eukaryote_schema.ExonLocus(start=7, end=8)
+        transcript1 = eukaryote_schema.TranscriptSpeciesType(
+            rna=rna1, exons=[exon1, exon2])
+        
+        gene2 = eukaryote_schema.GeneLocus(
+            polymer=dna1, start=4, end=18, strand=core.PolymerStrand.negative)
+        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)      
+        exon1 = eukaryote_schema.ExonLocus(start=4, end=10)
+        exon2 = eukaryote_schema.ExonLocus(start=14, end=16)
+        transcript2 = eukaryote_schema.TranscriptSpeciesType(
+            rna=rna2, exons=[exon1, exon2])
+
+        self.assertEqual(transcript1.get_seq(), 'ACUGUU')
+        self.assertEqual(transcript2.get_seq(), 'ACGGUAACUC')
+
+
     def test_get_empirical_formula(self):
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
             'ACGT', alphabet=Bio.Alphabet.DNAAlphabet()))        
@@ -251,10 +291,10 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def setUp(self):
         dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'TTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTATGAARTTYAARTTYCTCCTCACNCCNCTCTAATTT', 
-            alphabet=Bio.Alphabet.DNAAlphabet()))
-        
-        cell1 = dna1.cell = core.Cell()
+            'TTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTTTACAGTTYCGGGGTCAGCAGAAATTTTTTCATTTT', 
+            alphabet=Bio.Alphabet.DNAAlphabet()))    #TTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTT ATGAARTTYAARTTYCTCCTCACNCCNCTCTAA TTT
+                                                      #                                       atgaaa   aaatttctgctgaccccgctg
+        cell1 = dna1.cell = core.Cell()                #                                      TTACAGTTYCGGGGTCAGCAGAAATTTTTTCAT
 
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=36)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
@@ -333,8 +373,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         prot1 = eukaryote_schema.ProteinSpeciesType(transcript=transcript1, coding_region=cds1)
 
         # Protein subunit 2
-        gene2 = eukaryote_schema.GeneLocus(polymer=dna1, 
-                    start=37, end=75, strand=core.PolymerStrand.negative)
+        gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=37, end=75)
         rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exon2 = eukaryote_schema.ExonLocus(start=40, end=72)
         transcript2 = eukaryote_schema.TranscriptSpeciesType(rna=rna2, exons=[exon2])
