@@ -62,7 +62,7 @@ class TestCli(unittest.TestCase):
         filename_seq = path.join(self.tempdir, 'seq.fna')
         io.Writer().run(kb, filename_core, filename_seq, set_repo_metadata_from_path=False)
 
-        with self.assertRaisesRegex(ValueError, '^Knowledge base is invalid: '):
+        with self.assertRaisesRegex(SystemExit, '^Knowledge base is invalid: '):
             with __main__.App(argv=['validate', filename_core, filename_seq]) as app:
                 app.run()
 
