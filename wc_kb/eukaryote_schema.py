@@ -7,6 +7,8 @@
 """
 
 from wc_utils.util import chem
+import Bio.Alphabet
+import Bio.Seq
 import enum
 import obj_model
 from wc_kb import core
@@ -151,15 +153,25 @@ class PreRnaSpeciesType(core.PolymerSpeciesType):
                            'half_life', 'comments', 'references', 'database_references')
         verbose_name = 'pre-RNA species type'
 
-    def get_seq(self):
+    def get_seq(self, seq_dict=None):
         """ Get the 5' to 3' sequence
+
+        Args:
+            seq_dict (:obj:`pyfaidx.Fasta`, optional): dictionary-like Fasta record of the
+                sequence of each chromosome to be provided for fast random access without
+                taking too much memory 
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
         
-        dna_seq = self.gene.polymer.get_subseq(
-            start=self.gene.start, end=self.gene.end)
+        if self.gene.polymer.seq:
+            dna_seq = self.gene.polymer.get_subseq(
+                start=self.gene.start, end=self.gene.end)
+        else:
+            dna_seq = Bio.Seq.Seq(seq_dict[self.gene.polymer.id][
+                self.gene.start-1:self.gene.end], 
+                alphabet=Bio.Alphabet.DNAAlphabet())    
 
         if self.gene.strand==core.PolymerStrand.positive:
             five_to_three_seq = dna_seq.transcribe()
@@ -237,19 +249,31 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
         attribute_order = ('id', 'name', 'rna', 'exons', 'half_life', 
                            'comments', 'references', 'database_references')
 
-    def get_seq(self):
+    def get_seq(self, seq_dict=None):
         """ Get the 5' to 3' sequence
+
+        Args:
+            seq_dict (:obj:`pyfaidx.Fasta`, optional): dictionary-like Fasta record of the
+                sequence of each chromosome to be provided for fast random access without
+                taking too much memory
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
         dna_seq = ''
-        for exon in self.exons:
-            exon_start = exon.start
-            exon_end = exon.end
-            dna_seq += self.rna.gene.polymer.get_subseq(
-                            start=exon_start, end=exon_end)
-        
+
+        if self.rna.gene.polymer.seq:
+
+            for exon in self.exons:                
+                dna_seq += self.rna.gene.polymer.get_subseq(
+                    start=exon.start, end=exon.end)
+        else:
+
+            for exon in self.exons:
+                dna_seq += Bio.Seq.Seq(seq_dict[self.rna.gene.polymer.id][
+                    exon.start-1:exon.end], 
+                    alphabet=Bio.Alphabet.DNAAlphabet())    
+                    
         if self.rna.gene.strand==core.PolymerStrand.positive:
             five_to_three_seq = dna_seq.transcribe()
         else:
@@ -329,29 +353,35 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_region', 'half_life', 
                            'comments', 'references', 'database_references')
 
-    def get_seq(self, table=1, cds=True):
+    def get_seq(self, table=1, cds=True, seq_dict=None):
         """ Get the 5' to 3' sequence
 
         Args:
             table (:obj:`int`, optional): NCBI identifier for translation table 
                                         (default = standard table)
-            cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS                            
+            cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
+            seq_dict (:obj:`pyfaidx.Fasta`, optional): dictionary-like Fasta record of the
+                sequence of each chromosome to be provided for fast random access without
+                taking too much memory                            
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
         dna_seq = ''
-        for exon in self.transcript.exons:
-            if exon.start<=self.coding_region.start<=exon.end:
+
+        if self.transcript.rna.gene.polymer.seq:
+            
+            for exon in self.transcript.exons:                
                 dna_seq += self.transcript.rna.gene.polymer.get_subseq(
-                            start=self.coding_region.start, end=exon.end) 
-            elif self.coding_region.start<=exon.start and self.coding_region.end>=exon.end:
-                dna_seq += self.transcript.rna.gene.polymer.get_subseq(
-                            start=exon.start, end=exon.end)
-            elif exon.start<=self.coding_region.end<=exon.end:
-                dna_seq += self.transcript.rna.gene.polymer.get_subseq(
-                            start=exon.start, end=self.coding_region.end)
+                    start=max(self.coding_region.start, exon.start), 
+                    end=min(self.coding_region.end, exon.end)) 
+        else:
         
+            for exon in self.transcript.exons:                
+                dna_seq += Bio.Seq.Seq(seq_dict[self.transcript.rna.gene.polymer.id][
+                    max(self.coding_region.start, exon.start)-1:min(self.coding_region.end, exon.end)], 
+                    alphabet=Bio.Alphabet.DNAAlphabet())  
+                        
         if self.transcript.rna.gene.strand==core.PolymerStrand.positive:
             five_to_three_seq = dna_seq.transcribe().translate(
                 table=table, cds=cds)
