@@ -49,7 +49,7 @@ class ValidateController(cement.Controller):
             io.Reader().run(args.core_path, args.seq_path, strict=args.strict)
             print('Knowledge base is valid')
         except ValueError as exception:
-            raise ValueError('Knowledge base is invalid: ' + str(exception))
+            raise SystemExit('Knowledge base is invalid: ' + str(exception))
 
 
 class DifferenceController(cement.Controller):
