@@ -14,9 +14,11 @@ from wc_kb import core, prokaryote_schema
 from wc_utils.util import chem
 import Bio.Alphabet
 import Bio.Seq
-import Bio.SeqIO
 import Bio.SeqUtils
 import mendeleev
+import os
+import shutil
+import tempfile
 import unittest
 
 
@@ -39,9 +41,23 @@ class CellTestCase(unittest.TestCase):
 
 class RnaSpeciesTypeTestCase(unittest.TestCase):
 
+    def setUp(self):
+        self.tmp_dirname = tempfile.mkdtemp()
+        self.sequence_path = os.path.join(self.tmp_dirname, 'test_seq.fasta')
+        with open(self.sequence_path, 'w') as f:
+            f.write('>dna1\nACGTACGTACGTACG\n'
+                    '>dna2\nA\n'
+                    '>dna3\nC\n'
+                    '>dna4\nG\n'
+                    '>dna5\nT\n'
+                    '>dna6\nAAAA\n'
+                    '>dna7\nAACCGGTT\n')
+
+    def tearDown(self):    
+        shutil.rmtree(self.tmp_dirname)  
+
     def test_constructor(self):
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=15)
         rna1 = prokaryote_schema.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[
@@ -54,8 +70,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.half_life, 2)
 
     def test_get_empirical_formula(self):
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'A', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna2', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=1)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -63,8 +78,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O7P'))
 
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'C', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna3', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=1)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -72,8 +86,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.get_empirical_formula(),
                          chem.EmpiricalFormula('C9H12N3O8P'))
 
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'G', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna4', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=1)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -81,8 +94,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O8P'))
 
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'T', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna5', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=1)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -90,8 +102,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.get_empirical_formula(),
                          chem.EmpiricalFormula('C9H11N2O9P'))
 
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna6', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=2)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -100,16 +111,14 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
                          chem.EmpiricalFormula('C20H23N10O13P2'))
 
     def test_get_charge(self):
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna6', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=1)
         rna1 = prokaryote_schema.RnaSpeciesType(
             id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(rna1.get_charge(), -2)
 
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna6', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=2)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -117,8 +126,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.get_charge(), -3)
 
     def test_get_mol_wt(self):
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna7', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=1)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -128,8 +136,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
             - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
         self.assertAlmostEqual(rna1.get_mol_wt(), exp_mol_wt, places=1)
 
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna7', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=3, end=3)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -139,8 +146,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
             - (rna1.get_len() + 1) * mendeleev.element('H').atomic_weight
         self.assertAlmostEqual(rna1.get_mol_wt(), exp_mol_wt, places=1)
 
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna7', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=5, end=5)
         rna1 = prokaryote_schema.RnaSpeciesType(
@@ -154,9 +160,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
     def setUp(self):
         # Mycoplasma Genintalium Genome
-        records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
-        dna_seq = next(records).seq
-        dna1 = core.DnaSpeciesType(seq=dna_seq)
+        dna1 = core.DnaSpeciesType(id='chromosome', sequence_path='tests/fixtures/seq.fna')
 
         cell1 = dna1.cell = core.Cell()
         cell1.knowledge_base = core.KnowledgeBase(
@@ -243,7 +247,12 @@ class GeneLocusTestCase(unittest.TestCase):
 
 class TranscriptionUnitLocusTestCase(unittest.TestCase):
     def test(self):
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()),
+        tmp_dirname = tempfile.mkdtemp()
+        sequence_path = os.path.join(tmp_dirname, 'test_seq.fasta')
+        with open(sequence_path, 'w') as f:
+            f.write('>dna1\nACGTACGTACGTACG\n')    
+        
+        dna1 = core.DnaSpeciesType(id='dna1', sequence_path=sequence_path,
                                    circular=False, double_stranded=False)
 
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
@@ -267,6 +276,8 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
         self.assertEqual(tu1.get_3_prime(), 1)
         self.assertEqual(tu1.get_5_prime(), 15)
 
+        shutil.rmtree(tmp_dirname) 
+
 
 class ComplexSpeciesTypeTestCase(unittest.TestCase):
     def test_ComplexSpeciesType(self):
@@ -275,9 +286,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         complex1 = core.ComplexSpeciesType()
 
         # Generate test proteins from  Mycoplasma Genintalium Genome
-        records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
-        dna_seq = next(records).seq
-        dna1 = core.DnaSpeciesType(seq=dna_seq)
+        dna1 = core.DnaSpeciesType(id='chromosome', sequence_path='tests/fixtures/seq.fna')
 
         cell1 = dna1.cell = core.Cell()
         cell1.knowledge_base = core.KnowledgeBase(

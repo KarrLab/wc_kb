@@ -6,7 +6,6 @@
 :License: MIT
 """
 
-from pyfaidx import Fasta
 from wc_kb import core, eukaryote_schema
 from wc_utils.util import chem
 import Bio.Alphabet
@@ -57,9 +56,20 @@ class CellTestCase(unittest.TestCase):
 
 class PreRnaSpeciesTypeTestCase(unittest.TestCase):
 
+    def setUp(self):
+        self.tmp_dirname = tempfile.mkdtemp()
+        self.sequence_path = os.path.join(self.tmp_dirname, 'test_seq.fasta')
+        with open(self.sequence_path, 'w') as f:
+            f.write('>dna1\nACTGAGTTACGTACGTTTT\n'
+                    '>dna2\nACGT\n'
+                    '>dna3\nAAAA\n'
+                    '>dna4\nAACCGGTT\n')
+
+    def tearDown(self):    
+        shutil.rmtree(self.tmp_dirname)  
+
     def test_constructor(self):
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'ACGTACGTACGTACGTTTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna1')
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=15)
         rna1 = eukaryote_schema.PreRnaSpeciesType(id='rna1', name='rna1', gene=gene1, 
         	type=1, half_life=2)
@@ -74,10 +84,7 @@ class PreRnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.database_references, [])
 
     def test_get_seq(self):
-        # If sequence is saved as an instance attribute
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq(
-            'ACTGAGTTACGTACGTTTT', alphabet=Bio.Alphabet.DNAAlphabet()))
-        
+        dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         gene1 = eukaryote_schema.GeneLocus(
             polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
@@ -87,31 +94,10 @@ class PreRnaSpeciesTypeTestCase(unittest.TestCase):
         rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)            
 
         self.assertEqual(rna1.get_seq(), 'ACUGAGUUACGUACG')
-        self.assertEqual(rna2.get_seq(), 'AAACGUACGUAACUC')
-
-        # If sequence is saved as a flat file index
-        self.tmp_dirname = tempfile.mkdtemp()
-        with open(os.path.join(self.tmp_dirname, 'test_seq.fasta'), 'w') as f:
-            f.write('>dna1\nACTGAGTTACGTACGTTTT\n')
-
-        dna1 = core.DnaSpeciesType(id='dna1')
-        dna_seq = Fasta(os.path.join(self.tmp_dirname, 'test_seq.fasta'), as_raw=True)
-        gene1 = eukaryote_schema.GeneLocus(
-            polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
-        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
-
-        gene2 = eukaryote_schema.GeneLocus(
-            polymer=dna1, start=4, end=18, strand=core.PolymerStrand.negative)
-        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)            
-
-        self.assertEqual(rna1.get_seq(seq_dict=dna_seq), 'ACUGAGUUACGUACG')
-        self.assertEqual(rna2.get_seq(seq_dict=dna_seq), 'AAACGUACGUAACUC')
-
-        shutil.rmtree(self.tmp_dirname)           
+        self.assertEqual(rna2.get_seq(), 'AAACGUACGUAACUC')                
 
     def test_get_empirical_formula(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'ACGT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna2', sequence_path=self.sequence_path)
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=1)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
@@ -133,16 +119,14 @@ class PreRnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna4.get_empirical_formula(),
                          chem.EmpiricalFormula('C9H11N2O9P'))
 
-        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna2 = core.DnaSpeciesType(id='dna3', sequence_path=self.sequence_path)
         gene5 = eukaryote_schema.GeneLocus(polymer=dna2, start=1, end=2)
         rna5 = eukaryote_schema.PreRnaSpeciesType(gene=gene5)
         self.assertEqual(rna5.get_empirical_formula(),
                          chem.EmpiricalFormula('C20H23N10O13P2'))
 
     def test_get_charge(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna3', sequence_path=self.sequence_path)
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=1)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
@@ -153,8 +137,7 @@ class PreRnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna2.get_charge(), -3)
 
     def test_get_mol_wt(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna4', sequence_path=self.sequence_path)
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=1)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
@@ -180,9 +163,22 @@ class PreRnaSpeciesTypeTestCase(unittest.TestCase):
 
 class TranscriptSpeciesTypeTestCase(unittest.TestCase):
 
+    def setUp(self):
+        self.tmp_dirname = tempfile.mkdtemp()
+        self.sequence_path = os.path.join(self.tmp_dirname, 'test_seq.fasta')
+        with open(self.sequence_path, 'w') as f:
+            f.write('>dna1\nACGTACGTACGTACGTTTT\n'
+                    '>dna2\nACTGAGTTACGTACGTTTT\n'
+                    '>dna3\nACGT\n'
+                    '>dna4\nATAT\n'
+                    '>dna5\nAAAA\n'
+                    '>dna6\nAACCGGTT\n')
+
+    def tearDown(self):    
+        shutil.rmtree(self.tmp_dirname)
+
     def test_constructor(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'ACGTACGTACGTACGTTTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=15)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
 
@@ -208,9 +204,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(transcript2.exons, [exon2])
 
     def test_get_seq(self):
-        # If sequence is saved as an instance attribute
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'ACTGAGTTACGTACGTTTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna2', sequence_path=self.sequence_path)
         
         gene1 = eukaryote_schema.GeneLocus(
             polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
@@ -232,38 +226,8 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(transcript1.get_seq(), 'ACUGUU')
         self.assertEqual(transcript2.get_seq(), 'ACGGUAACUC')
 
-        # If sequence is saved as a flat file index
-        self.tmp_dirname = tempfile.mkdtemp()
-        with open(os.path.join(self.tmp_dirname, 'test_seq.fasta'), 'w') as f:
-            f.write('>dna1\nACTGAGTTACGTACGTTTT\n')
-
-        dna1 = core.DnaSpeciesType(id='dna1')
-        dna_seq = Fasta(os.path.join(self.tmp_dirname, 'test_seq.fasta'), as_raw=True)
-        gene1 = eukaryote_schema.GeneLocus(
-            polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
-        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
-        
-        exon1 = eukaryote_schema.ExonLocus(start=1, end=4)
-        exon2 = eukaryote_schema.ExonLocus(start=7, end=8)
-        transcript1 = eukaryote_schema.TranscriptSpeciesType(
-            rna=rna1, exons=[exon1, exon2])
-        
-        gene2 = eukaryote_schema.GeneLocus(
-            polymer=dna1, start=4, end=18, strand=core.PolymerStrand.negative)
-        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)      
-        exon1 = eukaryote_schema.ExonLocus(start=4, end=10)
-        exon2 = eukaryote_schema.ExonLocus(start=14, end=16)
-        transcript2 = eukaryote_schema.TranscriptSpeciesType(
-            rna=rna2, exons=[exon1, exon2])
-
-        self.assertEqual(transcript1.get_seq(seq_dict=dna_seq), 'ACUGUU')
-        self.assertEqual(transcript2.get_seq(seq_dict=dna_seq), 'ACGGUAACUC')
-
-        shutil.rmtree(self.tmp_dirname)
-
     def test_get_empirical_formula(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'ACGT', alphabet=Bio.Alphabet.DNAAlphabet()))        
+        dna1 = core.DnaSpeciesType(id='dna3', sequence_path=self.sequence_path)        
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=4)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
         
@@ -287,8 +251,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(transcript4.get_empirical_formula(),
                          chem.EmpiricalFormula('C9H11N2O9P'))
 
-        dna2 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'ATAT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna2 = core.DnaSpeciesType(id='dna4', sequence_path=self.sequence_path)
         gene2 = eukaryote_schema.GeneLocus(polymer=dna2, start=1, end=4)
         rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exon5_1 = eukaryote_schema.ExonLocus(start=1, end=1)
@@ -298,8 +261,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
                          chem.EmpiricalFormula('C20H23N10O13P2'))
 
     def test_get_charge(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'AAAA', alphabet=Bio.Alphabet.DNAAlphabet()))        
+        dna1 = core.DnaSpeciesType(id='dna5', sequence_path=self.sequence_path)        
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=1)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
@@ -315,8 +277,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(transcript2.get_charge(), -3)
 
     def test_get_mol_wt(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'AACCGGTT', alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna6', sequence_path=self.sequence_path)
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=6)
         rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
 
@@ -343,10 +304,14 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
 
 
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
+
     def setUp(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'TTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTTTACAGTTYCGGGGTCAGCAGAAATTTTTTCATTTT', 
-            alphabet=Bio.Alphabet.DNAAlphabet()))
+        self.tmp_dirname = tempfile.mkdtemp()
+        sequence_path = os.path.join(self.tmp_dirname, 'test_seq.fasta')
+        with open(sequence_path, 'w') as f:
+            f.write('>dna1\nTTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTTTACAGTTYCGGGGTCAGCAGAAATTTTTTCATTTT\n')
+                    
+        dna1 = core.DnaSpeciesType(id='dna1', sequence_path=sequence_path)
 
         cell1 = dna1.cell = core.Cell()           
 
@@ -372,6 +337,9 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.prot2 = eukaryote_schema.ProteinSpeciesType(id='prot2', name='protein2', 
             uniprot='P12345', cell=cell1, transcript=transcript2, coding_region=cds2)
 
+    def tearDown(self):    
+        shutil.rmtree(self.tmp_dirname)    
+
     def test_constructor(self):
         
         self.assertEqual(self.prot1.id, 'prot1')
@@ -385,50 +353,11 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(self.prot1.cell, None)
 
     def test_get_seq(self):
-
         # Default translation table used is 1 (standard)
         self.assertEqual(self.prot1.get_seq(), 'MKVLINKNEL')
         self.assertEqual(self.prot2.get_seq(), 'MKKFLLTPL')
 
-        # If sequence is saved as a flat file index        
-        self.tmp_dirname = tempfile.mkdtemp()
-        with open(os.path.join(self.tmp_dirname, 'test_seq.fasta'), 'w') as f:
-            f.write('>dna1\nTTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTTTACAGTTYCGGGGTCAGCAGAAATTTTTTCATTTT\n')
-
-        dna1 = core.DnaSpeciesType(id='dna1')
-        dna_seq = Fasta(os.path.join(self.tmp_dirname, 'test_seq.fasta'), as_raw=True)
-        
-        cell1 = dna1.cell = core.Cell()           
-
-        gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=36)
-        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
-        exon1 = eukaryote_schema.ExonLocus(start=4, end=36)
-        transcript1 = eukaryote_schema.TranscriptSpeciesType(rna=rna1, exons=[exon1])
-        cds1 = eukaryote_schema.CdsLocus(id='cds1', start=4, end=36)        
-        prot1 = eukaryote_schema.ProteinSpeciesType(id='prot1', name='protein1', 
-            uniprot='Q12X34', transcript=transcript1, coding_region=cds1, half_life=0.35)
-
-        gene2 = eukaryote_schema.GeneLocus(polymer=dna1,
-            start=30, end=75, strand=core.PolymerStrand.negative)
-        rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
-        exon2_1 = eukaryote_schema.ExonLocus(start=32, end=35)
-        exon2_2 = eukaryote_schema.ExonLocus(start=38, end=45)
-        exon2_3 = eukaryote_schema.ExonLocus(start=49, end=54)
-        exon2_4 = eukaryote_schema.ExonLocus(start=55, end=72)
-        exon2_5 = eukaryote_schema.ExonLocus(start=73, end=74)
-        transcript2 = eukaryote_schema.TranscriptSpeciesType(
-            rna=rna2, exons=[exon2_1, exon2_2, exon2_3, exon2_4, exon2_5])
-        cds2 = eukaryote_schema.CdsLocus(id='cds2', start=40, end=72)        
-        prot2 = eukaryote_schema.ProteinSpeciesType(id='prot2', name='protein2', 
-            uniprot='P12345', cell=cell1, transcript=transcript2, coding_region=cds2)
-
-        self.assertEqual(prot1.get_seq(seq_dict=dna_seq), 'MKVLINKNEL')
-        self.assertEqual(prot2.get_seq(seq_dict=dna_seq), 'MKKFLLTPL')        
-
-        shutil.rmtree(self.tmp_dirname)
-
     def test_get_empirical_formula(self):
-
         # Default translation table used is 1 (standard)
         self.assertEqual(self.prot1.get_empirical_formula(),
                          chem.EmpiricalFormula('C53H96N14O15S1'))
@@ -436,24 +365,25 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
                          chem.EmpiricalFormula('C53H91N11O11S1'))
 
     def test_get_mol_wt(self):
-
         # Default translation table used is 1 (standard)
         self.assertAlmostEqual(self.prot1.get_mol_wt(), 1201.49, delta=0.3)
         self.assertAlmostEqual(self.prot2.get_mol_wt(), 1090.43, delta=0.3)
 
     def test_get_charge(self):
-
         # Default translation table used is 1 (standard)
         self.assertEqual(self.prot1.get_charge(), 1)
         self.assertEqual(self.prot2.get_charge(), 2)
 
 
 class ComplexSpeciesTypeTestCase(unittest.TestCase):
-    def test_ComplexSpeciesType(self):        
+    def test_ComplexSpeciesType(self):
+
+        self.tmp_dirname = tempfile.mkdtemp()
+        sequence_path = os.path.join(self.tmp_dirname, 'test_seq.fasta')
+        with open(sequence_path, 'w') as f:
+            f.write('>dna1\nTTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTATGAARTTYAARTTYCTCCTCACNCCNCTCTAATTT\n')        
         
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq(
-            'TTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTATGAARTTYAARTTYCTCCTCACNCCNCTCTAATTT', 
-            alphabet=Bio.Alphabet.DNAAlphabet()))
+        dna1 = core.DnaSpeciesType(id='dna1', sequence_path=sequence_path)
 
         # Protein subunit 1
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=36)
@@ -484,6 +414,8 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
                                (2*prot1.get_mol_wt() + 3 * prot2.get_mol_wt()))
         self.assertEqual(complex1.get_empirical_formula(),
                          chem.EmpiricalFormula('C292H492N64O66S5'))
+
+        shutil.rmtree(self.tmp_dirname)
 
 
 class GeneLocusTestCase(unittest.TestCase):
@@ -559,9 +491,7 @@ class RegulatoryElementLocusTestCase(unittest.TestCase):
 
 class RegulatoryModuleTestCase(unittest.TestCase):
     def test_constructor(self):
-        dna1 = core.DnaSpeciesType(seq=Bio.Seq.Seq('ACGTACGTACGTACGATAT', 
-                                    alphabet=Bio.Alphabet.DNAAlphabet()),
-                                    circular=False, double_stranded=False)
+        dna1 = core.DnaSpeciesType(circular=False, double_stranded=False)
         
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=9, end=15)
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=17, end=18)

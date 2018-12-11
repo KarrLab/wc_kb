@@ -18,6 +18,9 @@ import Bio.SeqIO
 import Bio.SeqUtils
 import mendeleev
 import numpy
+import os
+import shutil
+import tempfile
 import unittest
 
 
@@ -166,7 +169,12 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
 
 class DnaSpeciesTypeTestCase(unittest.TestCase):
     def test(self):
-        dna = core.DnaSpeciesType(id='dna1', name='dna1', seq=Bio.Seq.Seq('ACGTACGT', alphabet=Bio.Alphabet.DNAAlphabet()),
+        self.tmp_dirname = tempfile.mkdtemp()
+        filepath = os.path.join(self.tmp_dirname, 'test_seq.fasta')
+        with open(filepath, 'w') as f:
+            f.write('>dna1\nACGTACGT\n')
+
+        dna = core.DnaSpeciesType(id='dna1', name='dna1', sequence_path=filepath,
                                   circular=False, double_stranded=False, ploidy=2)
 
         self.assertEqual(dna.id, 'dna1')
@@ -262,11 +270,19 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
 
         self.assertAlmostEqual(dna.get_mol_wt(), exp_mol_wt, places=0)
 
+        shutil.rmtree(self.tmp_dirname)  
+
 
 class PolymerLocusTestCase(unittest.TestCase):
     def test_constructor(self):
         cell1 = core.Cell()
-        dna1 = core.DnaSpeciesType(id='dna1', seq=Bio.Seq.Seq('ACGTACGTACGTACG', alphabet=Bio.Alphabet.DNAAlphabet()),
+
+        self.tmp_dirname = tempfile.mkdtemp()
+        filepath = os.path.join(self.tmp_dirname, 'test_seq.fasta')
+        with open(filepath, 'w') as f:
+            f.write('>dna1\nACGTACGTACGTACG\n')
+
+        dna1 = core.DnaSpeciesType(id='dna1', sequence_path=filepath,
                                    circular=False, double_stranded=False)
 
         locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=dna1,
@@ -290,6 +306,8 @@ class PolymerLocusTestCase(unittest.TestCase):
         locus1.strand = core.PolymerStrand.negative
         self.assertEqual(locus1.get_seq(), rev_comp_seq)
         self.assertEqual(locus1.get_len(), 15)
+
+        shutil.rmtree(self.tmp_dirname)  
 
 
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):

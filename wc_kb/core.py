@@ -12,10 +12,12 @@
 
 from natsort import natsorted, ns
 from math import ceil, floor, exp, log, log10, isnan
+from pyfaidx import Fasta
 from wc_utils.util import chem
 from wc_utils.util.list import det_dedupe
 import abc
-import Bio.SeqUtils
+import Bio.Alphabet
+import Bio.Seq
 import enum
 import math
 import obj_model.abstract
@@ -1545,29 +1547,38 @@ class DnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of a DNA species
 
     Attributes:
-        seq (:obj:`Bio.Seq.Seq`): sequence
+        seq_path (:obj:`str`): path to sequence fasta file
         ploidy (:obj:`int`): ploidy
     """
 
-    seq = obj_model.extra_attributes.BioSeqAttribute(verbose_name='Sequence')
+    sequence_path = obj_model.StringAttribute()
     ploidy = obj_model.IntegerAttribute(min=0)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'seq', 'circular', 'double_stranded', 
+        attribute_order = ('id', 'name', 'sequence_path', 'circular', 'double_stranded', 
             'ploidy', 'half_life', 'comments', 'references', 'database_references')
         verbose_name = 'DNA species type'
 
     def get_seq(self, start=None, end=None):
         """ Get the sequence
 
+        Args:
+            start (:obj:`int`, optional): start coordinate of the queried subsequence,
+                default is the start of the full sequence 
+            end (:obj:`int`, optional): end coordinate of the queried subsequence,
+                default is the end of the full sequence
+
         Returns:
             :obj:`Bio.Seq.Seq`: structure
         """
+        
+        seq_idx = Fasta(self.sequence_path, as_raw=True)
+        start = start or 1
+        end = end or len(seq_idx[self.id][:])
 
-        start = start or 0
-        end = end or len(self.seq)
+        seq = seq_idx[self.id][start-1:end]
 
-        return self.seq[start:end]
+        return Bio.Seq.Seq(seq, alphabet=Bio.Alphabet.DNAAlphabet())
 
     def get_empirical_formula(self):
         """ Get the empirical formula for a DNA molecule with
