@@ -75,13 +75,15 @@ EUKARYOTE_MODEL_ORDER = (
 class Writer(object):
     """ Write knowledge base to file(s) """
 
-    def run(self, knowledge_base, core_path, seq_path, schema=True, set_repo_metadata_from_path=True):
+    def run(self, knowledge_base, core_path, seq_path=None, rewrite_seq_path=False, schema=True, set_repo_metadata_from_path=True):
         """ Write knowledge base to file(s)
 
         Args:
             knowledge_base (:obj:`core.KnowledgeBase`): knowledge base
             core_path (:obj:`str`): path to save core knowledge base
-            seq_path (:obj:`str`): path to save genome sequence
+            seq_path (:obj:`str`, optional): path to save genome sequence
+            rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the saved knowledge base
+                will be updated to the newly saved seq_path 
             schema (:obj:`bool`, optional): if :obj:`True`, use model order for prokaryote, else use model order for eukaryote
             set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
                 branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
@@ -113,15 +115,22 @@ class Writer(object):
         if set_repo_metadata_from_path:
             util.set_git_repo_metadata_from_path(knowledge_base, core_path)
 
-        # gather DNA sequences
-        dna_seqs = []
-        if cell:
-            dna_species_types = cell.species_types.get(
-                __type=core.DnaSpeciesType)
-            for species_type in dna_species_types:
-                dna_seqs.append(Bio.SeqRecord.SeqRecord(
-                    species_type.seq, species_type.id))
-                species_type.seq = None
+        # export sequences if a path is provided
+        if seq_path:
+            dna_seqs = []
+            if cell:
+                dna_species_types = cell.species_types.get(
+                    __type=core.DnaSpeciesType)
+                for species_type in dna_species_types:
+                    dna_seqs.append(Bio.SeqRecord.SeqRecord(
+                        species_type.get_seq(), species_type.id))
+                    if rewrite_seq_path:
+                        species_type.sequence_path = seq_path    
+            
+            with open(seq_path, 'w') as file:
+                writer = Bio.SeqIO.FastaIO.FastaWriter(
+                    file, wrap=70, record2title=lambda record: record.id)
+                writer.write_file(dna_seqs)            
 
         # export core
         _, ext = os.path.splitext(core_path)
@@ -138,18 +147,7 @@ class Writer(object):
                    title=knowledge_base.id,
                    description=knowledge_base.name,
                    version=knowledge_base.version,
-                   **kwargs)
-
-        # export sequences
-        with open(seq_path, 'w') as file:
-            writer = Bio.SeqIO.FastaIO.FastaWriter(
-                file, wrap=70, record2title=lambda record: record.id)
-            writer.write_file(dna_seqs)
-
-        # restore DNA sequences
-        if cell:
-            for species_type, seq in zip(dna_species_types, dna_seqs):
-                species_type.seq = seq.seq
+                   **kwargs)       
 
     @classmethod
     def validate_implicit_relationships(cls):
@@ -200,12 +198,14 @@ class Reader(object):
     """ Read knowledge base from file(s) """
 
     #@wc_utils.cache.memoize(filename_args=[1, 2])
-    def run(self, core_path, seq_path, schema=True, strict=True):
+    def run(self, core_path, seq_path, rewrite_seq_path=True, schema=True, strict=True):
         """ Read knowledge base from file(s)
 
         Args:
             core_path (:obj:`str`): path to core knowledge base
             seq_path (:obj:`str`): path to genome sequence
+            rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the knowledge base
+                will be updated to the provided seq_path 
             schema (:obj:`bool`, optional): if :obj:`True`, use model order for prokaryote, else use model order for eukaryote
             strict (:obj:`bool`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
                 :obj:`obj_model` serialization format:
@@ -289,9 +289,10 @@ class Reader(object):
                     for model_obj in model_objects:
                         setattr(model_obj, attr.name, cell)
 
-        # read genome sequence and link to the DNA species types
-        for dna in Bio.SeqIO.parse(seq_path, "fasta"):
-            kb.cell.species_types.get_one(id=dna.id).seq = dna.seq
+        # link path to genome sequence to the DNA species types if rewrite_seq_path is True
+        if rewrite_seq_path:
+            for dna in Bio.SeqIO.parse(seq_path, "fasta"):
+                kb.cell.species_types.get_one(id=dna.id).sequence_path = seq_path
 
         # validate
         objs = []
@@ -307,7 +308,7 @@ class Reader(object):
         return kb
 
 
-def convert(source_core, source_seq, dest_core, dest_seq, strict=True):
+def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=False, strict=True):
     """ Convert among Excel (.xlsx), comma separated (.csv), and tab separated (.tsv) file formats
 
     Read a knowledge base from the `source` files(s) and write it to the `destination` files(s). A path to a
@@ -319,6 +320,8 @@ def convert(source_core, source_seq, dest_core, dest_seq, strict=True):
         source_seq (:obj:`str`): path to the genome sequence of the source knowledge base
         dest_core (:obj:`str`): path to save the converted core of the knowledge base
         dest_seq (:obj:`str`): path to save the converted genome sequence of the knowledge base
+        rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the converted
+            core of the knowledge base will be updated to the path of the converted genome sequence 
         strict (:obj:`bool`, optional): if :obj:`True`, validate that the the model file(s) strictly follow the
                 :obj:`obj_model` serialization format:
 
@@ -330,14 +333,14 @@ def convert(source_core, source_seq, dest_core, dest_seq, strict=True):
                 * There are no extra columns
     """
     kb = Reader().run(source_core, source_seq, strict=strict)
-    Writer().run(kb, dest_core, dest_seq, set_repo_metadata_from_path=False)
+    Writer().run(kb, dest_core, dest_seq, rewrite_seq_path=rewrite_seq_path, set_repo_metadata_from_path=False)
 
 
 def create_template(core_path, seq_path, set_repo_metadata_from_path=True):
     """ Create file with knowledge base template, including row and column headings
 
     Args:
-        core_path (:obj:`str`): path to save temploate of core knowledge base
+        core_path (:obj:`str`): path to save template of core knowledge base
         seq_path (:obj:`str`): path to save genome sequence
         set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
             branch, revision) for the knowledge base from the parent directory of :obj:`core_path`

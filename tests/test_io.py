@@ -10,6 +10,8 @@
 from wc_kb import core, prokaryote_schema
 from wc_kb import io
 import Bio.Seq
+import Bio.SeqRecord
+import filecmp
 import obj_model.io
 import os
 import random
@@ -22,21 +24,26 @@ import wc_utils.workbook.io
 class TestIO(unittest.TestCase):
 
     def setUp(self):
+        self.dir = tempfile.mkdtemp()
+        self.seq_path = os.path.join(self.dir, 'seq.fna')
+
         self.kb = kb = core.KnowledgeBase(id='genus_species', name='Genus species', version='0.0.1')
 
         cell = kb.cell = core.Cell(id='genus_species_cell')
 
+        dna_seqs = []
         for i_chr in range(5):
-            dna = core.DnaSpeciesType(id='chr_{}'.format(i_chr + 1))
+            dna = core.DnaSpeciesType(id='chr_{}'.format(i_chr + 1), sequence_path=self.seq_path)
             cell.species_types.append(dna)
-
+                
             seq_len = random.randint(100, 200)
             bases = 'ACGT'
             seq = ''
             for i_nt in range(seq_len):
                 seq += bases[random.randint(0, 3)]
-            dna.seq = Bio.Seq.Seq(seq)
-
+            dna_seqs.append(Bio.SeqRecord.SeqRecord(
+                    Bio.Seq.Seq(seq), dna.id))              
+                
             for i_trn in range(5):
                 trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
                 trn.cell = cell
@@ -45,32 +52,35 @@ class TestIO(unittest.TestCase):
                 trn.end = ((trn.start + random.randint(1, 200) - 1) % seq_len) + 1
                 trn.strand = core.PolymerStrand.positive
 
-        self.dir = tempfile.mkdtemp()
+        with open(self.seq_path, 'w') as file:
+            writer = Bio.SeqIO.FastaIO.FastaWriter(
+                    file, wrap=70, record2title=lambda record: record.id)
+            writer.write_file(dna_seqs)            
 
     def tearDown(self):
         shutil.rmtree(self.dir)
 
     def test_write_read(self):
-        core_path = os.path.join(self.dir, 'core.xlsx')
-        seq_path = os.path.join(self.dir, 'seq.fna')
+        core_path = os.path.join(self.dir, 'core.xlsx')     
 
         writer = io.Writer()
-        writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=False)
+        writer.run(self.kb, core_path, set_repo_metadata_from_path=False)
 
         reader = io.Reader()
-        kb = reader.run(core_path, seq_path)
+        kb = reader.run(core_path, self.seq_path)
 
         core_path = os.path.join(self.dir, 'core2.xlsx')
         seq_path = os.path.join(self.dir, 'seq2.fna')
         writer.run(kb, core_path, seq_path, set_repo_metadata_from_path=False)
 
         self.assertTrue(self.kb.is_equal(kb))
+        self.assertTrue(filecmp.cmp(self.seq_path, seq_path, shallow=False))
 
     def test_read_write_prokaryote(self):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         core_path = os.path.join(fixtures, 'core.xlsx')
         seq_path = os.path.join(fixtures, 'seq.fna')
-        
+                
         reader = io.Reader()
         kb = reader.run(core_path, seq_path)
         
@@ -80,15 +90,16 @@ class TestIO(unittest.TestCase):
         writer = io.Writer()
         writer.run(kb, tmp_core_path, tmp_seq_path, set_repo_metadata_from_path=False)
         
-        tmp_kb = reader.run(tmp_core_path, tmp_seq_path)
+        tmp_kb = reader.run(tmp_core_path, seq_path)        
         
         self.assertTrue(kb.is_equal(tmp_kb))
+        self.assertTrue(filecmp.cmp(tmp_seq_path, seq_path, shallow=False))
 
     def test_read_write_eukaryote(self):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         core_path = os.path.join(fixtures, 'eukaryote_core.xlsx')
         seq_path = os.path.join(fixtures, 'eukaryote_seq.fna')
-        
+                
         reader = io.Reader()
         kb = reader.run(core_path, seq_path, schema=False)
         
@@ -98,9 +109,30 @@ class TestIO(unittest.TestCase):
         writer = io.Writer()
         writer.run(kb, tmp_core_path, tmp_seq_path, schema=False, set_repo_metadata_from_path=False)
         
-        tmp_kb = reader.run(tmp_core_path, tmp_seq_path, schema=False)
+        tmp_kb = reader.run(tmp_core_path, seq_path, schema=False)
         
         self.assertTrue(kb.is_equal(tmp_kb))
+        self.assertTrue(filecmp.cmp(tmp_seq_path, seq_path, shallow=False))
+
+    def test_rewrite_seq_path_in_read_write(self):
+        path_core_1 = os.path.join(self.dir, 'core_1.xlsx')        
+        path_core_2 = os.path.join(self.dir, 'core_2.xlsx')
+        path_seq_1 = os.path.join(self.dir, 'seq_1.fna')
+        path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
+        
+        io.Writer().run(self.kb, path_core_1, path_seq_1, set_repo_metadata_from_path=False)
+        kb1 = io.Reader().run(path_core_1, path_seq_1)
+        kb2 = io.Reader().run(path_core_1, path_seq_1, rewrite_seq_path=False)
+        self.assertFalse(kb1.is_equal(self.kb))
+        self.assertTrue(kb2.is_equal(self.kb))
+        self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
+
+        io.Writer().run(self.kb, path_core_2, path_seq_2, rewrite_seq_path=True, set_repo_metadata_from_path=False)
+        kb3 = io.Reader().run(path_core_2, self.seq_path)
+        kb4 = io.Reader().run(path_core_2, self.seq_path, rewrite_seq_path=False)
+        self.assertFalse(kb3.is_equal(self.kb))
+        self.assertTrue(kb4.is_equal(self.kb))
+        self.assertTrue(filecmp.cmp(path_seq_2, self.seq_path, shallow=False))            
 
     def test_write_with_repo_md(self):
         _, core_path = tempfile.mkstemp(suffix='.xlsx', dir='.')
@@ -122,10 +154,12 @@ class TestIO(unittest.TestCase):
 
     def test_write_without_cell_relationships(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        seq_path = os.path.join(self.dir, 'seq.fna')
+        seq_path = os.path.join(self.dir, 'test_seq.fna')
 
-        dna = core.DnaSpeciesType(id='chr_x')
-        dna.seq = Bio.Seq.Seq('ACGT')
+        with open(seq_path, 'w') as file:
+            file.write('>chr_x\nACGT\n')
+
+        dna = core.DnaSpeciesType(id='chr_x', sequence_path=seq_path)
         self.kb.cell.species_types.append(dna)
 
         trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_x_0')
@@ -138,8 +172,8 @@ class TestIO(unittest.TestCase):
 
     def test_write_read_sloppy(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        seq_path = os.path.join(self.dir, 'seq.fna')
-
+        seq_path = os.path.join(self.dir, 'test_seq.fna')
+        
         writer = io.Writer()
         writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=False)
 
@@ -150,16 +184,17 @@ class TestIO(unittest.TestCase):
 
         reader = io.Reader()
         with self.assertRaisesRegex(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
-            kb = reader.run(core_path, seq_path)
-        kb = reader.run(core_path, seq_path, strict=False)
+            kb = reader.run(core_path, self.seq_path)
+        kb = reader.run(core_path, self.seq_path, strict=False)
 
         self.assertTrue(kb.is_equal(self.kb))
+        self.assertTrue(filecmp.cmp(self.seq_path, seq_path, shallow=False))
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
         obj_model.io.WorkbookWriter().run(core_path, [], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
 
-        seq_path = os.path.join(self.dir, 'seq.fna')
+        seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
@@ -177,7 +212,7 @@ class TestIO(unittest.TestCase):
         core_path = os.path.join(self.dir, 'core.xlsx')
         obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
 
-        seq_path = os.path.join(self.dir, 'seq.fna')
+        seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
@@ -191,7 +226,7 @@ class TestIO(unittest.TestCase):
         core_path = os.path.join(self.dir, 'core.xlsx')
         obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
 
-        seq_path = os.path.join(self.dir, 'seq.fna')
+        seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
@@ -206,7 +241,7 @@ class TestIO(unittest.TestCase):
         core_path = os.path.join(self.dir, 'core.xlsx')
         obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
 
-        seq_path = os.path.join(self.dir, 'seq.fna')
+        seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
@@ -222,14 +257,17 @@ class TestIO(unittest.TestCase):
         path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
         io.Writer().run(self.kb, path_core_1, path_seq_1, set_repo_metadata_from_path=False)
+        self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
-        kb = io.Reader().run(path_core_2, path_seq_2)
+        kb = io.Reader().run(path_core_2, self.seq_path)
         self.assertTrue(kb.is_equal(self.kb))
+        self.assertTrue(filecmp.cmp(path_seq_1, path_seq_2, shallow=False))
 
         io.convert(path_core_2, path_seq_2, path_core_3, path_seq_3)
-        kb = io.Reader().run(path_core_3, path_seq_3)
+        kb = io.Reader().run(path_core_3, self.seq_path)
         self.assertTrue(kb.is_equal(self.kb))
+        self.assertTrue(filecmp.cmp(path_seq_2, path_seq_3, shallow=False))
 
     def test_convert_sloppy(self):
         path_core_1 = os.path.join(self.dir, 'core_1.xlsx')
@@ -240,6 +278,7 @@ class TestIO(unittest.TestCase):
         path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
         io.Writer().run(self.kb, path_core_1, path_seq_1, set_repo_metadata_from_path=False)
+        self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         wb = wc_utils.workbook.io.read(path_core_1)
         row = wb['Knowledge base'].pop(0)
@@ -249,12 +288,14 @@ class TestIO(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
             io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
         io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2, strict=False)
-        kb = io.Reader().run(path_core_2, path_seq_2)
+        kb = io.Reader().run(path_core_2, self.seq_path)
         self.assertTrue(kb.is_equal(self.kb))
+        self.assertTrue(filecmp.cmp(path_seq_1, path_seq_2, shallow=False))
 
         io.convert(path_core_2, path_seq_2, path_core_3, path_seq_3)
-        kb = io.Reader().run(path_core_3, path_seq_3)
+        kb = io.Reader().run(path_core_3, self.seq_path)
         self.assertTrue(kb.is_equal(self.kb))
+        self.assertTrue(filecmp.cmp(path_seq_2, path_seq_3, shallow=False))
 
     def test_create_template(self):
         path_core = os.path.join(self.dir, 'template.xlsx')
