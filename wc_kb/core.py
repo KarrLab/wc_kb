@@ -1594,16 +1594,25 @@ class DnaSpeciesType(PolymerSpeciesType):
 
             :math:`N_A * dAMP + N_C * dCMP + N_G * dGMP + N_T * dTMP - L * OH`
 
+        N's in the sequence will be distributed into the four bases by preserving the original ratio    
+
         Returns:
            :obj:`chem.EmpiricalFormula`: empirical formula
         """
         seq = self.get_seq()
-        n_a = seq.count('A')
-        n_c = seq.count('C')
-        n_g = seq.count('G')
-        n_t = seq.count('T')
-        l = len(seq)
-
+        n_a = seq.upper().count('A')
+        n_c = seq.upper().count('C')
+        n_g = seq.upper().count('G')
+        n_t = seq.upper().count('T')
+        n_n = seq.upper().count('N')
+        
+        l = len(seq)         
+        known_bases = n_a + n_c + n_g + n_t
+        n_a += round(n_a / known_bases * n_n)
+        n_c += round(n_c / known_bases * n_n)
+        n_g += round(n_g / known_bases * n_n)        
+        n_t = l - (n_a + n_c + n_g)
+       
         if self.double_stranded:
             n_a = n_a + n_t
             n_t = n_a

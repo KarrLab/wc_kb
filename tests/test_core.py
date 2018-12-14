@@ -172,7 +172,8 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
         self.tmp_dirname = tempfile.mkdtemp()
         filepath = os.path.join(self.tmp_dirname, 'test_seq.fasta')
         with open(filepath, 'w') as f:
-            f.write('>dna1\nACGTACGT\n')
+            f.write('>dna1\nACGTACGT\n'
+                    '>dna2\nACGTACGTNNNN\n')
 
         dna = core.DnaSpeciesType(id='dna1', name='dna1', sequence_path=filepath,
                                   circular=False, double_stranded=False, ploidy=2)
@@ -269,6 +270,19 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
             - 16 * mendeleev.element('H').atomic_weight
 
         self.assertAlmostEqual(dna.get_mol_wt(), exp_mol_wt, places=0)
+
+        # If there are N's in the DNA sequence
+        dna2 = core.DnaSpeciesType(id='dna2', sequence_path=filepath,
+                                  circular=False, double_stranded=True)
+
+        L = dna2.get_len()
+        self.assertEqual(dna2.get_empirical_formula(),
+                         chem.EmpiricalFormula('C10H12N5O6P') * 3 * 2
+                         + chem.EmpiricalFormula('C9H12N3O7P') * 3 * 2
+                         + chem.EmpiricalFormula('C10H12N5O7P') * 3 * 2
+                         + chem.EmpiricalFormula('C10H13N2O8P') * 3 * 2
+                         - chem.EmpiricalFormula('OH') * (L - 1) * 2
+                         )
 
         shutil.rmtree(self.tmp_dirname)  
 
