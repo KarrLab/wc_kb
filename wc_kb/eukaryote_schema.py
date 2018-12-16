@@ -72,11 +72,16 @@ class ExonLocus(core.PolymerLocus):
 class CdsLocus(core.PolymerLocus):
     """ Knowledge of an coding region
 
+    Attributes:
+        exon (:obj:`ExonLocus`): exon
+
     Related attributes:
         protein (:obj:`ProteinSpeciesType`): protein
     """        
+    exon = obj_model.OneToOneAttribute(ExonLocus, related_name='cds_loci')
+
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'start', 'end', 
+        attribute_order = ('id', 'polymer', 'name', 'exon', 'start', 'end', 
                            'comments', 'references', 'database_references')
         verbose_name = 'CDS loci'                           
 
@@ -307,7 +312,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     Attributes:
         uniprot (:obj:`str`): uniprot id
         transcript (:obj:`TranscriptSpeciesType`): transcript
-        coding_region (:obj:`CdsLocus`): CDS Locus
+        coding_regions (:obj:1list` of :obj:`CdsLocus`): CDS Loci
 
     Related attributes:
         regulatory_elements (:obj:`RegulatoryElementLocus`): protein binding sites    
@@ -315,10 +320,10 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     uniprot = obj_model.StringAttribute()
     transcript = obj_model.OneToOneAttribute(TranscriptSpeciesType, related_name='protein')
-    coding_region = obj_model.OneToOneAttribute(CdsLocus, related_name='protein')
+    coding_regions = obj_model.OneToManyAttribute(CdsLocus, related_name='protein')
     
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_region', 'half_life', 
+        attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 'half_life', 
                            'comments', 'references', 'database_references')
 
     def get_seq(self, table=1, cds=True):
@@ -332,11 +337,11 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        dna_seq = ''           
-        for exon in self.transcript.exons:                
+        dna_seq = ''
+
+        for cds in sorted(self.coding_regions, key=lambda x: x.start):                
             dna_seq += self.transcript.rna.gene.polymer.get_subseq(
-                    start=max(self.coding_region.start, exon.start), 
-                    end=min(self.coding_region.end, exon.end))
+                    start=cds.start, end=cds.end)
         
         if self.transcript.rna.gene.strand == core.PolymerStrand.negative:
             dna_seq = dna_seq.reverse_complement()
