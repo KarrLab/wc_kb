@@ -208,23 +208,22 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         
         gene1 = eukaryote_schema.GeneLocus(
             polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
-        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)
-        
-        exon1 = eukaryote_schema.ExonLocus(start=1, end=4)
-        exon2 = eukaryote_schema.ExonLocus(start=7, end=8)
+        rna1 = eukaryote_schema.PreRnaSpeciesType(gene=gene1)        
+        exon1_1 = eukaryote_schema.ExonLocus(start=1, end=4)
+        exon1_2 = eukaryote_schema.ExonLocus(start=7, end=8)
         transcript1 = eukaryote_schema.TranscriptSpeciesType(
-            rna=rna1, exons=[exon1, exon2])
+            rna=rna1, exons=[exon1_1, exon1_2])
         
         gene2 = eukaryote_schema.GeneLocus(
             polymer=dna1, start=4, end=18, strand=core.PolymerStrand.negative)
         rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)      
-        exon1 = eukaryote_schema.ExonLocus(start=4, end=10)
-        exon2 = eukaryote_schema.ExonLocus(start=14, end=16)
+        exon2_1 = eukaryote_schema.ExonLocus(start=4, end=10)
+        exon2_2 = eukaryote_schema.ExonLocus(start=14, end=16)
         transcript2 = eukaryote_schema.TranscriptSpeciesType(
-            rna=rna2, exons=[exon1, exon2])
+            rna=rna2, exons=[exon2_1, exon2_2])
 
         self.assertEqual(transcript1.get_seq(), 'ACUGUU')
-        self.assertEqual(transcript2.get_seq(), 'ACGGUAACUC')
+        self.assertEqual(transcript2.get_seq(), 'ACGGUAACUC') 
 
     def test_get_empirical_formula(self):
         dna1 = core.DnaSpeciesType(id='dna3', sequence_path=self.sequence_path)        
@@ -309,8 +308,8 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.tmp_dirname = tempfile.mkdtemp()
         sequence_path = os.path.join(self.tmp_dirname, 'test_seq.fasta')
         with open(sequence_path, 'w') as f:
-            f.write('>dna1\nTTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTTTACAGTTYCGGGGTCAGCAGAAATTTTTTCATTTT\n')
-                    
+            f.write('>dna1\nTTTATGAARGTNCTCATHAAYAARAAYGARCTCTAGTTTATGAARTTYAARTTYCTCCTCACNCCNCTCTAATTT\n')
+    
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=sequence_path)
 
         cell1 = dna1.cell = core.Cell()           
@@ -324,7 +323,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
             uniprot='Q12X34', transcript=transcript1, coding_regions=[cds1], half_life=0.35)
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1,
-            start=30, end=75, strand=core.PolymerStrand.negative)
+            start=30, end=75, strand=core.PolymerStrand.positive)
         rna2 = eukaryote_schema.PreRnaSpeciesType(gene=gene2)
         exon2_1 = eukaryote_schema.ExonLocus(start=32, end=35)
         exon2_2 = eukaryote_schema.ExonLocus(start=38, end=45)

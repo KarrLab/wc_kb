@@ -7,6 +7,8 @@
 """
 
 from wc_utils.util import chem
+import Bio.Alphabet
+import Bio.Seq
 import enum
 import obj_model
 from wc_kb import core
@@ -243,15 +245,15 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        dna_seq = ''
+        dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet())
 
-        for exon in self.exons:                
+        for exon in sorted(self.exons, key=lambda x: x.start):                
             dna_seq += self.rna.gene.polymer.get_subseq(
                     start=exon.start, end=exon.end)
 
         if self.rna.gene.strand==core.PolymerStrand.negative:
             dna_seq = dna_seq.reverse_complement()    
-        
+
         return dna_seq.transcribe()    
 
     def get_empirical_formula(self):
@@ -320,7 +322,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     uniprot = obj_model.StringAttribute()
     transcript = obj_model.OneToOneAttribute(TranscriptSpeciesType, related_name='protein')
-    coding_regions = obj_model.OneToManyAttribute(CdsLocus, related_name='protein')
+    coding_regions = obj_model.ManyToManyAttribute(CdsLocus, related_name='protein')
     
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 'half_life', 
@@ -337,15 +339,15 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        dna_seq = ''
+        dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet())
 
         for cds in sorted(self.coding_regions, key=lambda x: x.start):                
             dna_seq += self.transcript.rna.gene.polymer.get_subseq(
                     start=cds.start, end=cds.end)
-        
+
         if self.transcript.rna.gene.strand == core.PolymerStrand.negative:
-            dna_seq = dna_seq.reverse_complement()
-            
+            dna_seq = dna_seq.reverse_complement()    
+                    
         return dna_seq.transcribe().translate(table=table, cds=cds)
 
     def get_empirical_formula(self, table=1, cds=True):
