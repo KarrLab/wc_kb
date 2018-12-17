@@ -80,7 +80,7 @@ class CdsLocus(core.PolymerLocus):
     Related attributes:
         protein (:obj:`ProteinSpeciesType`): protein
     """        
-    exon = obj_model.OneToOneAttribute(ExonLocus, related_name='cds_loci')
+    exon = obj_model.ManyToOneAttribute(ExonLocus, related_name='cds_loci')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'exon', 'start', 'end', 
