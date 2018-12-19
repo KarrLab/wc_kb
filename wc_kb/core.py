@@ -22,7 +22,6 @@ import enum
 import math
 import obj_model.abstract
 import obj_model
-import obj_model.extra_attributes
 import openbabel
 import pkg_resources
 import re
