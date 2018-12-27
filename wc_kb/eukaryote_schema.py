@@ -29,11 +29,24 @@ class RegulatoryElementType(enum.Enum):
 
 
 class ActivityLevel(enum.Enum):
+    """ Activity level of regulatory element"""
     active = 1
     poised = 2
     repressed = 3
     inactive = 4
     na = 5
+
+
+class RegulationType(enum.Enum):
+    """ Type of regulation between a regulatory element and a gene """
+    proximal = 1
+    distal = 2
+
+
+class RegulatoryDirection(enum.Enum):
+    """ The direction of regulation """
+    positive = 1
+    negative = -1
 
 
 #####################
@@ -50,7 +63,7 @@ class GeneLocus(core.PolymerLocus):
 
     Related attributes:
         rna (:obj:`list` of :obj:`PreRnaSpeciesType`): rna
-        regulatory_modules (:obj:`RegulatoryModule`): regulatory_modules
+        regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory_modules
     """
     symbol = obj_model.StringAttribute()
     type = obj_model.EnumAttribute(core.GeneType)
@@ -108,7 +121,7 @@ class RegulatoryElementLocus(core.PolymerLocus):
     motif_features = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_elements')
     
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'type', 'activity', 
+        attribute_order = ('id', 'polymer', 'name', 'type', 'activity', 'strand', 
                            'start', 'end', 'bound_start', 'bound_end', 'motif_features', 
                            'comments', 'references', 'database_references')
 
@@ -116,22 +129,33 @@ class RegulatoryElementLocus(core.PolymerLocus):
 class RegulatoryModule(obj_model.Model):
     """ Knowledge about regulatory modules
 
-    Attributes:        
+    Attributes:
+        id (:obj:`str`): identifier
+        name (:obj:`str`): name        
         gene (:obj:`GeneLocus`): gene
-        regulatory_elements (:obj:`list` of :obj:`RegulatoryElementLocus`): regulatory elements
+        regulatory_element (:obj:`RegulatoryElementLocus`): regulatory element
+        binding_factor (:obj:`ProteinSpeciesType`): binding factor
+        type (:obj:`RegulationType`): type of regulation (proximal or distal)
+        direction (:obj:`RegulatoryDirection`): direction of regulation
         comments (:obj:`str`): comments
         references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
     """
-    gene = obj_model.OneToOneAttribute(GeneLocus, related_name='regulatory_modules')
-    regulatory_elements = obj_model.ManyToManyAttribute(
+    id = obj_model.SlugAttribute(primary=True, unique=True)
+    name = obj_model.StringAttribute()
+    gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='regulatory_modules')
+    regulatory_element = obj_model.ManyToOneAttribute(
         RegulatoryElementLocus, related_name='regulatory_modules')
+    binding_factor = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='regulatory_modules')
+    type = obj_model.EnumAttribute(RegulationType)
+    direction = obj_model.EnumAttribute(RegulatoryDirection)
     comments = obj_model.LongStringAttribute()
     references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
     database_references = core.DatabaseReferenceAttribute(related_name='regulatory_modules')    
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('gene', 'regulatory_elements', 'comments', 'references', 'database_references')
+        attribute_order = ('id', 'name', 'gene', 'regulatory_element', 'binding_factor', 'type', 
+                            'direction', 'comments', 'references', 'database_references')
 
 
 #####################
@@ -314,10 +338,11 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     Attributes:
         uniprot (:obj:`str`): uniprot id
         transcript (:obj:`TranscriptSpeciesType`): transcript
-        coding_regions (:obj:1list` of :obj:`CdsLocus`): CDS Loci
+        coding_regions (:obj:`list` of :obj:`CdsLocus`): CDS Loci
 
     Related attributes:
-        regulatory_elements (:obj:`RegulatoryElementLocus`): protein binding sites    
+        regulatory_elements (:obj:`list` of `RegulatoryElementLocus`): potential binding sites
+        regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory DNA binding sites    
     """
 
     uniprot = obj_model.StringAttribute()

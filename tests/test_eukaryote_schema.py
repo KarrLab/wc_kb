@@ -501,12 +501,29 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         promoter = eukaryote_schema.RegulatoryElementLocus(polymer=dna1, start=6, end=8)
         enhancer = eukaryote_schema.RegulatoryElementLocus(polymer=dna1, start=2, end=4)
 
+        tf = eukaryote_schema.ProteinSpeciesType(id='tf')
+
         reg_module1 = eukaryote_schema.RegulatoryModule(gene=gene1, 
-            regulatory_elements=[promoter, enhancer])
-        reg_module2 = eukaryote_schema.RegulatoryModule(gene=gene2, 
-            regulatory_elements=[enhancer])
+            regulatory_element=promoter, binding_factor=tf, 
+            type=eukaryote_schema.RegulationType.proximal, 
+            direction=eukaryote_schema.RegulatoryDirection.positive)
+        reg_module2 = eukaryote_schema.RegulatoryModule(gene=gene1, 
+            regulatory_element=enhancer, binding_factor=tf, 
+            type=eukaryote_schema.RegulationType.distal, 
+            direction=eukaryote_schema.RegulatoryDirection.negative)
+        reg_module3 = eukaryote_schema.RegulatoryModule(id='rm3', name='reg_module3', 
+            gene=gene2, regulatory_element=enhancer)
          
         self.assertEqual(reg_module1.gene, gene1)
-        self.assertEqual(reg_module1.regulatory_elements, [promoter, enhancer])
-        self.assertEqual(reg_module2.gene, gene2)
-        self.assertEqual(reg_module2.regulatory_elements, [enhancer])
+        self.assertEqual(reg_module1.regulatory_element, promoter)
+        self.assertEqual(reg_module1.binding_factor, tf)
+        self.assertEqual(reg_module1.type.value, 1)
+        self.assertEqual(reg_module1.direction.value, 1)
+        self.assertEqual(reg_module2.gene, gene1)
+        self.assertEqual(reg_module2.regulatory_element, enhancer)
+        self.assertEqual(reg_module2.binding_factor, tf)
+        self.assertEqual(reg_module2.type.value, 2)
+        self.assertEqual(reg_module2.direction.value, -1)
+        self.assertEqual(reg_module3.id, 'rm3')
+        self.assertEqual(reg_module3.name, 'reg_module3')
+        self.assertEqual(set([i.gene for i in enhancer.regulatory_modules]), set([gene1, gene2]))
