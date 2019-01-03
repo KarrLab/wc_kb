@@ -66,7 +66,7 @@ class KnowledgeBaseTestCase(unittest.TestCase):
     def test_constructor(self):
         kb = core.KnowledgeBase()
         self.assertEqual(kb.cell, None)
-        
+
 
 class CellTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -82,7 +82,7 @@ class CellTestCase(unittest.TestCase):
 
         self.assertEqual(cell.species_types.get(
             __type=core.DnaSpeciesType), [])
-        
+
 
 class CompartmentTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -284,7 +284,7 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
                          - chem.EmpiricalFormula('OH') * (L - 1) * 2
                          )
 
-        shutil.rmtree(self.tmp_dirname)  
+        shutil.rmtree(self.tmp_dirname)
 
 
 class PolymerLocusTestCase(unittest.TestCase):
@@ -321,7 +321,7 @@ class PolymerLocusTestCase(unittest.TestCase):
         self.assertEqual(locus1.get_seq(), rev_comp_seq)
         self.assertEqual(locus1.get_len(), 15)
 
-        shutil.rmtree(self.tmp_dirname)  
+        shutil.rmtree(self.tmp_dirname)
 
 
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
@@ -333,8 +333,9 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
             '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
             '/p-2/t4-,6-,7-,10-'
             '/m1'
-            '/s1'
+            '/s1\n'
         ))
+
         self.assertEqual(met.get_structure(), met.structure)
         self.assertEqual(met.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O7P'))
@@ -409,8 +410,8 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         )
 
         self.rate_law_equation_2 = rate_law_equation_2 = core.RateLawEquation(
-            expression='p1*species_type_1[c]*species_type_2[c]/(p2+species_type_2[c]+(species_type_2[c]^2/p3))', 
-            modifiers=[species_1, species_2], 
+            expression='p1*species_type_1[c]*species_type_2[c]/(p2+species_type_2[c]+(species_type_2[c]^2/p3))',
+            modifiers=[species_1, species_2],
             parameters=[parameter_1, parameter_2]
         )
 
@@ -464,7 +465,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         self.assertEqual(self.parameter_3.error, 0.15)
         self.assertEqual(self.parameter_3.units, 'M')
         self.assertEqual(self.parameter_3.references, [])
-        self.assertEqual(self.parameter_3.database_references, [])                                                
+        self.assertEqual(self.parameter_3.database_references, [])
 
     def test_deserialize_RateLawEquation(self):
         attr = core.RateLawEquation.expression
@@ -473,7 +474,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         rle_1, error = core.RateLawEquation.deserialize(attr, self.species_1.id(), self.objects)
         self.assertTrue(error is None)
         self.assertEqual(rle_1.modifiers, [self.species_1])
-        rle_2, error = core.RateLawEquation.deserialize(attr, 
+        rle_2, error = core.RateLawEquation.deserialize(attr,
             'p1*species_type_1[c]*species_type_2[c]/(p2+species_type_2[c]+(species_type_2[c]^2/p3))', self.objects)
         self.assertTrue(error is None)
         self.assertEqual(rle_2.modifiers, [self.species_1, self.species_2])
@@ -510,13 +511,13 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(complex1.formation_process, None)
         self.assertEqual(complex1.subunits, [])
 
-        cofactor1 = core.MetaboliteSpeciesType(id='cofactor1', 
+        cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
             structure='InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2')
         cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
             structure='InChI=1S/Zn/q+2')
 
-        # Test adding subunit composition 
-        # Add subunit composition: (2) cofactor1 + (3) cofactor2 ==> complex1        
+        # Test adding subunit composition
+        # Add subunit composition: (2) cofactor1 + (3) cofactor2 ==> complex1
         species_type_coeff1 = core.SpeciesTypeCoefficient(
             species_type=cofactor1, coefficient=2)
         species_type_coeff2 = core.SpeciesTypeCoefficient(
@@ -733,7 +734,7 @@ class SpeciesCoefficientTestCase(unittest.TestCase):
 
 class SpeciesTypeCoefficientTestCase(unittest.TestCase):
     def test_constructor(self):
-        
+
         met = core.MetaboliteSpeciesType(id='met')
         species_type_coeff = core.SpeciesTypeCoefficient(species_type=met, coefficient=3)
 
@@ -741,7 +742,7 @@ class SpeciesTypeCoefficientTestCase(unittest.TestCase):
         self.assertEqual(species_type_coeff.coefficient, 3)
 
     def test_serialize(self):
-        
+
         met = core.MetaboliteSpeciesType(id='met')
         species_type_coeff = core.SpeciesTypeCoefficient(species_type=met, coefficient=3)
 
@@ -751,26 +752,26 @@ class SpeciesTypeCoefficientTestCase(unittest.TestCase):
         self.assertEqual(core.SpeciesTypeCoefficient._serialize(
             species_type=met, coefficient=1), 'met')
         self.assertEqual(core.SpeciesTypeCoefficient._serialize(
-            species_type=met, coefficient=2000), '(2.000000e+03) met')        
-        
-            
+            species_type=met, coefficient=2000), '(2.000000e+03) met')
+
+
 class SubunitAttributeTestCase(unittest.TestCase):
     def test_SubunitAttribute(self):
         compart1 = core.Compartment(id='c')
-        
+
         met1 = core.MetaboliteSpeciesType(id='met1')
         dna1 = core.DnaSpeciesType(id='dna1')
         complex1 = core.ComplexSpeciesType(id='complex1')
 
         species1 = core.Species(species_type=complex1, compartment=compart1)
-        
+
         species_type_coeff1 = core.SpeciesTypeCoefficient(
             species_type=met1, coefficient=2)
         species_type_coeff2 = core.SpeciesTypeCoefficient(
             species_type=dna1, coefficient=3)
         species_type_coeff3 = core.SpeciesTypeCoefficient(
             species_type=complex1, coefficient=5)
-        
+
         self.assertEqual(
             core.SubunitAttribute().serialize(subunits=[]), '')
         self.assertEqual(core.SubunitAttribute().serialize(subunits=[species_type_coeff1]),
@@ -779,11 +780,11 @@ class SubunitAttributeTestCase(unittest.TestCase):
                          '(3) dna1 + (2) met1')
         self.assertEqual(core.SubunitAttribute().serialize(subunits=[species_type_coeff1, species_type_coeff2, species_type_coeff3]),
                          '(5) complex1 + (3) dna1 + (2) met1')
-        
+
         objects = {
             core.DnaSpeciesType: {
                 'dna1': dna1
-            },            
+            },
             core.MetaboliteSpeciesType: {
                 'met1': met1
             },
@@ -854,7 +855,7 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
                          '(2) met1[c] + (3) met2[c] ==> (7) complex1[m]')
 
         objects = {
-            core.DnaSpeciesType: {},            
+            core.DnaSpeciesType: {},
             core.MetaboliteSpeciesType: {
                 'met1': met1, 'met2': met2
             },
@@ -863,7 +864,7 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
             },
             core.Compartment: {
                 'c': compart1, 'm': compart2
-            },            
+            },
             core.Species: {
                 'met1[c]': species1, 'met2[c]': species2, 'complex1[c]': species3, 'complex[m]': species4
 

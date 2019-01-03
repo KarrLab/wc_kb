@@ -507,9 +507,9 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
         errors = []
         for spec_coeff_match in re.findall(pat_spec_coeff, value, flags=re.I):
             spec_type_errors = []
-            
+
             spec_type_id = spec_coeff_match[5]
-            
+
             spec_type = None
             for species_type_cls in get_subclasses(SpeciesType):
                 if species_type_cls in objects and spec_type_id in objects[species_type_cls]:
@@ -517,8 +517,8 @@ class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
                     break
             if not spec_type:
                 spec_type_errors.append(
-                    'Undefined species type "{}"'.format(spec_type_id))            
-            
+                    'Undefined species type "{}"'.format(spec_type_id))
+
             compartment_id = spec_coeff_match[6]
             if compartment_id in objects[Compartment]:
                 compartment = objects[Compartment][compartment_id]
@@ -766,7 +766,7 @@ class Reference(obj_model.Model):
     """ Reference to the literature
 
     Attributes:
-        id (:obj:`str`): identifier     
+        id (:obj:`str`): identifier
         standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
         cell (:obj:`Cell`): cell
 
@@ -780,12 +780,12 @@ class Reference(obj_model.Model):
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
         observables (:obj:`list` of :obj:`Observable`): observables
     """
-    id = obj_model.SlugAttribute(primary=True, unique=True)    
+    id = obj_model.SlugAttribute(primary=True, unique=True)
     standard_id = obj_model.StringAttribute()
     cell = obj_model.ManyToOneAttribute(Cell, related_name='references')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'standard_id')        
+        attribute_order = ('id', 'standard_id')
 
 
 class Compartment(KnowledgeBaseObject):
@@ -1042,7 +1042,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
         Args:
             species_type (:obj:`SpeciesType`): species_type
             coefficient (:obj:`float`): coefficient
-            
+
         Returns:
             :obj:`str`: string representation of a species type and a coefficient
         """
@@ -1065,7 +1065,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
             attribute (:obj:`Attribute`): attribute
             value (:obj:`str`): String representation
             objects (:obj:`dict`): dictionary of objects, grouped by model
-            
+
         Returns:
             :obj:`tuple` of `list` of `SpeciesTypeCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
                 and cleaning error
@@ -1074,13 +1074,13 @@ class SpeciesTypeCoefficient(obj_model.Model):
         errors = []
         id = r'[a-z][a-z0-9_]*'
         stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = r'({} )*({})'.format(stoch, id)        
-        gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)        
+        gbl_part = r'({} )*({})'.format(stoch, id)
+        gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)
         gbl_pattern = r'^({})$'.format(gbl_side)
-        
+
         global_match = re.match(gbl_pattern, value, flags=re.I)
-        
-        if global_match:           
+
+        if global_match:
             subunits_str = global_match.group(1)
         else:
             attr = cls.Meta.attributes['species_type']
@@ -1096,11 +1096,11 @@ class SpeciesTypeCoefficient(obj_model.Model):
                     break
 
             if not species_type:
-                errors.append('Undefined species type "{}"'.format(part[4]))            
+                errors.append('Undefined species type "{}"'.format(part[4]))
 
             coefficient = float(part[1] or 1.)
 
-            if not errors:          
+            if not errors:
 
                 if coefficient != 0:
                     if cls not in objects:
@@ -1117,7 +1117,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
             return (None, InvalidAttribute(cls, errors))
         return (parts, None)
 
-    
+
 class SpeciesCoefficient(obj_model.Model):
     """ A tuple of a species and a coefficient
 
@@ -1249,7 +1249,7 @@ class PolymerSpeciesType(SpeciesType):
     double_stranded = obj_model.BooleanAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'circular', 'double_stranded', 
+        attribute_order = ('id', 'name', 'circular', 'double_stranded',
                            'half_life', 'comments', 'references', 'database_references')
 
     @abc.abstractmethod
@@ -1381,7 +1381,7 @@ class Observable(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowle
         attribute_order = ('id', 'name', 'cell', 'species',
                            'observables', 'comments', 'references', 'database_references')
 
-    
+
 class ObservableCoefficient(obj_model.Model):
     """ A tuple of observable and coefficient
 
@@ -1500,7 +1500,17 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`str`: structure
         """
-        return self.structure
+
+        ph = 7.95
+        mol = openbabel.OBMol()
+        conversion = openbabel.OBConversion()
+        conversion.SetInFormat('inchi')
+        conversion.ReadString(mol, self.structure)
+        mol.CorrectForPH(ph)
+        conversion.SetOutFormat('inchi')
+        protontated_inchi = conversion.WriteString(mol)
+        
+        return protontated_inchi
 
     def to_openbabel_mol(self):
         """ Convert species type to an Open Babel molecule
@@ -1520,8 +1530,17 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
+
+        ph = 7.95
         mol = self.to_openbabel_mol()
-        return chem.EmpiricalFormula(mol.GetFormula().rstrip('+-'))
+        conversion = openbabel.OBConversion()
+        conversion.SetInFormat('inchi')
+        conversion.ReadString(mol, self.structure)
+        mol.CorrectForPH(ph)
+        conversion.SetOutFormat('inchi')
+        protontated_inchi = conversion.WriteString(mol)
+        protontated_formula = mol.GetFormula().rstrip('+-')
+        return chem.EmpiricalFormula(protontated_formula)
 
     def get_charge(self):
         """ Get the charge
@@ -1529,7 +1548,15 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`int`: charge
         """
+        ph = 7.95
         mol = self.to_openbabel_mol()
+
+        conversion = openbabel.OBConversion()
+        conversion.SetInFormat('inchi')
+        conversion.ReadString(mol, self.structure)
+        mol.CorrectForPH(ph)
+        conversion.SetOutFormat('inchi')
+
         return mol.GetTotalCharge()
 
     def get_mol_wt(self):
@@ -1554,7 +1581,7 @@ class DnaSpeciesType(PolymerSpeciesType):
     ploidy = obj_model.IntegerAttribute(min=0)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'sequence_path', 'circular', 'double_stranded', 
+        attribute_order = ('id', 'name', 'sequence_path', 'circular', 'double_stranded',
             'ploidy', 'half_life', 'comments', 'references', 'database_references')
         verbose_name = 'DNA species type'
 
@@ -1563,14 +1590,14 @@ class DnaSpeciesType(PolymerSpeciesType):
 
         Args:
             start (:obj:`int`, optional): start coordinate of the queried subsequence,
-                default is the start of the full sequence 
+                default is the start of the full sequence
             end (:obj:`int`, optional): end coordinate of the queried subsequence,
                 default is the end of the full sequence
 
         Returns:
             :obj:`Bio.Seq.Seq`: structure
         """
-        
+
         seq_idx = Fasta(self.sequence_path, as_raw=True)
         start = start or 1
         end = end or len(seq_idx[self.id][:])
@@ -1593,7 +1620,7 @@ class DnaSpeciesType(PolymerSpeciesType):
 
             :math:`N_A * dAMP + N_C * dCMP + N_G * dGMP + N_T * dTMP - L * OH`
 
-        N's in the sequence will be distributed into the four bases by preserving the original ratio    
+        N's in the sequence will be distributed into the four bases by preserving the original ratio
 
         Returns:
            :obj:`chem.EmpiricalFormula`: empirical formula
@@ -1604,14 +1631,14 @@ class DnaSpeciesType(PolymerSpeciesType):
         n_g = seq.upper().count('G')
         n_t = seq.upper().count('T')
         n_n = seq.upper().count('N')
-        
-        l = len(seq)         
+
+        l = len(seq)
         known_bases = n_a + n_c + n_g + n_t
         n_a += round(n_a / known_bases * n_n)
         n_c += round(n_c / known_bases * n_n)
-        n_g += round(n_g / known_bases * n_n)        
+        n_g += round(n_g / known_bases * n_n)
         n_t = l - (n_a + n_c + n_g)
-       
+
         if self.double_stranded:
             n_a = n_a + n_t
             n_t = n_a
@@ -1674,8 +1701,8 @@ class ComplexSpeciesType(SpeciesType):
     Attributes:
         formation_process (:obj:`ComplexFormationType`): type of formation process
         subunits (:obj:`list` of :obj:`SpeciesTypeCoefficient`): subunits
-        composition_in_uniprot (:obj:`str`): protein subunit composition in uniprot IDs 
-        complex_type (:obj:`ComplexType`): type of complex        
+        composition_in_uniprot (:obj:`str`): protein subunit composition in uniprot IDs
+        complex_type (:obj:`ComplexType`): type of complex
         binding (:obj:`str`): strand of DNA bound if involved
         region (:obj:`str`): region where DNA is bound if involved
 
@@ -1686,7 +1713,7 @@ class ComplexSpeciesType(SpeciesType):
     composition_in_uniprot = obj_model.StringAttribute()
     complex_type = obj_model.StringAttribute()  # EnumAttribute(ComplexType)
     binding = obj_model.StringAttribute()
-    region = obj_model.StringAttribute()    
+    region = obj_model.StringAttribute()
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'formation_process', 'subunits',
@@ -1842,7 +1869,7 @@ class RateLawEquation(obj_model.Model):
             valid_functions (:obj:`tuple` of `builtin_function_or_method`): tuple of functions that
                 can be used in a `RateLawEquation`s `expression`
             valid_models (:obj:`tuple` of `str`): names of `obj_model.Model`s in this module that a
-                `RateLawEquation` is allowed to reference in its `expression`    
+                `RateLawEquation` is allowed to reference in its `expression`
         """
         attribute_order = ('expression', 'modifiers', 'parameters')
         tabular_orientation = TabularOrientation.inline
@@ -1892,7 +1919,7 @@ class RateLawEquation(obj_model.Model):
                     if error:
                         errors += error.messages
                     else:
-                        parameters.append(parameter)        
+                        parameters.append(parameter)
         except Exception as e:
             errors += ["deserialize fails on '{}': {}".format(value, str(e))]
 
@@ -1917,7 +1944,7 @@ class Reaction(KnowledgeBaseObject):
 
     Attributes:
         cell (:obj:`Cell`): cell
-        submodel (:obj:`str`): submodel where reaction belongs to 
+        submodel (:obj:`str`): submodel where reaction belongs to
         participants (:obj:`list` of :obj:`SpeciesCoefficient`): participants
         reversible (:obj:`boolean`): denotes whether reaction is reversible
         references (:obj:`list` of :obj:`Reference`): references
@@ -1949,11 +1976,11 @@ class Parameter(KnowledgeBaseObject):
         units (:obj:`str`): units of value
         references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
-    
+
     Related attributes:
         rate_law_equations (:obj:`list` of :obj:`RateLawEquation`): rate law equations that use a Parameter
     """
-    
+
     value = FloatAttribute(min=0)
     error = FloatAttribute(min=0)
     units = StringAttribute()
@@ -1961,7 +1988,7 @@ class Parameter(KnowledgeBaseObject):
     database_references = DatabaseReferenceAttribute(related_name='parameters')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'value', 'error', 'units', 'comments', 
+        attribute_order = ('id', 'name', 'value', 'error', 'units', 'comments',
                             'references', 'database_references')
 
 
