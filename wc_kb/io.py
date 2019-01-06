@@ -133,8 +133,7 @@ class Writer(object):
                 writer.write_file(dna_seqs)            
 
         # export core
-        _, ext = os.path.splitext(core_path)
-        writer = obj_model.io.get_writer(ext)()
+        writer = obj_model.io.Writer.get_writer(core_path)()
 
         kwargs = {}
         if isinstance(writer, obj_model.io.WorkbookWriter):
@@ -234,8 +233,7 @@ class Reader(object):
             model_order = EUKARYOTE_MODEL_ORDER      
 
         # read core objects from file
-        _, ext = os.path.splitext(core_path)
-        reader = obj_model.io.get_reader(ext)()
+        reader = obj_model.io.Reader.get_reader(core_path)()
 
         kwargs = {}
         if isinstance(reader, obj_model.io.WorkbookReader):
