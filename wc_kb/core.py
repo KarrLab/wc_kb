@@ -134,7 +134,7 @@ class SubunitAttribute(ManyToManyAttribute):
             return ''
 
         subunits = natsorted(subunits, lambda unit: (
-                unit.species_type.id), alg=ns.IGNORECASE)
+            unit.species_type.id), alg=ns.IGNORECASE)
 
         lhs = []
         for unit in subunits:
@@ -206,8 +206,8 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
             help (:obj:`str`, optional): help message
         """
         super(DatabaseReferenceAttribute, self).__init__(DatabaseReference,
-                                                       related_name=related_name, min_related=0, min_related_rev=0,
-                                                       verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+                                                         related_name=related_name, min_related=0, min_related_rev=0,
+                                                         verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
 
     def serialize(self, database_references, encoded=None):
         """ Serialize related object
@@ -1509,7 +1509,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protontated_inchi = conversion.WriteString(mol)
-        
+
         return protontated_inchi
 
     def to_openbabel_mol(self):
@@ -1582,7 +1582,7 @@ class DnaSpeciesType(PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'sequence_path', 'circular', 'double_stranded',
-            'ploidy', 'half_life', 'comments', 'references', 'database_references')
+                           'ploidy', 'half_life', 'comments', 'references', 'database_references')
         verbose_name = 'DNA species type'
 
     def get_seq(self, start=None, end=None):
@@ -1901,7 +1901,7 @@ class RateLawEquation(obj_model.Model):
         parameters = []
         errors = []
         modifier_pattern = r'(^|[^a-z0-9_])({}\[{}\])([^a-z0-9_]|$)'.format(SpeciesType.id.pattern[1:-1],
-                                                                           Compartment.id.pattern[1:-1])
+                                                                            Compartment.id.pattern[1:-1])
         parameter_pattern = r'(^|[^a-z0-9_\[\]])({})([^a-z0-9_\[\]]|$)'.format(Parameter.id.pattern[1:-1])
 
         reserved_names = set([func.__name__ for func in RateLawEquation.Meta.valid_functions] + ['k_cat', 'k_m'])
@@ -1957,7 +1957,7 @@ class Reaction(KnowledgeBaseObject):
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='reactions')
     participants = ReactionParticipantAttribute(related_name='reactions')
-    submodel   = obj_model.StringAttribute()
+    submodel = obj_model.StringAttribute()
     reversible = obj_model.BooleanAttribute()
     references = obj_model.ManyToManyAttribute(Reference, related_name='reactions')
     database_references = DatabaseReferenceAttribute(related_name='reactions')
@@ -1989,7 +1989,7 @@ class Parameter(KnowledgeBaseObject):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'value', 'error', 'units', 'comments',
-                            'references', 'database_references')
+                           'references', 'database_references')
 
 
 class Property(KnowledgeBaseObject):
@@ -2013,3 +2013,17 @@ class Property(KnowledgeBaseObject):
         attribute_order = ('id', 'name', 'value', 'units', 'comments',
                            'references', 'database_references')
         verbose_name_plural = 'Properties'
+
+
+class Validator(obj_model.Validator):
+    def run(self, knowledge_base, get_related=True):
+        """ Validate a knowledge_base and return its errors
+
+        Args:
+            knowledge_base (:obj:`KnowledgeBase`): knowledge base
+            get_related (:obj:`bool`, optional): if true, get all related objects
+
+        Returns:
+            :obj:`InvalidObjectSet` or `None`: list of invalid objects/models and their errors
+        """
+        return super(Validator, self).run(knowledge_base, get_related=get_related)

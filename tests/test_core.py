@@ -273,7 +273,7 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
 
         # If there are N's in the DNA sequence
         dna2 = core.DnaSpeciesType(id='dna2', sequence_path=filepath,
-                                  circular=False, double_stranded=True)
+                                   circular=False, double_stranded=True)
 
         L = dna2.get_len()
         self.assertEqual(dna2.get_empirical_formula(),
@@ -474,8 +474,10 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         rle_1, error = core.RateLawEquation.deserialize(attr, self.species_1.id(), self.objects)
         self.assertTrue(error is None)
         self.assertEqual(rle_1.modifiers, [self.species_1])
-        rle_2, error = core.RateLawEquation.deserialize(attr,
-            'p1*species_type_1[c]*species_type_2[c]/(p2+species_type_2[c]+(species_type_2[c]^2/p3))', self.objects)
+        rle_2, error = core.RateLawEquation.deserialize(
+            attr,
+            'p1*species_type_1[c]*species_type_2[c]/(p2+species_type_2[c]+(species_type_2[c]^2/p3))',
+            self.objects)
         self.assertTrue(error is None)
         self.assertEqual(rle_2.modifiers, [self.species_1, self.species_2])
         self.assertEqual(rle_2.parameters, [self.parameter_1, self.parameter_2, self.parameter_3])
@@ -512,9 +514,9 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(complex1.subunits, [])
 
         cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
-            structure='InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2')
+                                               structure='InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2')
         cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
-            structure='InChI=1S/Zn/q+2')
+                                               structure='InChI=1S/Zn/q+2')
 
         # Test adding subunit composition
         # Add subunit composition: (2) cofactor1 + (3) cofactor2 ==> complex1
@@ -981,3 +983,12 @@ class ObservableTestCase(unittest.TestCase):
             observable1.species[1].species.species_type.id, 'dna1')
         self.assertIsInstance(
             observable2.observables[0].observable, core.Observable)
+
+
+class ValidatorTestCase(unittest.TestCase):
+    def test(self):
+        kb = core.KnowledgeBase(id='kb', name='test kb', version='0.0.1', wc_kb_version='0.0.1')
+        self.assertEqual(core.Validator().run(kb), None)
+
+        kb.id = ''
+        self.assertNotEqual(core.Validator().run(kb), None)
