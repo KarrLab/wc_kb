@@ -7,6 +7,7 @@
 :License: MIT
 """
 
+from test.support import EnvironmentVarGuard
 from wc_kb import core, prokaryote_schema
 from wc_kb import io
 import Bio.Seq
@@ -35,15 +36,15 @@ class TestIO(unittest.TestCase):
         for i_chr in range(5):
             dna = core.DnaSpeciesType(id='chr_{}'.format(i_chr + 1), sequence_path=self.seq_path)
             cell.species_types.append(dna)
-                
+
             seq_len = random.randint(100, 200)
             bases = 'ACGT'
             seq = ''
             for i_nt in range(seq_len):
                 seq += bases[random.randint(0, 3)]
             dna_seqs.append(Bio.SeqRecord.SeqRecord(
-                    Bio.Seq.Seq(seq), dna.id))              
-                
+                Bio.Seq.Seq(seq), dna.id))
+
             for i_trn in range(5):
                 trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
                 trn.cell = cell
@@ -54,24 +55,24 @@ class TestIO(unittest.TestCase):
 
         with open(self.seq_path, 'w') as file:
             writer = Bio.SeqIO.FastaIO.FastaWriter(
-                    file, wrap=70, record2title=lambda record: record.id)
-            writer.write_file(dna_seqs)            
+                file, wrap=70, record2title=lambda record: record.id)
+            writer.write_file(dna_seqs)
 
     def tearDown(self):
         shutil.rmtree(self.dir)
 
     def test_write_read(self):
-        core_path = os.path.join(self.dir, 'core.xlsx')     
+        core_path = os.path.join(self.dir, 'core.xlsx')
 
         writer = io.Writer()
-        writer.run(self.kb, core_path, set_repo_metadata_from_path=False)
+        writer.run(core_path, self.kb, set_repo_metadata_from_path=False)
 
         reader = io.Reader()
-        kb = reader.run(core_path, self.seq_path)
+        kb = reader.run(core_path, seq_path=self.seq_path)[core.KnowledgeBase][0]
 
         core_path = os.path.join(self.dir, 'core2.xlsx')
         seq_path = os.path.join(self.dir, 'seq2.fna')
-        writer.run(kb, core_path, seq_path, set_repo_metadata_from_path=False)
+        writer.run(core_path, kb, seq_path, set_repo_metadata_from_path=False)
 
         self.assertTrue(self.kb.is_equal(kb))
         self.assertTrue(filecmp.cmp(self.seq_path, seq_path, shallow=False))
@@ -80,18 +81,18 @@ class TestIO(unittest.TestCase):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         core_path = os.path.join(fixtures, 'core.xlsx')
         seq_path = os.path.join(fixtures, 'seq.fna')
-                
+
         reader = io.Reader()
-        kb = reader.run(core_path, seq_path)
-        
+        kb = reader.run(core_path, seq_path=seq_path)[core.KnowledgeBase][0]
+
         tmp_core_path = os.path.join(self.dir, 'tmp_core.xlsx')
         tmp_seq_path = os.path.join(self.dir, 'tmp_seq.fna')
-        
+
         writer = io.Writer()
-        writer.run(kb, tmp_core_path, tmp_seq_path, set_repo_metadata_from_path=False)
-        
-        tmp_kb = reader.run(tmp_core_path, seq_path)        
-        
+        writer.run(tmp_core_path, kb, seq_path=tmp_seq_path, set_repo_metadata_from_path=False)
+
+        tmp_kb = reader.run(tmp_core_path, seq_path)[core.KnowledgeBase][0]
+
         self.assertTrue(kb.is_equal(tmp_kb))
         self.assertTrue(filecmp.cmp(tmp_seq_path, seq_path, shallow=False))
 
@@ -99,40 +100,48 @@ class TestIO(unittest.TestCase):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         core_path = os.path.join(fixtures, 'eukaryote_core.xlsx')
         seq_path = os.path.join(fixtures, 'eukaryote_seq.fna')
-                
+
         reader = io.Reader()
-        kb = reader.run(core_path, seq_path, schema=False)
-        
+        kb = reader.run(core_path, seq_path=seq_path, taxon='eukaryote')[core.KnowledgeBase][0]
+
         tmp_core_path = os.path.join(self.dir, 'tmp_eukaryote_core.xlsx')
         tmp_seq_path = os.path.join(self.dir, 'tmp_eukaryote_seq.fna')
 
         writer = io.Writer()
-        writer.run(kb, tmp_core_path, tmp_seq_path, schema=False, set_repo_metadata_from_path=False)
-        
-        tmp_kb = reader.run(tmp_core_path, seq_path, schema=False)
-        
+        writer.run(tmp_core_path, kb, seq_path=tmp_seq_path, taxon='eukaryote', set_repo_metadata_from_path=False)
+
+        tmp_kb = reader.run(tmp_core_path, seq_path, taxon='eukaryote')[core.KnowledgeBase][0]
+
         self.assertTrue(kb.is_equal(tmp_kb))
         self.assertTrue(filecmp.cmp(tmp_seq_path, seq_path, shallow=False))
 
     def test_rewrite_seq_path_in_read_write(self):
-        path_core_1 = os.path.join(self.dir, 'core_1.xlsx')        
+        path_core_1 = os.path.join(self.dir, 'core_1.xlsx')
         path_core_2 = os.path.join(self.dir, 'core_2.xlsx')
         path_seq_1 = os.path.join(self.dir, 'seq_1.fna')
         path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
-        
-        io.Writer().run(self.kb, path_core_1, path_seq_1, set_repo_metadata_from_path=False)
-        kb1 = io.Reader().run(path_core_1, path_seq_1)
-        kb2 = io.Reader().run(path_core_1, path_seq_1, rewrite_seq_path=False)
+
+        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, set_repo_metadata_from_path=False)
+        kb1 = io.Reader().run(path_core_1, seq_path=path_seq_1)[core.KnowledgeBase][0]
+        kb2 = io.Reader().run(path_core_1, seq_path=path_seq_1, rewrite_seq_path=False)[core.KnowledgeBase][0]
+        kb3 = io.Reader().run(path_core_1, seq_path=self.seq_path)[core.KnowledgeBase][0]
+        kb4 = io.Reader().run(path_core_1, seq_path=self.seq_path, rewrite_seq_path=False)[core.KnowledgeBase][0]
         self.assertFalse(kb1.is_equal(self.kb))
-        self.assertTrue(kb2.is_equal(self.kb))
+        self.assertFalse(kb2.is_equal(self.kb))
+        self.assertTrue(kb3.is_equal(self.kb))
+        self.assertFalse(kb4.is_equal(self.kb))
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
-        io.Writer().run(self.kb, path_core_2, path_seq_2, rewrite_seq_path=True, set_repo_metadata_from_path=False)
-        kb3 = io.Reader().run(path_core_2, self.seq_path)
-        kb4 = io.Reader().run(path_core_2, self.seq_path, rewrite_seq_path=False)
-        self.assertFalse(kb3.is_equal(self.kb))
-        self.assertTrue(kb4.is_equal(self.kb))
-        self.assertTrue(filecmp.cmp(path_seq_2, self.seq_path, shallow=False))            
+        io.Writer().run(path_core_2, self.kb, seq_path=path_seq_2, rewrite_seq_path=False, set_repo_metadata_from_path=False)
+        kb5 = io.Reader().run(path_core_2, seq_path=path_seq_2)[core.KnowledgeBase][0]
+        kb6 = io.Reader().run(path_core_2, seq_path=path_seq_2, rewrite_seq_path=False)[core.KnowledgeBase][0]
+        kb7 = io.Reader().run(path_core_2, seq_path=self.seq_path)[core.KnowledgeBase][0]
+        kb8 = io.Reader().run(path_core_2, seq_path=self.seq_path, rewrite_seq_path=False)[core.KnowledgeBase][0]
+        self.assertFalse(kb5.is_equal(self.kb))
+        self.assertTrue(kb6.is_equal(self.kb))
+        self.assertTrue(kb7.is_equal(self.kb))
+        self.assertTrue(kb8.is_equal(self.kb))
+        self.assertTrue(filecmp.cmp(path_seq_2, self.seq_path, shallow=False))
 
     def test_write_with_repo_md(self):
         _, core_path = tempfile.mkstemp(suffix='.xlsx', dir='.')
@@ -141,7 +150,7 @@ class TestIO(unittest.TestCase):
         self.assertEqual(self.kb.url, '')
 
         writer = io.Writer()
-        writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=True)
+        writer.run(core_path, self.kb, seq_path=seq_path, set_repo_metadata_from_path=True)
 
         self.assertIn(self.kb.url, [
             'https://github.com/KarrLab/wc_kb.git',
@@ -168,14 +177,14 @@ class TestIO(unittest.TestCase):
 
         writer = io.Writer()
         with self.assertRaisesRegex(ValueError, 'must be set to the instance of `Cell`'):
-            writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=False)
+            writer.run(core_path, self.kb, seq_path=seq_path, set_repo_metadata_from_path=False)
 
     def test_write_read_sloppy(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
         seq_path = os.path.join(self.dir, 'test_seq.fna')
-        
+
         writer = io.Writer()
-        writer.run(self.kb, core_path, seq_path, set_repo_metadata_from_path=False)
+        writer.run(core_path, self.kb, seq_path=seq_path, set_repo_metadata_from_path=False)
 
         wb = wc_utils.workbook.io.read(core_path)
         row = wb['Knowledge base'].pop(0)
@@ -184,54 +193,56 @@ class TestIO(unittest.TestCase):
 
         reader = io.Reader()
         with self.assertRaisesRegex(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
-            kb = reader.run(core_path, self.seq_path)
-        kb = reader.run(core_path, self.seq_path, strict=False)
+            reader.run(core_path, seq_path=self.seq_path)
+        env = EnvironmentVarGuard()
+        env.set('CONFIG__DOT__wc_kb__DOT__io__DOT__strict', '0')
+        with env:
+            kb = reader.run(core_path, self.seq_path)[core.KnowledgeBase][0]
 
         self.assertTrue(kb.is_equal(self.kb))
         self.assertTrue(filecmp.cmp(self.seq_path, seq_path, shallow=False))
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [], io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
-        kb = io.Reader().run(core_path, seq_path)
-        self.assertEqual(kb, None)
+        with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
+            io.Reader().run(core_path, seq_path=seq_path)
 
-        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
-        with self.assertRaisesRegex(ValueError, 'cannot contain instances'):
-            io.Reader().run(core_path, seq_path)
+        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
+            io.Reader().run(core_path, seq_path=seq_path)
 
     def test_reader_error_multiple_kbs(self):
         kb1 = core.KnowledgeBase(id='kb1', name='kb1', version='0.0.1')
         kb2 = core.KnowledgeBase(id='kb2', name='kb2', version='0.0.1')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
         with self.assertRaisesRegex(ValueError, ' should define one knowledge base'):
-            io.Reader().run(core_path, seq_path)
+            io.Reader().run(core_path, seq_path=seq_path)
 
-    def test_reader_error_no_cell(self):
+    def test_reader_no_cell(self):
         kb = core.KnowledgeBase(id='kb', name='kb1', version='0.0.1')
         dna = core.DnaSpeciesType(id='chr')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
-        with self.assertRaisesRegex(ValueError, 'cannot contain instances'):
-            io.Reader().run(core_path, seq_path)
+        io.Reader().run(core_path, seq_path=seq_path)
 
     def test_reader_error_multiple_cells(self):
         kb = core.KnowledgeBase(id='kb', name='kb1', version='0.0.1')
@@ -239,14 +250,14 @@ class TestIO(unittest.TestCase):
         cell2 = core.Cell(id='cell2', name='cell2')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.PROKARYOTE_MODEL_ORDER, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
             pass
 
-        with self.assertRaisesRegex(ValueError, ' should define one cell'):
-            io.Reader().run(core_path, seq_path)
+        with self.assertRaisesRegex(ValueError, ' should define zero or one cells'):
+            io.Reader().run(core_path, seq_path=seq_path)
 
     def test_convert(self):
         path_core_1 = os.path.join(self.dir, 'core_1.xlsx')
@@ -256,16 +267,16 @@ class TestIO(unittest.TestCase):
         path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
         path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
-        io.Writer().run(self.kb, path_core_1, path_seq_1, set_repo_metadata_from_path=False)
+        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, set_repo_metadata_from_path=False)
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
-        kb = io.Reader().run(path_core_2, self.seq_path)
+        kb = io.Reader().run(path_core_2, seq_path=self.seq_path)[core.KnowledgeBase][0]
         self.assertTrue(kb.is_equal(self.kb))
         self.assertTrue(filecmp.cmp(path_seq_1, path_seq_2, shallow=False))
 
         io.convert(path_core_2, path_seq_2, path_core_3, path_seq_3)
-        kb = io.Reader().run(path_core_3, self.seq_path)
+        kb = io.Reader().run(path_core_3, seq_path=self.seq_path)[core.KnowledgeBase][0]
         self.assertTrue(kb.is_equal(self.kb))
         self.assertTrue(filecmp.cmp(path_seq_2, path_seq_3, shallow=False))
 
@@ -277,7 +288,7 @@ class TestIO(unittest.TestCase):
         path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
         path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
-        io.Writer().run(self.kb, path_core_1, path_seq_1, set_repo_metadata_from_path=False)
+        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, set_repo_metadata_from_path=False)
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         wb = wc_utils.workbook.io.read(path_core_1)
@@ -287,13 +298,16 @@ class TestIO(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "The columns of worksheet 'Knowledge base' must be defined in this order"):
             io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
-        io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2, strict=False)
-        kb = io.Reader().run(path_core_2, self.seq_path)
+        env = EnvironmentVarGuard()
+        env.set('CONFIG__DOT__wc_kb__DOT__io__DOT__strict', '0')
+        with env:
+            io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
+        kb = io.Reader().run(path_core_2, seq_path=self.seq_path)[core.KnowledgeBase][0]
         self.assertTrue(kb.is_equal(self.kb))
         self.assertTrue(filecmp.cmp(path_seq_1, path_seq_2, shallow=False))
 
         io.convert(path_core_2, path_seq_2, path_core_3, path_seq_3)
-        kb = io.Reader().run(path_core_3, self.seq_path)
+        kb = io.Reader().run(path_core_3, seq_path=self.seq_path)[core.KnowledgeBase][0]
         self.assertTrue(kb.is_equal(self.kb))
         self.assertTrue(filecmp.cmp(path_seq_2, path_seq_3, shallow=False))
 
@@ -301,7 +315,7 @@ class TestIO(unittest.TestCase):
         path_core = os.path.join(self.dir, 'template.xlsx')
         path_seq = os.path.join(self.dir, 'template_seq.fna')
         io.create_template(path_core, path_seq, set_repo_metadata_from_path=False)
-        kb = io.Reader().run(path_core, path_seq)
+        kb = io.Reader().run(path_core, seq_path=path_seq)[core.KnowledgeBase][0]
 
     def test_validate_implicit_relationships(self):
         class TestModel(obj_model.Model):
@@ -317,7 +331,7 @@ class TestIO(unittest.TestCase):
         try:
             core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(core.Cell, related_name='c')
             with self.assertRaisesRegex(Exception,
-                'Relationships to `KnowledgeBase` that are not one-to-one are prohibited'):
+                                        'Relationships to `KnowledgeBase` that are not one-to-one are prohibited'):
                 io.Writer.validate_implicit_relationships()
         finally:
             core.KnowledgeBase.Meta.related_attributes.pop('test')
@@ -325,7 +339,7 @@ class TestIO(unittest.TestCase):
         try:
             core.Cell.Meta.attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='c')
             with self.assertRaisesRegex(Exception,
-                'Relationships from `Cell` to `KnowledgeBase` that are not one-to-one are prohibited:'):
+                                        'Relationships from `Cell` to `KnowledgeBase` that are not one-to-one are prohibited:'):
                 io.Writer.validate_implicit_relationships()
         finally:
             core.Cell.Meta.attributes.pop('test')
@@ -333,7 +347,7 @@ class TestIO(unittest.TestCase):
         try:
             core.Cell.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='d')
             with self.assertRaisesRegex(Exception,
-                'Relationships from `Cell` to classes other than `KnowledgeBase` are prohibited:'):
+                                        'Relationships from `Cell` to classes other than `KnowledgeBase` are prohibited:'):
                 io.Writer.validate_implicit_relationships()
         finally:
             core.Cell.Meta.attributes.pop('test')
@@ -341,7 +355,7 @@ class TestIO(unittest.TestCase):
         try:
             core.Cell.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='d')
             with self.assertRaisesRegex(Exception,
-                'Relationships to `Cell` that are not one-to-one or many-to-one are prohibited: '):
+                                        'Relationships to `Cell` that are not one-to-one or many-to-one are prohibited: '):
                 io.Writer.validate_implicit_relationships()
         finally:
             core.Cell.Meta.related_attributes.pop('test')
@@ -349,7 +363,7 @@ class TestIO(unittest.TestCase):
         try:
             core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='b')
             with self.assertRaisesRegex(Exception,
-                'Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited'):
+                                        'Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited'):
                 io.Writer.validate_implicit_relationships()
         finally:
             core.KnowledgeBase.Meta.related_attributes.pop('test')

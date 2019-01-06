@@ -12,6 +12,8 @@ dirname = os.path.dirname(__file__)
 package_data = {
     name: [
         'VERSION',
+        'config/core.default.cfg',
+        'config/core.schema.cfg',
     ],
 }
 

@@ -9,3 +9,6 @@ include LICENSE
 
 # requirements
 include requirements.txt
+
+# configuration files
+recursive-include wc_kb *.cfg

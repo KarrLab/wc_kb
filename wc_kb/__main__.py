@@ -6,6 +6,7 @@
 :License: MIT
 """
 
+from wc_kb import core
 from wc_kb import io
 import cement
 import wc_kb
@@ -38,15 +39,13 @@ class ValidateController(cement.Controller):
         arguments = [
             (['core_path'], dict(type=str, help='Path to knowledge base core')),
             (['seq_path'], dict(type=str, help='Path to FASTA-formatted genome sequence')),
-            (['--sloppy'], dict(dest='strict', default=True, action='store_false',
-                                help='If set, do not validate the format of the knowledge base core file(s)')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
         try:
-            io.Reader().run(args.core_path, args.seq_path, strict=args.strict)
+            io.Reader().run(args.core_path, seq_path=args.seq_path)
             print('Knowledge base is valid')
         except ValueError as exception:
             raise SystemExit('Knowledge base is invalid: ' + str(exception))
@@ -67,8 +66,6 @@ class DifferenceController(cement.Controller):
             (['seq_path_2'], dict(type=str, help='Path to FASTA-formatted genome sequence for second knowledge base')),
             (['--compare-files'], dict(dest='compare_files', default=False, action='store_true',
                                        help='If true, compare knowledge bases; otherwise compare files directly')),
-            (['--sloppy'], dict(dest='strict', default=True, action='store_false',
-                                help='If set, do not validate the format of the knowledge base file(s)')),
         ]
 
     @cement.ex(hide=True)
@@ -81,8 +78,8 @@ class DifferenceController(cement.Controller):
             diff = kb1.difference(kb2)
 
         else:
-            kb1 = io.Reader().run(args.core_path_1, args.seq_path_1, strict=args.strict)
-            kb2 = io.Reader().run(args.core_path_2, args.seq_path_2, strict=args.strict)
+            kb1 = io.Reader().run(args.core_path_1, seq_path=args.seq_path_1)[core.KnowledgeBase][0]
+            kb2 = io.Reader().run(args.core_path_2, seq_path=args.seq_path_2)[core.KnowledgeBase][0]
             diff = kb1.difference(kb2)
 
         if diff:
@@ -112,19 +109,16 @@ class NormalizeController(cement.Controller):
             (['--dest-seq'], dict(
                 default='', type=str,
                 help='Path to save normalized FASTA-formatted genome sequence for the knowledge base')),
-            (['--sloppy'], dict(
-                dest='strict', default=True, action='store_false',
-                help='If set, do not validate the format of the knowledge base file(s)')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        kb = io.Reader().run(args.source_core, args.source_seq, strict=args.strict)
+        kb = io.Reader().run(args.source_core, seq_path=args.source_seq)[core.KnowledgeBase][0]
         if args.dest_core or args.dest_seq:
-            io.Writer().run(kb, args.dest_core, args.dest_seq, set_repo_metadata_from_path=False)
+            io.Writer().run(args.dest_core, kb, seq_path=args.dest_seq, set_repo_metadata_from_path=False)
         else:
-            io.Writer().run(kb, args.source_core, args.source_seq, set_repo_metadata_from_path=False)
+            io.Writer().run(args.source_core, kb, seq_path=args.source_seq, set_repo_metadata_from_path=False)
 
 
 class ConvertController(cement.Controller):
@@ -141,14 +135,12 @@ class ConvertController(cement.Controller):
             (['source_seq'], dict(type=str, help='Path to FASTA-formatted genome sqeuence of the knowledge base')),
             (['dest_core'], dict(type=str, help='Path to save the converted core of the knowledge base')),
             (['dest_seq'], dict(type=str, help='Path to save the converted FASTA-formatted genome sequence of the knowledge base')),
-            (['--sloppy'], dict(dest='strict', default=True, action='store_false',
-                                help='If set, do not validate the format of the knowledge base file(s)')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        io.convert(args.source_core, args.source_seq, args.dest_core, args.dest_seq, strict=args.strict)
+        io.convert(args.source_core, args.source_seq, args.dest_core, args.dest_seq)
 
 
 class CreateTemplateController(cement.Controller):
@@ -187,16 +179,14 @@ class UpdateVersionMetadataController(cement.Controller):
             (['--ignore-repo-metadata'], dict(dest='set_repo_metadata_from_path', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
                                                     'the parent directory of `path-core`'))),
-            (['--sloppy'], dict(dest='strict', default=True, action='store_false',
-                                help='If set, do not validate the format of the knowledge base file(s)')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        kb = io.Reader().run(args.path_core, args.path_seq, strict=args.strict)
+        kb = io.Reader().run(args.path_core, seq_path=args.path_seq)[core.KnowledgeBase][0]
         kb.wc_kb_version = wc_kb.__version__
-        io.Writer().run(kb, args.path_core, args.path_seq, set_repo_metadata_from_path=args.set_repo_metadata_from_path)
+        io.Writer().run(args.path_core, kb, seq_path=args.path_seq, set_repo_metadata_from_path=args.set_repo_metadata_from_path)
 
 
 class App(cement.App):
