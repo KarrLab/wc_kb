@@ -1494,24 +1494,23 @@ class MetaboliteSpeciesType(SpeciesType):
         attribute_order = ('id', 'name', 'structure',
                            'half_life', 'comments', 'references', 'database_references')
 
-    def get_structure(self):
+    def get_structure(self, ph=7.95):
         """ Get the structure
 
         Returns:
             :obj:`str`: structure
         """
 
-        return self.structure
+        #return self.structure
 
-        #ph = 7.95
-        #mol = openbabel.OBMol()
-        #conversion = openbabel.OBConversion()
-        #conversion.SetInFormat('inchi')
-        #conversion.ReadString(mol, self.structure)
-        #mol.CorrectForPH(ph)
-        #conversion.SetOutFormat('inchi')
-        #protontated_inchi = conversion.WriteString(mol)
-        #return protontated_inchi
+        mol = openbabel.OBMol()
+        conversion = openbabel.OBConversion()
+        conversion.SetInFormat('inchi')
+        conversion.ReadString(mol, self.structure)
+        mol.CorrectForPH(ph)
+        conversion.SetOutFormat('inchi')
+        protontated_inchi = conversion.WriteString(mol)
+        return protontated_inchi
 
     def to_openbabel_mol(self):
         """ Convert species type to an Open Babel molecule
@@ -1525,45 +1524,43 @@ class MetaboliteSpeciesType(SpeciesType):
         obConversion.ReadString(mol, self.structure)
         return mol
 
-    def get_empirical_formula(self):
+    def get_empirical_formula(self, ph=7.95):
         """ Get the empirical formula
 
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
 
-        mol = self.to_openbabel_mol()
-        return chem.EmpiricalFormula(mol.GetFormula().rstrip('+-'))
-
-        #ph = 7.95
         #mol = self.to_openbabel_mol()
-        #conversion = openbabel.OBConversion()
-        #conversion.SetInFormat('inchi')
-        #conversion.ReadString(mol, self.structure)
-        #mol.CorrectForPH(ph)
-        #conversion.SetOutFormat('inchi')
-        #protontated_inchi = conversion.WriteString(mol)
-        #protontated_formula = mol.GetFormula().rstrip('+-')
-        #return chem.EmpiricalFormula(protontated_formula)
+        #return chem.EmpiricalFormula(mol.GetFormula().rstrip('+-'))
 
-    def get_charge(self):
+        mol = self.to_openbabel_mol()
+        conversion = openbabel.OBConversion()
+        conversion.SetInFormat('inchi')
+        conversion.ReadString(mol, self.structure)
+        mol.CorrectForPH(ph)
+        conversion.SetOutFormat('inchi')
+        protontated_inchi = conversion.WriteString(mol)
+        protontated_formula = mol.GetFormula().rstrip('+-')
+        return chem.EmpiricalFormula(protontated_formula)
+
+    def get_charge(self, ph=7.95):
         """ Get the charge
 
         Returns:
             :obj:`int`: charge
         """
 
-        mol = self.to_openbabel_mol()
-        return mol.GetTotalCharge()
-
-        #ph = 7.95
         #mol = self.to_openbabel_mol()
-        #conversion = openbabel.OBConversion()
-        #conversion.SetInFormat('inchi')
-        #conversion.ReadString(mol, self.structure)
-        #mol.CorrectForPH(ph)
-        #conversion.SetOutFormat('inchi')
         #return mol.GetTotalCharge()
+
+        mol = self.to_openbabel_mol()
+        conversion = openbabel.OBConversion()
+        conversion.SetInFormat('inchi')
+        conversion.ReadString(mol, self.structure)
+        mol.CorrectForPH(ph)
+        conversion.SetOutFormat('inchi')
+        return mol.GetTotalCharge()
 
     def get_mol_wt(self):
         """ Get the molecular weight
