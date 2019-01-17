@@ -26,10 +26,15 @@ import openbabel
 import pkg_resources
 import re
 import six
+import token
 from obj_model import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
                        RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
                        OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
                        InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
+from obj_model.expression import (ExpressionOneToOneAttribute, ExpressionManyToOneAttribute,
+                                  ExpressionStaticTermMeta, ExpressionDynamicTermMeta,
+                                  ExpressionExpressionTermMeta, Expression,
+                                  ParsedExpression, ParsedExpressionError)
 from wc_utils.util.enumerate import CaseInsensitiveEnum
 from wc_utils.util.types import get_subclasses
 
@@ -84,7 +89,22 @@ class ComplexFormationType(enum.Enum):
     process_Translation = 9
 
 
-ConcentrationUnit = enum.Enum('ConcentrationUnit', type=int, names=[
+class Unit(int, enum.Enum):
+    """ Base class for units """
+    pass
+
+
+class ObservableCoefficientUnit(Unit):
+    """ Observable coefficient units """
+    dimensionless = 1
+
+
+class MoleculeCountUnit(Unit):
+    """ Units of molecule counts """
+    molecule = 1
+
+
+ConcentrationUnit = Unit('ConcentrationUnit', names=[
     ('molecules', 1),
     ('M', 2),
     ('mM', 3),
@@ -183,10 +203,12 @@ class OneToOneSpeciesAttribute(OneToOneAttribute):
 
     def deserialize(self, value, objects, decoded=None):
         """ Deserialize value
+
         Args:
             value (:obj:`str`): String representation
             objects (:obj:`dict`): dictionary of objects, grouped by model
             decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+            
         Returns:
             :obj:`tuple` of :obj:`list` of :obj:`Species`, :obj:`InvalidAttribute` or :obj:`None`: :obj:`tuple` of cleaned value
                 and cleaning error
@@ -437,223 +459,6 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         return (parts, errors)
 
 
-class ObservableSpeciesParticipantAttribute(ManyToManyAttribute):
-    """ Inline separated list of species and their weights of an observable
-
-    Attributes:
-        separator (:obj:`str`): list separator
-    """
-
-    def __init__(self, related_class, separator=' + ', related_name='', verbose_name='', verbose_related_name='', help=''):
-        """
-        Args:
-            related_class (:obj:`class`): related class
-            separator (:obj:`str`, optional): list separator
-            related_name (:obj:`str`, optional): name of related attribute on `related_class`
-            verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
-        """
-        super(ObservableSpeciesParticipantAttribute, self).__init__(related_class, related_name=related_name,
-                                                                    verbose_name=verbose_name,
-                                                                    verbose_related_name=verbose_related_name,
-                                                                    help=help)
-        self.separator = separator
-
-    def serialize(self, spec_coeffs, encoded=None):
-        """ Serialize related object
-
-        Args:
-            spec_coeffs (:obj:`list` of :obj:`Model`): Python representation of species and their coefficients
-            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
-
-        Returns:
-            :obj:`str`: simple Python representation
-        """
-        if not spec_coeffs:
-            return ''
-
-        spec_coeff_strs = []
-        for spec_coeff_obj in spec_coeffs:
-            spec_coeff_str = spec_coeff_obj.serialize(
-                show_compartment=True, show_coefficient_sign=True)
-            spec_coeff_strs.append(spec_coeff_str)
-
-        return self.separator.join(spec_coeff_strs)
-
-    def deserialize(self, value, objects, decoded=None):
-        """ Deserialize value
-
-        Args:
-            value (:obj:`str`): String representation
-            objects (:obj:`dict`): dictionary of objects, grouped by model
-            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
-
-        Returns:
-            :obj:`tuple` of `list` of `related_class`, `InvalidAttribute` or `None`: tuple of cleaned value
-                and cleaning error
-        """
-        if not value:
-            return ([], None)
-
-        pat_id = r'([a-z][a-z0-9_]*)'
-        pat_coeff = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        pat_spec_coeff = r'({} )*({}\[{}\])'.format(pat_coeff, pat_id, pat_id)
-        pat_observable = r'^{}( \+ {})*$'.format(pat_spec_coeff, pat_spec_coeff)
-        if not re.match(pat_observable, value, flags=re.I):
-            return (None, InvalidAttribute(self, ['Incorrectly formatted observable: {}'.format(value)]))
-
-        spec_coeff_objs = []
-        errors = []
-        for spec_coeff_match in re.findall(pat_spec_coeff, value, flags=re.I):
-            spec_type_errors = []
-
-            spec_type_id = spec_coeff_match[5]
-
-            spec_type = None
-            for species_type_cls in get_subclasses(SpeciesType):
-                if species_type_cls in objects and spec_type_id in objects[species_type_cls]:
-                    spec_type = objects[species_type_cls][spec_type_id]
-                    break
-            if not spec_type:
-                spec_type_errors.append(
-                    'Undefined species type "{}"'.format(spec_type_id))
-
-            compartment_id = spec_coeff_match[6]
-            if compartment_id in objects[Compartment]:
-                compartment = objects[Compartment][compartment_id]
-            else:
-                spec_type_errors.append(
-                    'Undefined compartment "{}"'.format(compartment_id))
-
-            coefficient = float(spec_coeff_match[1] or 1.)
-
-            if spec_type_errors:
-                errors += spec_type_errors
-            elif coefficient != 0:
-                spec_id = Species.gen_id(
-                    spec_type.get_primary_attribute(), compartment.get_primary_attribute())
-                obj, error = Species.deserialize(self, spec_id, objects)
-
-                if error:
-                    raise ValueError('Invalid object "{}"'.format(spec_primary_attribute)
-                                     )  # pragma: no cover # unreachable due to error checking above
-
-                if self.related_class not in objects:
-                    objects[self.related_class] = {}
-                serialized_value = self.related_class._serialize(
-                    obj, coefficient)
-                if serialized_value in objects[self.related_class]:
-                    spec_coeff_obj = objects[self.related_class][serialized_value]
-                else:
-                    spec_coeff_obj = self.related_class(
-                        species=obj, coefficient=coefficient)
-                    objects[self.related_class][serialized_value] = spec_coeff_obj
-                spec_coeff_objs.append(spec_coeff_obj)
-
-        if errors:
-            return (None, InvalidAttribute(self, errors))
-        return (spec_coeff_objs, None)
-
-
-class ObservableObservableParticipantAttribute(ManyToManyAttribute):
-    """ Inline separated list of observables and their weights of an observable
-
-    Attributes:
-        separator (:obj:`str`): list separator
-    """
-
-    def __init__(self, related_class, separator=' + ', related_name='', verbose_name='', verbose_related_name='', help=''):
-        """
-        Args:
-            related_class (:obj:`class`): related class
-            separator (:obj:`str`, optional): list separator
-            related_name (:obj:`str`, optional): name of related attribute on `related_class`
-            verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
-        """
-        super(ObservableObservableParticipantAttribute, self).__init__(related_class, related_name=related_name,
-                                                                       verbose_name=verbose_name,
-                                                                       verbose_related_name=verbose_related_name,
-                                                                       help=help)
-        self.separator = separator
-
-    def serialize(self, obs_coeffs, encoded=None):
-        """ Serialize related object
-
-        Args:
-            obs_coeffs (:obj:`list` of :obj:`Model`): Python representation of observables and their coefficients
-            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
-
-        Returns:
-            :obj:`str`: simple Python representation
-        """
-        if not obs_coeffs:
-            return ''
-
-        obs_coeff_strs = []
-        for obs_coeff_obj in obs_coeffs:
-            obs_coeff_str = obs_coeff_obj.serialize()
-            obs_coeff_strs.append(obs_coeff_str)
-
-        return self.separator.join(obs_coeff_strs)
-
-    def deserialize(self, value, objects, decoded=None):
-        """ Deserialize value
-
-        Args:
-            value (:obj:`str`): String representation
-            objects (:obj:`dict`): dictionary of objects, grouped by model
-            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
-
-        Returns:
-            :obj:`tuple` of `list` of `related_class`, `InvalidAttribute` or `None`: tuple of cleaned value
-                and cleaning error
-        """
-        if not value:
-            return ([], None)
-
-        pat_id = r'([a-z][a-z0-9_]*)'
-        pat_coeff = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        pat_obs_coeff = r'({} )*({})'.format(pat_coeff, pat_id, pat_id)
-        pat_observable = r'^{}( \+ {})*$'.format(pat_obs_coeff, pat_obs_coeff)
-        if not re.match(pat_observable, value, flags=re.I):
-            return (None, InvalidAttribute(self, ['Incorrectly formatted observable: {}'.format(value)]))
-
-        obs_coeff_objs = []
-        errors = []
-        for obs_coeff_match in re.findall(pat_obs_coeff, value, flags=re.I):
-            obs_errors = []
-
-            obs_id = obs_coeff_match[5]
-            if obs_id in objects[Observable]:
-                obs = objects[Observable][obs_id]
-            else:
-                obs_errors.append('Undefined observable "{}"'.format(obs_id))
-
-            coefficient = float(obs_coeff_match[1] or 1.)
-
-            if obs_errors:
-                errors += obs_errors
-            elif coefficient != 0:
-                if self.related_class not in objects:
-                    objects[self.related_class] = {}
-                serialized_value = self.related_class._serialize(
-                    obs, coefficient)
-                if serialized_value in objects[self.related_class]:
-                    obs_coeff_obj = objects[self.related_class][serialized_value]
-                else:
-                    obs_coeff_obj = self.related_class(
-                        observable=obs, coefficient=coefficient)
-                    objects[self.related_class][serialized_value] = obs_coeff_obj
-                obs_coeff_objs.append(obs_coeff_obj)
-
-        if errors:
-            return (None, InvalidAttribute(self, errors))
-        return (obs_coeff_objs, None)
-
-
 #####################
 #####################
 # Base classes
@@ -880,6 +685,7 @@ class Species(obj_model.Model):
         tabular_orientation = TabularOrientation.inline
         unique_together = (('species_type', 'compartment', ), )
         ordering = ('species_type', 'compartment')
+        expression_term_token_pattern = (token.NAME, token.LSQB, token.NAME, token.RSQB)
 
     @staticmethod
     def gen_id(species_type, compartment):
@@ -1354,127 +1160,94 @@ class PolymerLocus(KnowledgeBaseObject):
         return abs(self.start - self.end) + 1
 
 
-class Observable(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
-    """Knowledge of an observable to include in a model
-
+class ObservableExpression(obj_model.Model, Expression):
+    """ A mathematical expression of Observables and Species
+    
+    The expression used by a `Observable`.
+    
     Attributes:
-        cell (:obj:`Cell`): The cell that the observable is in
-        species (:obj:`list` of :obj:`SpeciesCoefficient`): A list of the species and the
-            coefficients to be included in the observable
-        observables (:obj:`list` of :obj:`ObservableCoefficient`): list of component observables
-            and their coefficients
-        references (:obj:`list` of :obj:`Reference`): references
-        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
-
-    Related Attributes:
-        observable_coefficients (:obj:`list` of :obj:`ObservableCoefficient`): Participants in observables
-"""
-    cell = ManyToOneAttribute(Cell, related_name='observables')
-    species = ObservableSpeciesParticipantAttribute(
-        'SpeciesCoefficient', related_name='observables')
-    observables = ObservableObservableParticipantAttribute(
-        'ObservableCoefficient', related_name='observables')
-    references = obj_model.ManyToManyAttribute(Reference, related_name='observables')
-    database_references = DatabaseReferenceAttribute(related_name='observables')
-
-    class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'cell', 'species',
-                           'observables', 'comments', 'references', 'database_references')
-
-
-class ObservableCoefficient(obj_model.Model):
-    """ A tuple of observable and coefficient
-
-    Attributes:
+        expression (:obj:`str`): mathematical expression for an Observable
+        _parsed_expression (:obj:`ParsedExpression`): an analyzed `expression`; not an `obj_model.Model`
+        species (:obj:`list` of :obj:`Species`): Species used by this Observable expression
+        observables (:obj:`list` of :obj:`Observable`): other Observables used by this Observable expression
+    
+    Related attributes:
         observable (:obj:`Observable`): observable
-        coefficient (:obj:`float`): coefficient
     """
-    observable = ManyToOneAttribute(
-        Observable, related_name='observable_coefficients')
-    coefficient = FloatAttribute(nan=False)
 
-    class Meta(obj_model.Model.Meta):
-        attribute_order = ('observable', 'coefficient')
-        frozen_columns = 1
+    expression = LongStringAttribute(primary=True, unique=True, default='')
+    species = ManyToManyAttribute(Species, related_name='observable_expressions')
+    observables = ManyToManyAttribute('Observable', related_name='observable_expressions')
+
+    class Meta(obj_model.Model.Meta, Expression.Meta):
         tabular_orientation = TabularOrientation.inline
-        ordering = ('observable',)
+        expression_term_models = ('Species', 'Observable')
+        expression_is_linear = True
 
     def serialize(self):
-        """ Serialize related object
+        """ Generate string representation
 
         Returns:
-            :obj:`str`: simple Python representation
+            :obj:`str`: string representation
         """
-        return self._serialize(self.observable, self.coefficient)
-
-    @staticmethod
-    def _serialize(observable, coefficient):
-        """ Serialize values
-
-        Args:
-            observable (:obj:`Observable`): observable
-            coefficient (:obj:`float`): coefficient
-
-        Returns:
-            :obj:`str`: simple Python representation
-        """
-        coefficient = float(coefficient)
-
-        if coefficient == 1:
-            coefficient_str = ''
-        elif coefficient % 1 == 0 and abs(coefficient) < 1000:
-            coefficient_str = '({:.0f}) '.format(coefficient)
-        else:
-            coefficient_str = '({:e}) '.format(coefficient)
-
-        return '{}{}'.format(coefficient_str, observable.serialize())
+        return Expression.serialize(self)
 
     @classmethod
-    def deserialize(cls, attribute, value, objects):
+    def deserialize(cls, value, objects):
         """ Deserialize value
 
         Args:
-            attribute (:obj:`Attribute`): attribute
             value (:obj:`str`): String representation
             objects (:obj:`dict`): dictionary of objects, grouped by model
 
         Returns:
-            :obj:`tuple` of `list` of `ObservableCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
-                and cleaning error
+            :obj:`tuple` of :obj:`ObservableExpression`, `InvalidAttribute` or `None`:
+                tuple of cleaned value and cleaning error
         """
-        errors = []
+        return Expression.deserialize(cls, value, objects)
 
-        pattern = r'^(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
+    
+class Observable(KnowledgeBaseObject):
+    """ Observable: a linear function of other Observables and Species
+    
+    Attributes:
+        cell (:obj:`Cell`): cell        
+        expression (:obj:`ObservableExpression`): mathematical expression for an Observable
+        units (:obj:`MoleculeCountUnit`): units of expression
+        references (:obj:`list` of :obj:`Reference`): references
+        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
+    
+    Related attributes:
+        observable_expressions (:obj:`list` of :obj:`ObservableExpression`): observable expressions
+        rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): rate law expressions
+    """
+    
+    cell = ManyToOneAttribute(Cell, related_name='observables')
+    expression = ExpressionOneToOneAttribute(ObservableExpression, related_name='observable',
+                                             min_related=1, min_related_rev=1)
+    units = EnumAttribute(MoleculeCountUnit, default=MoleculeCountUnit['molecule'])
+    references = obj_model.ManyToManyAttribute(Reference, related_name='observables')
+    database_references = DatabaseReferenceAttribute(related_name='observables')   
 
-        match = re.match(pattern, value, flags=re.I)
-        if match:
-            errors = []
+    class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
+        attribute_order = ('id', 'name', 'expression', 'units',
+                           'comments', 'references', 'database_references')
+        expression_term_model = ObservableExpression
+        expression_term_units = 'units'
 
-            coefficient = float(match.group(2) or 1.)
+    def deserialize(self, value, objects, decoded=None):
+        """ Deserialize value
 
-            obs_id = match.group(5)
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
 
-            observable, error = Observable.deserialize(obs_id, objects)
-            if error:
-                return (None, error)
-
-            serial_val = cls._serialize(observable, coefficient)
-            if cls in objects and serial_val in objects[cls]:
-                return (objects[cls][serial_val], None)
-
-            if cls not in objects:
-                objects[cls] = {}
-            serialized_val = cls._serialize(observable, coefficient)
-            if serialized_val in objects[cls]:
-                obj = objects[cls][serialized_val]
-            else:
-                obj = cls(observable=observable, coefficient=coefficient)
-                objects[cls][serialized_val] = obj
-            return (obj, None)
-
-        else:
-            attr = cls.Meta.attributes['observable']
-            return (None, InvalidAttribute(attr, ['Invalid observable coefficient']))
+        Returns:
+            :obj:`tuple` of :obj:`ObservableExpression`, `InvalidAttribute` or `None`:
+                tuple of cleaned value and cleaning error
+        """
+        return expression.deserialize()    
 
 
 #####################

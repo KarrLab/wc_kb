@@ -914,75 +914,76 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
             result[1].messages[0], 'Incorrectly formatted participants: ==> met1[c]')
 
 
-class ObservableCoefficientTestCase(unittest.TestCase):
-    def test_observable_coefficient(self):
+class ObservableExpressionTestCase(unittest.TestCase):
+
+    def test_observable_expression(self):
         cell = core.Cell()
         comp1 = core.Compartment(id='c')
         met1 = core.MetaboliteSpeciesType(id='met1')
-        dna1 = core.DnaSpeciesType(id="dna1")
+        dna1 = core.DnaSpeciesType(id='dna1')
 
         species1 = core.Species(species_type=met1, compartment=comp1)
         species2 = core.Species(species_type=dna1, compartment=comp1)
 
-        speciesCoefficient1 = core.SpeciesCoefficient(
-            species=species1, coefficient=2.5)
-        speciesCoefficient2 = core.SpeciesCoefficient(
-            species=species2, coefficient=3)
+        exp1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[species1, species2])        
+        observable1 = core.Observable(cell=cell, id='obs1', expression=exp1)
+        exp2 = core.ObservableExpression(expression='met1[c] / obs1', species=[species1], observables=[observable1])
 
-        observable1 = core.Observable(
-            id='test', cell=cell, species=[speciesCoefficient1, speciesCoefficient2])
-        observableCoefficient1 = core.ObservableCoefficient(
-            observable=observable1, coefficient=2.3)
+        objects = {
+            core.Compartment: {
+                'c': comp1
+            },
+            core.MetaboliteSpeciesType: {
+                'met1': met1
+            },
+            core.DnaSpeciesType: {
+                'dna1': dna1
+            },
+            core.Species: {
+                'met1[c]': species1, 'dna1[c]': species2
+            },
+            core.Observable: {
+                'obs1': observable1
+            }
+        }
 
-        self.assertIsInstance(observableCoefficient1,
-                              core.ObservableCoefficient)
-        self.assertIsInstance(
-            observableCoefficient1.observable, core.Observable)
-        self.assertIsInstance(observableCoefficient1.coefficient, float)
-        self.assertEqual(observableCoefficient1.observable.id, 'test')
-
+        result1 = core.ObservableExpression().deserialize(
+            value='2 * met1[c] + 3.3 * dna1[c]', objects=objects)
+        result2 = core.ObservableExpression().deserialize(
+            value='met1[c] / obs1', objects=objects)
+        
+        self.assertEqual(exp1.serialize(), '2 * met1[c] + 3.3 * dna1[c]')
+        self.assertEqual(result1[0].expression, '2 * met1[c] + 3.3 * dna1[c]')
+        self.assertEqual(set([i.species_type.id for i in result1[0].species]), set(['met1', 'dna1']))
+        self.assertEqual(set([i.compartment.id for i in result1[0].species]), set(['c', 'c']))
+        self.assertEqual(result1[1], None)
+        self.assertEqual(result2[0].expression, 'met1[c] / obs1')
+        self.assertEqual(result2[0].species[0].species_type.id, 'met1')
+        self.assertEqual(result2[0].observables[0].id, 'obs1')
+        self.assertEqual(result2[1], None)
+        
 
 class ObservableTestCase(unittest.TestCase):
-    def setUp(self):
-        pass
 
     def test_observables(self):
         cell = core.Cell()
         comp1 = core.Compartment(id='c')
         met1 = core.MetaboliteSpeciesType(id='met1')
-        dna1 = core.DnaSpeciesType(id="dna1")
+        dna1 = core.DnaSpeciesType(id='dna1')
 
         species1 = core.Species(species_type=met1, compartment=comp1)
         species2 = core.Species(species_type=dna1, compartment=comp1)
 
-        speciesCoefficient1 = core.SpeciesCoefficient(
-            species=species1, coefficient=2)
-        speciesCoefficient2 = core.SpeciesCoefficient(
-            species=species2, coefficient=3.3)
+        exp1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[species1, species2])        
+        observable1 = core.Observable(cell=cell, id='obs1', expression=exp1)
 
-        observable1 = core.Observable(
-            cell=cell, species=[speciesCoefficient1, speciesCoefficient2])
-        observableCoefficient1 = core.ObservableCoefficient(
-            observable=observable1, coefficient=2)
+        exp2 = core.ObservableExpression(expression='met1[c] / obs1', species=[species1], observables=[observable1])
+        observable2 = core.Observable(cell=cell, id='obs2', expression=exp2)
 
-        observable2 = core.Observable(cell=cell, species=[
-                                      speciesCoefficient1, speciesCoefficient2], observables=[observableCoefficient1])
-
-        self.assertIsInstance(observable1, core.Observable)
-        self.assertIsInstance(observable2, core.Observable)
-        with self.assertRaisesRegex(AttributeError, ""):
-            observable3 = core.Observable(
-                cell=cell, species=[species1, species2])
-        self.assertIsInstance(observable1.species[0], core.SpeciesCoefficient)
-        self.assertIsInstance(
-            observable2.observables[0], core.ObservableCoefficient)
-        self.assertIsInstance(
-            observable1.species[0].species, core.Species)
-        self.assertEqual(observable1.species[0].species.id(), 'met1[c]')
-        self.assertEqual(
-            observable1.species[1].species.species_type.id, 'dna1')
-        self.assertIsInstance(
-            observable2.observables[0].observable, core.Observable)
+        self.assertEqual(cell.observables.get_one(id='obs1').expression.expression, '2 * met1[c] + 3.3 * dna1[c]')
+        self.assertEqual(set([i.species_type.id for i in cell.observables.get_one(id='obs1').expression.species]), set(['met1', 'dna1']))
+        self.assertEqual(cell.observables.get_one(id='obs1').expression.observables, [])
+        self.assertEqual(cell.observables.get_one(id='obs2').expression.observables[0], observable1)
 
 
 class ValidatorTestCase(unittest.TestCase):
