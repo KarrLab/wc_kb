@@ -208,7 +208,7 @@ class OneToOneSpeciesAttribute(OneToOneAttribute):
             value (:obj:`str`): String representation
             objects (:obj:`dict`): dictionary of objects, grouped by model
             decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
-            
+
         Returns:
             :obj:`tuple` of :obj:`list` of :obj:`Species`, :obj:`InvalidAttribute` or :obj:`None`: :obj:`tuple` of cleaned value
                 and cleaning error
@@ -1223,7 +1223,7 @@ class Observable(KnowledgeBaseObject):
     """
     
     cell = ManyToOneAttribute(Cell, related_name='observables')
-    expression = ExpressionOneToOneAttribute(ObservableExpression, related_name='observable',
+    expression = ExpressionManyToOneAttribute(ObservableExpression, related_name='observable',
                                              min_related=1, min_related_rev=1)
     units = EnumAttribute(MoleculeCountUnit, default=MoleculeCountUnit['molecule'])
     references = obj_model.ManyToManyAttribute(Reference, related_name='observables')
