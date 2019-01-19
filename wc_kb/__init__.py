@@ -32,9 +32,8 @@ from .core import (KnowledgeBaseObject,
                    PolymerStrand,
                    Parameter,
                    RateLawDirection,
-                   RateLawEquationAttribute,
                    RateLaw,
-                   RateLawEquation,
+                   RateLawExpression,
                    Reference,
                    DatabaseReference)
 

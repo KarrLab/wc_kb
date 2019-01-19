@@ -672,7 +672,9 @@ class Species(obj_model.Model):
 
     Related attributes:
         concentration (:obj:`Concentration`): concentration
-        species_coefficients (:obj:`list` of :obj:`SpeciesCoefficient`): participations in reactions and observables
+        species_coefficients (:obj:`list` of :obj:`SpeciesCoefficient`): participations in reactions
+        rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): participations in the evaluation of rates
+        observable_expressions (:obj:`list` of :obj:`ObservableExpression`): participations in observables
     """
     species_type = ManyToOneAttribute(
         SpeciesType, related_name='species', min_related=1)
@@ -1167,7 +1169,6 @@ class ObservableExpression(obj_model.Model, Expression):
     
     Attributes:
         expression (:obj:`str`): mathematical expression for an Observable
-        _parsed_expression (:obj:`ParsedExpression`): an analyzed `expression`; not an `obj_model.Model`
         species (:obj:`list` of :obj:`Species`): Species used by this Observable expression
         observables (:obj:`list` of :obj:`Observable`): other Observables used by this Observable expression
     
@@ -1282,8 +1283,9 @@ class MetaboliteSpeciesType(SpeciesType):
         conversion.ReadString(mol, self.structure)
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
-        protontated_inchi = conversion.WriteString(mol)
-        return protontated_inchi
+        protonated_inchi = conversion.WriteString(mol)
+        
+        return protonated_inchi
 
     def to_openbabel_mol(self):
         """ Convert species type to an Open Babel molecule
@@ -1295,6 +1297,7 @@ class MetaboliteSpeciesType(SpeciesType):
         obConversion = openbabel.OBConversion()
         obConversion.SetInFormat('inchi')
         obConversion.ReadString(mol, self.structure)
+        
         return mol
 
     def get_empirical_formula(self, ph=7.95):
@@ -1314,8 +1317,9 @@ class MetaboliteSpeciesType(SpeciesType):
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protontated_inchi = conversion.WriteString(mol)
-        protontated_formula = mol.GetFormula().rstrip('+-')
-        return chem.EmpiricalFormula(protontated_formula)
+        protonated_formula = mol.GetFormula().rstrip('+-')
+        
+        return chem.EmpiricalFormula(protonated_formula)
 
     def get_charge(self, ph=7.95):
         """ Get the charge
@@ -1333,6 +1337,7 @@ class MetaboliteSpeciesType(SpeciesType):
         conversion.ReadString(mol, self.structure)
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
+        
         return mol.GetTotalCharge()
 
     def get_mol_wt(self):
@@ -1342,6 +1347,7 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`float`: molecular weight
         """
         mol = self.to_openbabel_mol()
+        
         return mol.GetMolWt()
 
 
@@ -1545,32 +1551,84 @@ class RateLawDirection(int, CaseInsensitiveEnum):
     forward = 1
 
 
-class RateLawEquationAttribute(ManyToOneAttribute):
-    """ Rate law equation """
+ReactionRateUnit = Unit('ReactionRateUnit', names=[
+    ('s^-1', 1),
+])  
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
-        """
-        Args:
-            related_name (:obj:`str`, optional): name of related attribute on `related_class`
-            verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
-        """
-        super(RateLawEquationAttribute, self).__init__('RateLawEquation',
-                                                       related_name=related_name, min_related=1, min_related_rev=1,
-                                                       verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
 
-    def serialize(self, rate_law_equation, encoded=None):
-        """ Serialize related object
+class RateLawExpression(obj_model.Model, Expression):
+    """ Rate law expression
+    
+    Attributes:
+        expression (:obj:`str`): mathematical expression of the rate law
+        parameters (:obj:`list` of :obj:`Parameter`): parameters whose values are used in the rate law
+        species (:obj:`list` of :obj:`Species`): species whose dynamic concentrations are used in the rate law
+        observables (:obj:`list` of :obj:`Observable`): observables whose values are used in the rate law
+    
+    Related attributes:
+        rate_law (:obj:`RateLaw`): the `RateLaw` which uses this `RateLawExpression`
+    """
+    expression = LongStringAttribute(primary=True, unique=True, default='')
+    parameters = ManyToManyAttribute('Parameter', related_name='rate_law_expressions')
+    species = ManyToManyAttribute(Species, related_name='rate_law_expressions')
+    observables = ManyToManyAttribute(Observable, related_name='rate_law_expressions')
+    
+    class Meta(obj_model.Model.Meta, Expression.Meta):
+        attribute_order = ('expression', 'parameters', 'species', 'observables')
+        tabular_orientation = TabularOrientation.inline
+        ordering = ('expression',)
+        expression_term_models = ('Parameter', 'Species', 'Observable')
 
-        Args:
-            rate_law_equation (:obj:`RateLawEquation`): the related `RateLawEquation`
-            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
-
+    def serialize(self):
+        """ Generate string representation
         Returns:
-            :obj:`str`: simple Python representation of the rate law equation
+            :obj:`str`: value of primary attribute
         """
-        return rate_law_equation.serialize()
+        return Expression.serialize(self)
+
+    @classmethod
+    def deserialize(cls, value, objects):
+        """ Deserialize value
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+        Returns:
+            :obj:`tuple` of :obj:`RateLawExpression`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        return Expression.deserialize(cls, value, objects)
+
+
+class RateLaw(KnowledgeBaseObject):
+    """ Rate law
+    
+    Attributes:
+        reaction (:obj:`Reaction`): reaction
+        direction (:obj:`RateLawDirection`): direction
+        expression (:obj:`RateLawExpression`): expression
+        units (:obj:`ReactionRateUnit`): units
+        references (:obj:`list` of :obj:`Reference`): references
+        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
+    """
+    reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
+    direction = EnumAttribute(RateLawDirection, default=RateLawDirection.forward)
+    expression = ExpressionManyToOneAttribute(RateLawExpression, min_related=1, min_related_rev=1, related_name='rate_laws')
+    units = EnumAttribute(ReactionRateUnit, default=ReactionRateUnit['s^-1'])
+    references = obj_model.ManyToManyAttribute(Reference, related_name='rate_laws')
+    database_references = DatabaseReferenceAttribute(related_name='rate_laws')
+
+    class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
+        attribute_order = ('id', 'reaction', 'direction', 'expression', 'units',
+                           'comments', 'references', 'database_references')
+        expression_term_model = RateLawExpression
+        expression_term_units = 'units'
+
+    def gen_id(self):
+        """ Generate identifier
+        Returns:
+            :obj:`str`: identifier
+        """
+        return '{}_{}'.format(self.reaction.id, self.direction.name)
 
     def deserialize(self, value, objects, decoded=None):
         """ Deserialize value
@@ -1581,140 +1639,12 @@ class RateLawEquationAttribute(ManyToOneAttribute):
             decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
 
         Returns:
-            :obj:`tuple` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value and cleaning error
+            :obj:`tuple` of :obj:`ObservableExpression`, `InvalidAttribute` or `None`:
+                tuple of cleaned value and cleaning error
         """
-        return RateLawEquation.deserialize(self, value, objects)
+        return expression.deserialize()    
 
-
-class RateLaw(obj_model.Model):
-    """ Rate law
-
-    Attributes:
-        reaction (:obj:`Reaction`): reaction
-        direction (:obj:`RateLawDirection`): direction
-        equation (:obj:`RateLawEquation`): equation
-        k_cat (:obj:`float`): k_cat for law with Michaelis–Menten kinetics (units: 1/sec)
-        k_m (:obj:`float`): K_m for law with Michaelis–Menten kinetics (units: mol/L)
-        comments (:obj:`str`): comments
-        references (:obj:`list` of :obj:`Reference`): references
-        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
-    """
-
-    reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
-    direction = EnumAttribute(RateLawDirection, default=RateLawDirection.forward)
-    equation = RateLawEquationAttribute(related_name='rate_laws')
-    k_cat = FloatAttribute(min=0, nan=True)
-    k_m = FloatAttribute(min=0, nan=True)
-    comments = obj_model.StringAttribute()
-    references = obj_model.ManyToManyAttribute(Reference, related_name='rate_laws')
-    database_references = DatabaseReferenceAttribute(related_name='rate_laws')
-
-    class Meta(obj_model.Model.Meta):
-        attribute_order = ('reaction', 'direction', 'equation', 'k_cat', 'k_m',
-                           'comments', 'references', 'database_references')
-        unique_together = (('reaction', 'direction'), )
-        ordering = ('reaction', 'direction',)
-
-    def serialize(self):
-        """ Generate string representation
-
-        Returns:
-            :obj:`str`: value of primary attribute
-        """
-        return '{}.{}'.format(self.reaction.serialize(), self.direction.name)
-
-
-class RateLawEquation(obj_model.Model):
-    """ Rate law equation
-
-    Attributes:
-        expression (:obj:`str`): mathematical expression of the rate law
-        modifiers (:obj:`list` of :obj:`Species`): species whose concentrations are used in the rate law
-        parameters (:obj:`list` of :obj:`Parameter`): parameters whose values are used in the rate law
-
-    Related attributes:
-        rate_law (:obj:`RateLaw`): the `RateLaw` which uses this `RateLawEquation`
-    """
-    expression = LongStringAttribute(primary=True, unique=True)
-    modifiers = ManyToManyAttribute(Species, related_name='rate_law_equations')
-    parameters = ManyToManyAttribute('Parameter', related_name='rate_law_equations')
-
-    class Meta(obj_model.Model.Meta):
-        """
-        Attributes:
-            valid_functions (:obj:`tuple` of `builtin_function_or_method`): tuple of functions that
-                can be used in a `RateLawEquation`s `expression`
-            valid_models (:obj:`tuple` of `str`): names of `obj_model.Model`s in this module that a
-                `RateLawEquation` is allowed to reference in its `expression`
-        """
-        attribute_order = ('expression', 'modifiers', 'parameters')
-        tabular_orientation = TabularOrientation.inline
-        ordering = ('rate_law',)
-        valid_functions = (ceil, floor, exp, pow, log, log10, min, max)
-        valid_models = ('Species', 'Parameter')
-
-    def serialize(self):
-        """ Generate string representation
-
-        Returns:
-            :obj:`str`: value of primary attribute
-        """
-        return self.expression
-
-    @classmethod
-    def deserialize(cls, attribute, value, objects):
-        """ Deserialize value
-
-        Args:
-            attribute (:obj:`Attribute`): attribute
-            value (:obj:`str`): String representation
-            objects (:obj:`dict`): dictionary of objects, grouped by model
-
-        Returns:
-            :obj:`tuple` of `object`, `InvalidAttribute` or `None`: tuple of cleaned value and cleaning error
-        """
-        modifiers = []
-        parameters = []
-        errors = []
-        modifier_pattern = r'(^|[^a-z0-9_])({}\[{}\])([^a-z0-9_]|$)'.format(SpeciesType.id.pattern[1:-1],
-                                                                            Compartment.id.pattern[1:-1])
-        parameter_pattern = r'(^|[^a-z0-9_\[\]])({})([^a-z0-9_\[\]]|$)'.format(Parameter.id.pattern[1:-1])
-
-        reserved_names = set([func.__name__ for func in RateLawEquation.Meta.valid_functions] + ['k_cat', 'k_m'])
-
-        try:
-            for match in re.findall(modifier_pattern, value, flags=re.I):
-                species, error = Species.deserialize(attribute, match[1], objects)
-                if error:
-                    errors += error.messages
-                else:
-                    modifiers.append(species)
-            for match in re.findall(parameter_pattern, value, flags=re.I):
-                if match[1] not in reserved_names:
-                    parameter, error = Parameter.deserialize(match[1], objects)
-                    if error:
-                        errors += error.messages
-                    else:
-                        parameters.append(parameter)
-        except Exception as e:
-            errors += ["deserialize fails on '{}': {}".format(value, str(e))]
-
-        if errors:
-            attr = cls.Meta.attributes['expression']
-            return (None, InvalidAttribute(attribute, errors))
-
-        # return value
-        if cls not in objects:
-            objects[cls] = {}
-        serialized_val = value
-        if serialized_val in objects[cls]:
-            obj = objects[cls][serialized_val]
-        else:
-            obj = cls(expression=value, modifiers=det_dedupe(modifiers), parameters=det_dedupe(parameters))
-            objects[cls][serialized_val] = obj
-        return (obj, None)
-
-
+    
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
 
@@ -1747,6 +1677,7 @@ class Parameter(KnowledgeBaseObject):
     """ Knowledge of parameters
 
     Attributes:
+        cell (:obj:`Cell`): cell
         value (:obj:`float`): value
         error (:obj:`float`): measurement error
         units (:obj:`str`): units of value
@@ -1754,9 +1685,10 @@ class Parameter(KnowledgeBaseObject):
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
 
     Related attributes:
-        rate_law_equations (:obj:`list` of :obj:`RateLawEquation`): rate law equations that use a Parameter
+        rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): rate law expressions that use a Parameter
     """
 
+    cell = obj_model.ManyToOneAttribute(Cell, related_name='parameters')
     value = FloatAttribute(min=0)
     error = FloatAttribute(min=0)
     units = StringAttribute()
@@ -1766,6 +1698,7 @@ class Parameter(KnowledgeBaseObject):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'value', 'error', 'units', 'comments',
                            'references', 'database_references')
+        expression_term_token_pattern = (token.NAME, )
 
 
 class Property(KnowledgeBaseObject):
