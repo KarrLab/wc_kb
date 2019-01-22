@@ -12,6 +12,7 @@
 
 from wc_kb import core
 from wc_utils.util import chem
+from wc_utils.util.units import unit_registry
 import Bio.Alphabet
 import Bio.Seq
 import Bio.SeqIO
@@ -373,7 +374,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             name='test_parameter1',
             value=0.7,
             error=0.01,
-            units='s^-1'
+            units=unit_registry.parse_units('s^-1')
         )
 
         self.parameter_2 = parameter_2 = core.Parameter(
@@ -381,7 +382,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             name='test_parameter2',
             value=2.,
             error=0.1,
-            units='M'
+            units=unit_registry.parse_units('M')
         )
 
         self.parameter_3 = parameter_3 = core.Parameter(
@@ -389,7 +390,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             name='test_parameter3',
             value=2.3,
             error=0.15,
-            units='M'
+            units=unit_registry.parse_units('M')
         )
 
         self.reaction_1 = reaction_1 = core.Reaction(
@@ -407,7 +408,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             reaction=reaction_1,
             direction=core.RateLawDirection.forward,
             expression=rate_law_expression_1,
-            units=core.ReactionRateUnit
+            units=unit_registry.parse_units('s^-1')
         )
 
         self.reaction_2 = reaction_2 = core.Reaction(
@@ -476,7 +477,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         self.assertEqual(self.parameter_2.name, 'test_parameter2')
         self.assertEqual(self.parameter_3.value, 2.3)
         self.assertEqual(self.parameter_3.error, 0.15)
-        self.assertEqual(self.parameter_3.units, 'M')
+        self.assertEqual(self.parameter_3.units, unit_registry.parse_units('M'))
         self.assertEqual(self.parameter_3.references, [])
         self.assertEqual(self.parameter_3.database_references, [])
 
@@ -614,7 +615,7 @@ class ConcentrationTestCase(unittest.TestCase):
 
         self.assertEqual(conc.serialize(), 'met[c]')
         self.assertEqual(conc.value, 0.2)
-        self.assertEqual(conc.units, 2)
+        self.assertEqual(conc.units, unit_registry.parse_units('molar'))
 
 
 class SpeciesCoefficientTestCase(unittest.TestCase):

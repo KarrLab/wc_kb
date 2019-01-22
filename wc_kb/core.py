@@ -1,7 +1,7 @@
 """ Core schema to represent a knowledge base to build models
 
 :Author: Balazs Szigeti <balazs.szigeti@mssm.edu>
-:Author: Jonathan Karr <jonrkarr@gmail.com>
+:Author: Jonathan Karr <karr@mssm.edu>
 :Author: Bilal Shaikh  <bilal.shaikh@columbia.edu>
 :Author: Arthur Goldberg <Arthur.Goldberg@mssm.edu>
 :Author: Yin Hoon Chew <yinhoon.chew@mssm.edu>
@@ -15,6 +15,7 @@ from math import ceil, floor, exp, log, log10, isnan
 from pyfaidx import Fasta
 from wc_utils.util import chem
 from wc_utils.util.list import det_dedupe
+from wc_utils.util.units import unit_registry
 import abc
 import Bio.Alphabet
 import Bio.Seq
@@ -22,6 +23,7 @@ import enum
 import math
 import obj_model.abstract
 import obj_model
+import obj_model.units
 import openbabel
 import pkg_resources
 import re
@@ -87,34 +89,6 @@ class ComplexFormationType(enum.Enum):
     process_RibosomeAssembly = 7
     process_Transcription = 8
     process_Translation = 9
-
-
-class Unit(int, enum.Enum):
-    """ Base class for units """
-    pass
-
-
-class ObservableCoefficientUnit(Unit):
-    """ Observable coefficient units """
-    dimensionless = 1
-
-
-class MoleculeCountUnit(Unit):
-    """ Units of molecule counts """
-    molecule = 1
-
-
-ConcentrationUnit = Unit('ConcentrationUnit', names=[
-    ('molecules', 1),
-    ('M', 2),
-    ('mM', 3),
-    ('uM', 4),
-    ('nM', 5),
-    ('pM', 6),
-    ('fM', 7),
-    ('aM', 8),
-    ('mol dm^-2', 9),
-])
 
 
 #####################
@@ -788,7 +762,7 @@ class Concentration(obj_model.Model):
         cell (:obj:`Cell`): cell
         species (:obj:`Species`): species
         value (:obj:`float`): value
-        units (:obj:`str`): units; default units is 'M'
+        units (:obj:`unit_registry.Unit`): units; default units is 'M'
         comments (:obj:`str`): comments
         references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
@@ -796,7 +770,17 @@ class Concentration(obj_model.Model):
     cell = obj_model.ManyToOneAttribute(Cell, related_name='concentrations')
     species = OneToOneSpeciesAttribute(related_name='concentration')
     value = FloatAttribute(min=0)
-    units = EnumAttribute(ConcentrationUnit, default=ConcentrationUnit.M)
+    units = obj_model.units.UnitAttribute(unit_registry,
+                          choices=(
+                              unit_registry.parse_units('molecule'),
+                              unit_registry.parse_units('mM'),
+                              unit_registry.parse_units('uM'),
+                              unit_registry.parse_units('nM'),
+                              unit_registry.parse_units('pM'),
+                              unit_registry.parse_units('fM'),
+                              unit_registry.parse_units('aM'),
+                          ),
+                          default=unit_registry.parse_units('M'))
     comments = LongStringAttribute()
     references = ManyToManyAttribute(Reference, related_name='concentrations')
     database_references = DatabaseReferenceAttribute(related_name='concentrations')
@@ -1164,14 +1148,14 @@ class PolymerLocus(KnowledgeBaseObject):
 
 class ObservableExpression(obj_model.Model, Expression):
     """ A mathematical expression of Observables and Species
-    
+
     The expression used by a `Observable`.
-    
+
     Attributes:
         expression (:obj:`str`): mathematical expression for an Observable
         species (:obj:`list` of :obj:`Species`): Species used by this Observable expression
         observables (:obj:`list` of :obj:`Observable`): other Observables used by this Observable expression
-    
+
     Related attributes:
         observable (:obj:`Observable`): observable
     """
@@ -1184,6 +1168,7 @@ class ObservableExpression(obj_model.Model, Expression):
         tabular_orientation = TabularOrientation.inline
         expression_term_models = ('Species', 'Observable')
         expression_is_linear = True
+        expression_unit_registry = unit_registry
 
     def serialize(self):
         """ Generate string representation
@@ -1207,28 +1192,30 @@ class ObservableExpression(obj_model.Model, Expression):
         """
         return Expression.deserialize(cls, value, objects)
 
-    
+
 class Observable(KnowledgeBaseObject):
     """ Observable: a linear function of other Observables and Species
-    
+
     Attributes:
         cell (:obj:`Cell`): cell        
         expression (:obj:`ObservableExpression`): mathematical expression for an Observable
-        units (:obj:`MoleculeCountUnit`): units of expression
+        units (:obj:`unit_registry.Unit`): units of expression
         references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
-    
+
     Related attributes:
         observable_expressions (:obj:`list` of :obj:`ObservableExpression`): observable expressions
         rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): rate law expressions
     """
-    
+
     cell = ManyToOneAttribute(Cell, related_name='observables')
     expression = ExpressionManyToOneAttribute(ObservableExpression, related_name='observable',
-                                             min_related=1, min_related_rev=1)
-    units = EnumAttribute(MoleculeCountUnit, default=MoleculeCountUnit['molecule'])
+                                              min_related=1, min_related_rev=1)
+    units = obj_model.units.UnitAttribute(unit_registry,
+                          choices=(unit_registry.parse_units('molecule'),),
+                          default=unit_registry.parse_units('molecule'))
     references = obj_model.ManyToManyAttribute(Reference, related_name='observables')
-    database_references = DatabaseReferenceAttribute(related_name='observables')   
+    database_references = DatabaseReferenceAttribute(related_name='observables')
 
     class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
         attribute_order = ('id', 'name', 'expression', 'units',
@@ -1248,7 +1235,7 @@ class Observable(KnowledgeBaseObject):
             :obj:`tuple` of :obj:`ObservableExpression`, `InvalidAttribute` or `None`:
                 tuple of cleaned value and cleaning error
         """
-        return expression.deserialize()    
+        return expression.deserialize()
 
 
 #####################
@@ -1275,7 +1262,7 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`str`: structure
         """
 
-        #return self.structure
+        # return self.structure
 
         mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
@@ -1284,7 +1271,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protonated_inchi = conversion.WriteString(mol)
-        
+
         return protonated_inchi
 
     def to_openbabel_mol(self):
@@ -1297,7 +1284,7 @@ class MetaboliteSpeciesType(SpeciesType):
         obConversion = openbabel.OBConversion()
         obConversion.SetInFormat('inchi')
         obConversion.ReadString(mol, self.structure)
-        
+
         return mol
 
     def get_empirical_formula(self, ph=7.95):
@@ -1308,7 +1295,7 @@ class MetaboliteSpeciesType(SpeciesType):
         """
 
         #mol = self.to_openbabel_mol()
-        #return chem.EmpiricalFormula(mol.GetFormula().rstrip('+-'))
+        # return chem.EmpiricalFormula(mol.GetFormula().rstrip('+-'))
 
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
@@ -1318,7 +1305,7 @@ class MetaboliteSpeciesType(SpeciesType):
         conversion.SetOutFormat('inchi')
         protontated_inchi = conversion.WriteString(mol)
         protonated_formula = mol.GetFormula().rstrip('+-')
-        
+
         return chem.EmpiricalFormula(protonated_formula)
 
     def get_charge(self, ph=7.95):
@@ -1329,7 +1316,7 @@ class MetaboliteSpeciesType(SpeciesType):
         """
 
         #mol = self.to_openbabel_mol()
-        #return mol.GetTotalCharge()
+        # return mol.GetTotalCharge()
 
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
@@ -1337,7 +1324,7 @@ class MetaboliteSpeciesType(SpeciesType):
         conversion.ReadString(mol, self.structure)
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
-        
+
         return mol.GetTotalCharge()
 
     def get_mol_wt(self):
@@ -1347,7 +1334,7 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`float`: molecular weight
         """
         mol = self.to_openbabel_mol()
-        
+
         return mol.GetMolWt()
 
 
@@ -1551,20 +1538,15 @@ class RateLawDirection(int, CaseInsensitiveEnum):
     forward = 1
 
 
-ReactionRateUnit = Unit('ReactionRateUnit', names=[
-    ('s^-1', 1),
-])  
-
-
 class RateLawExpression(obj_model.Model, Expression):
     """ Rate law expression
-    
+
     Attributes:
         expression (:obj:`str`): mathematical expression of the rate law
         parameters (:obj:`list` of :obj:`Parameter`): parameters whose values are used in the rate law
         species (:obj:`list` of :obj:`Species`): species whose dynamic concentrations are used in the rate law
         observables (:obj:`list` of :obj:`Observable`): observables whose values are used in the rate law
-    
+
     Related attributes:
         rate_law (:obj:`RateLaw`): the `RateLaw` which uses this `RateLawExpression`
     """
@@ -1572,12 +1554,13 @@ class RateLawExpression(obj_model.Model, Expression):
     parameters = ManyToManyAttribute('Parameter', related_name='rate_law_expressions')
     species = ManyToManyAttribute(Species, related_name='rate_law_expressions')
     observables = ManyToManyAttribute(Observable, related_name='rate_law_expressions')
-    
+
     class Meta(obj_model.Model.Meta, Expression.Meta):
         attribute_order = ('expression', 'parameters', 'species', 'observables')
         tabular_orientation = TabularOrientation.inline
         ordering = ('expression',)
         expression_term_models = ('Parameter', 'Species', 'Observable')
+        expression_unit_registry = unit_registry
 
     def serialize(self):
         """ Generate string representation
@@ -1601,19 +1584,21 @@ class RateLawExpression(obj_model.Model, Expression):
 
 class RateLaw(KnowledgeBaseObject):
     """ Rate law
-    
+
     Attributes:
         reaction (:obj:`Reaction`): reaction
         direction (:obj:`RateLawDirection`): direction
         expression (:obj:`RateLawExpression`): expression
-        units (:obj:`ReactionRateUnit`): units
+        units (:obj:`unit_registry.Unit`): units
         references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
     """
     reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
     direction = EnumAttribute(RateLawDirection, default=RateLawDirection.forward)
     expression = ExpressionManyToOneAttribute(RateLawExpression, min_related=1, min_related_rev=1, related_name='rate_laws')
-    units = EnumAttribute(ReactionRateUnit, default=ReactionRateUnit['s^-1'])
+    units = obj_model.units.UnitAttribute(unit_registry,
+                          choices=(unit_registry.parse_units('s^-1'),),
+                          default=unit_registry.parse_units('s^-1'))
     references = obj_model.ManyToManyAttribute(Reference, related_name='rate_laws')
     database_references = DatabaseReferenceAttribute(related_name='rate_laws')
 
@@ -1642,9 +1627,9 @@ class RateLaw(KnowledgeBaseObject):
             :obj:`tuple` of :obj:`ObservableExpression`, `InvalidAttribute` or `None`:
                 tuple of cleaned value and cleaning error
         """
-        return expression.deserialize()    
+        return expression.deserialize()
 
-    
+
 class Reaction(KnowledgeBaseObject):
     """ Knowledge of reactions
 
@@ -1680,7 +1665,7 @@ class Parameter(KnowledgeBaseObject):
         cell (:obj:`Cell`): cell
         value (:obj:`float`): value
         error (:obj:`float`): measurement error
-        units (:obj:`str`): units of value
+        units (:obj:`unit_registry.Unit`): units of value
         references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
 
@@ -1691,7 +1676,7 @@ class Parameter(KnowledgeBaseObject):
     cell = obj_model.ManyToOneAttribute(Cell, related_name='parameters')
     value = FloatAttribute(min=0)
     error = FloatAttribute(min=0)
-    units = StringAttribute()
+    units = obj_model.units.UnitAttribute(unit_registry, none=True)
     references = obj_model.ManyToManyAttribute(Reference, related_name='parameters')
     database_references = DatabaseReferenceAttribute(related_name='parameters')
 
@@ -1707,14 +1692,14 @@ class Property(KnowledgeBaseObject):
     Attributes:
         cell (:obj:`Cell`): cell
         value (:obj:`float`): value
-        units (:obj:`str`): units
+        units (:obj:`unit_registry.Unit`): units
         references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
 
     """
     cell = obj_model.ManyToOneAttribute(Cell, related_name='properties')
     value = obj_model.FloatAttribute()
-    units = obj_model.StringAttribute()
+    units = obj_model.units.UnitAttribute(unit_registry, none=True)
     references = obj_model.ManyToManyAttribute(Reference, related_name='properties')
     database_references = DatabaseReferenceAttribute(related_name='properties')
 
