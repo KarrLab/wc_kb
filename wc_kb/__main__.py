@@ -192,7 +192,7 @@ class UpdateVersionMetadataController(cement.Controller):
 class App(cement.App):
     """ Command line application """
     class Meta:
-        label = 'wc_kb'
+        label = 'wc-kb'
         base_controller = 'base'
         handlers = [
             BaseController,
