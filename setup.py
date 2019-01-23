@@ -46,7 +46,7 @@ setuptools.setup(
     ],
     entry_points={
         'console_scripts': [
-            'wc_kb = wc_kb.__main__:main',
+            'wc-kb = wc_kb.__main__:main',
         ],
     },
 )

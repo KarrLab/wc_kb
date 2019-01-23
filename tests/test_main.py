@@ -184,12 +184,12 @@ class TestCli(unittest.TestCase):
         self.assertEqual(kb.wc_kb_version, wc_kb.__version__)
 
     def test_raw_cli(self):
-        with mock.patch('sys.argv', ['wc_kb', '--help']):
+        with mock.patch('sys.argv', ['wc-kb', '--help']):
             with self.assertRaises(SystemExit) as context:
                 __main__.main()
-                self.assertRegex(context.Exception, 'usage: wc_kb')
+                self.assertRegex(context.Exception, 'usage: wc-kb')
 
-        with mock.patch('sys.argv', ['wc_kb']):
+        with mock.patch('sys.argv', ['wc-kb']):
             with CaptureOutput() as capturer:
                 __main__.main()
-                self.assertRegex(capturer.get_text(), 'usage: wc_kb')
+                self.assertRegex(capturer.get_text(), 'usage: wc-kb')
