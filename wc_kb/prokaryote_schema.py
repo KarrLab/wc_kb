@@ -13,7 +13,7 @@
 from wc_utils.util import chem
 import obj_model
 from wc_kb import core
-
+import pdb
 
 #####################
 #####################
@@ -67,7 +67,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         n_c = seq.count('C')
         n_g = seq.count('G')
         n_u = seq.count('U')
-        l = len(seq)+1
+        l   = len(seq)
 
         #formula = chem.EmpiricalFormula()
         #formula.C = 10 * n_a +  9 * n_c + 10 * n_g +  9 * n_u
@@ -78,10 +78,12 @@ class RnaSpeciesType(core.PolymerSpeciesType):
 
         formula = chem.EmpiricalFormula()
         formula.C = 10 * n_a +  9 * n_c + 10 * n_g +  9 * n_u
-        formula.H = 12 * n_a + 11 * n_c + 11 * n_g + 10 * n_u - (l - 1)
+        formula.H = 12 * n_a + 12 * n_c + 12 * n_g + 11 * n_u - (l - 1)
+        #formula.H = 12 * n_a + 12 * n_c + 12 * n_g + 11 * n_u - (l - 1)
+
         formula.N =  5 * n_a +  3 * n_c +  5 * n_g +  2 * n_u
         formula.O =  7 * n_a +  8 * n_c +  8 * n_g +  9 * n_u - (l - 1)
-        formula.P = n_a + n_c + n_g + n_u
+        formula.P =      n_a +      n_c +      n_g +      n_u
 
         return formula
 

@@ -20,12 +20,11 @@ import os
 import shutil
 import tempfile
 import unittest
-
+import pdb
 
 class CellTestCase(unittest.TestCase):
     def test_constructor(self):
         cell = core.Cell(taxon=2104)
-
         self.assertEqual(cell.knowledge_base, None)
         self.assertEqual(cell.taxon, 2104)
         self.assertEqual(cell.observables, [])
@@ -53,8 +52,8 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
                     '>dna6\nAAAA\n'
                     '>dna7\nAACCGGTT\n')
 
-    def tearDown(self):    
-        shutil.rmtree(self.tmp_dirname)  
+    def tearDown(self):
+        shutil.rmtree(self.tmp_dirname)
 
     def test_constructor(self):
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
@@ -62,6 +61,11 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
             id='tu1', polymer=dna1, start=1, end=15)
         rna1 = prokaryote_schema.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[
                                    tu1], type=1, half_life=2)
+
+        # make sure that only TU can be created that have valid length
+        # These should throw errors:
+        #tu2 = prokaryote_schema.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=1, end=20)
+        #tu2 = prokaryote_schema.TranscriptionUnitLocus(id='tu1', polymer=dna1, start=-3, end=20)
 
         self.assertEqual(rna1.id, 'rna1')
         self.assertEqual(rna1.name, 'rna1')
@@ -158,6 +162,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
 
 
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
+
     def setUp(self):
         # Mycoplasma Genintalium Genome
         dna1 = core.DnaSpeciesType(id='chromosome', sequence_path='tests/fixtures/seq.fna')
@@ -193,7 +198,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(protein.cell, None)
 
     def test_get_seq(self):
-        # Use translation table 4 since example genes are from 
+        # Use translation table 4 since example genes are from
         # Mycoplasma genitallium
 
         # MPN001
@@ -250,8 +255,8 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
         tmp_dirname = tempfile.mkdtemp()
         sequence_path = os.path.join(tmp_dirname, 'test_seq.fasta')
         with open(sequence_path, 'w') as f:
-            f.write('>dna1\nACGTACGTACGTACG\n')    
-        
+            f.write('>dna1\nACGTACGTACGTACG\n')
+
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=sequence_path,
                                    circular=False, double_stranded=False)
 
@@ -276,7 +281,7 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
         self.assertEqual(tu1.get_3_prime(), 1)
         self.assertEqual(tu1.get_5_prime(), 15)
 
-        shutil.rmtree(tmp_dirname) 
+        shutil.rmtree(tmp_dirname)
 
 
 class ComplexSpeciesTypeTestCase(unittest.TestCase):

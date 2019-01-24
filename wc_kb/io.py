@@ -88,7 +88,7 @@ class Writer(obj_model.io.Writer):
             core_path (:obj:`str`): path to save core knowledge base
             seq_path (:obj:`str`, optional): path to save genome sequence
             rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the saved knowledge base
-                will be updated to the newly saved seq_path 
+                will be updated to the newly saved seq_path
             taxon (:obj:`str`, optional): type of model order to use
             models (:obj:`list` of :obj:`Model`, optional): models in the order that they should
                 appear as worksheets; all models which are not in `models` will
@@ -134,7 +134,7 @@ class Writer(obj_model.io.Writer):
         if creator is None:
             creator = '{}.{}'.format(self.__class__.__module__, self.__class__.__name__)
 
-        # export sequences, if a path is provided        
+        # export sequences, if a path is provided
         if seq_path:
             dna_seqs = []
             original_seq_paths = []
@@ -152,6 +152,8 @@ class Writer(obj_model.io.Writer):
                 writer = Bio.SeqIO.FastaIO.FastaWriter(
                     file, wrap=70, record2title=lambda record: record.id)
                 writer.write_file(dna_seqs)
+
+            file.close()
 
         # export core
         super(Writer, self).run(core_path, knowledge_base, models=models, get_related=get_related,
@@ -245,7 +247,7 @@ class Reader(obj_model.io.Reader):
             core_path (:obj:`str`): path to core knowledge base
             seq_path (:obj:`str`): path to genome sequence
             rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the knowledge base
-                will be updated to the provided seq_path 
+                will be updated to the provided seq_path
             taxon (:obj:`str`, optional): type of model order to use
             models (:obj:`types.TypeType` or :obj:`list` of :obj:`types.TypeType`, optional): type
                 of object to read or list of types of objects to read
@@ -369,7 +371,7 @@ def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True)
         dest_core (:obj:`str`): path to save the converted core of the knowledge base
         dest_seq (:obj:`str`): path to save the converted genome sequence of the knowledge base
         rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the converted
-            core of the knowledge base will be updated to the path of the converted genome sequence 
+            core of the knowledge base will be updated to the path of the converted genome sequence
     """
     kb = Reader().run(source_core, seq_path=source_seq)[core.KnowledgeBase][0]
     Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path, set_repo_metadata_from_path=False)

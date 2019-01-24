@@ -20,11 +20,12 @@ import shutil
 import tempfile
 import unittest
 import wc_utils.workbook.io
-
+import pdb
 
 class TestIO(unittest.TestCase):
 
     def setUp(self):
+
         self.dir = tempfile.mkdtemp()
         self.seq_path = os.path.join(self.dir, 'seq.fna')
 
@@ -144,6 +145,10 @@ class TestIO(unittest.TestCase):
         self.assertTrue(filecmp.cmp(path_seq_2, self.seq_path, shallow=False))
 
     def test_write_with_repo_md(self):
+
+        # Is there a reason not to put them into temp? folder
+        #_, core_path = tempfile.mkstemp(suffix='.xlsx', dir=self.dir)
+        #_, seq_path = tempfile.mkstemp(suffix='.fna', dir=self.dir)
         _, core_path = tempfile.mkstemp(suffix='.xlsx', dir='.')
         _, seq_path = tempfile.mkstemp(suffix='.fna', dir='.')
 
@@ -158,6 +163,8 @@ class TestIO(unittest.TestCase):
             'git@github.com:KarrLab/wc_kb.git',
         ])
 
+        #pdb.set_trace()
+        # Are they not removed by tearDown?
         os.remove(core_path)
         os.remove(seq_path)
 
