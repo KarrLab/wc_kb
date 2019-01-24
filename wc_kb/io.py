@@ -80,7 +80,7 @@ class Writer(obj_model.io.Writer):
             seq_path=None, rewrite_seq_path=True, taxon='prokaryote',
             models=None, get_related=True, include_all_attributes=False, validate=True,
             title=None, description=None, keywords=None, version=None, language=None, creator=None,
-            set_repo_metadata_from_path=True):
+            extra_entries=0, set_repo_metadata_from_path=True):
         """ Write knowledge base to file(s)
 
         Args:
@@ -103,6 +103,7 @@ class Writer(obj_model.io.Writer):
             version (:obj:`str`, optional): version
             language (:obj:`str`, optional): language
             creator (:obj:`str`, optional): creator
+            extra_entries (:obj:`int`, optional): additional entries to display
             set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
                 branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
 
@@ -158,7 +159,8 @@ class Writer(obj_model.io.Writer):
         # export core
         super(Writer, self).run(core_path, knowledge_base, models=models, get_related=get_related,
                                 include_all_attributes=include_all_attributes, validate=validate,
-                                title=title, description=description, version=version, language=language, creator=creator)
+                                title=title, description=description, version=version, language=language, creator=creator,
+                                extra_entries=extra_entries)
 
         # reset sequence paths
         if seq_path and rewrite_seq_path:
@@ -377,16 +379,18 @@ def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True)
     Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path, set_repo_metadata_from_path=False)
 
 
-def create_template(core_path, seq_path, set_repo_metadata_from_path=True):
+def create_template(core_path, seq_path, extra_entries=10, set_repo_metadata_from_path=True):
     """ Create file with knowledge base template, including row and column headings
 
     Args:
         core_path (:obj:`str`): path to save template of core knowledge base
         seq_path (:obj:`str`): path to save genome sequence
+        extra_entries (:obj:`int`, optional): additional entries to display
         set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
             branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
     """
     kb = core.KnowledgeBase(
         id='template', name='Template', version=wc_kb.__version__)
     Writer().run(core_path, kb, seq_path=seq_path,
+                 extra_entries=extra_entries,
                  set_repo_metadata_from_path=set_repo_metadata_from_path)
