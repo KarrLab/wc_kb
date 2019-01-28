@@ -24,8 +24,10 @@ import shutil
 import tempfile
 import unittest
 
-
+# Does it make sense to test enumerations?
+# Organized + cover + passes
 class TestCore(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
         records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
@@ -49,13 +51,7 @@ class TestCore(unittest.TestCase):
         self.assertEqual(core.GeneType.tRna.value, 3)
 
 
-class DatabaseReferenceTestCase(unittest.TestCase):
-    def test_constructor(self):
-        db_ref1 = core.DatabaseReference(database='Sabio-Rk', id='123456')
-        self.assertEqual(db_ref1.database, 'Sabio-Rk')
-        self.assertEqual(db_ref1.id, '123456')
-
-
+# JUNK TESTS
 class ReferenceTestCase(unittest.TestCase):
     def test_constructor(self):
         ref1 = core.Reference(id='ref1', standard_id='10.1000/xyz123')
@@ -63,12 +59,14 @@ class ReferenceTestCase(unittest.TestCase):
         self.assertEqual(ref1.standard_id, '10.1000/xyz123')
 
 
+# JUNK TESTS
 class KnowledgeBaseTestCase(unittest.TestCase):
     def test_constructor(self):
         kb = core.KnowledgeBase()
         self.assertEqual(kb.cell, None)
 
 
+# JUNK TESTS
 class CellTestCase(unittest.TestCase):
     def test_constructor(self):
         cell = core.Cell()
@@ -85,12 +83,14 @@ class CellTestCase(unittest.TestCase):
             __type=core.DnaSpeciesType), [])
 
 
+# JUNK TESTS
 class CompartmentTestCase(unittest.TestCase):
     def test_constructor(self):
         comp = core.Compartment(volumetric_fraction=0.5)
         self.assertEqual(comp.volumetric_fraction, 0.5)
 
 
+# JUNK TESTS
 class SpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
         with self.assertRaisesRegex(TypeError, 'Can\'t instantiate abstract class'):
@@ -110,64 +110,175 @@ class SpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(species_type.half_life, 3.)
 
 
-class PolymerSpeciesTypeTestCase(unittest.TestCase):
+# JUNK TESTS
+class ConcentrationTestCase(unittest.TestCase):
     def test_constructor(self):
-        with self.assertRaisesRegex(TypeError, 'Can\'t instantiate abstract class'):
-            core.PolymerSpeciesType()
+        comp = core.Compartment(id='c')
+        met = core.MetaboliteSpeciesType(id='met')
+        spec = core.Species(species_type=met, compartment=comp)
+
+        conc = core.Concentration(species=spec, value=0.2)
+
+        self.assertEqual(conc.serialize(), 'met[c]')
+        self.assertEqual(conc.value, 0.2)
+        self.assertEqual(conc.units, unit_registry.parse_units('molar'))
+
+
+# Organized + cover + passes
+class DatabaseReferenceTestCase(unittest.TestCase):
+
+    def test_serialize(self):
+        db_ref1 = core.DatabaseReference(database='Sabio-Rk', id='123456')
+        self.assertEqual(db_ref1.serialize(), 'Sabio-Rk:123456')
+
+        db_ref2 = core.DatabaseReference(database='KEGG', id='00')
+        self.assertEqual(db_ref2.serialize(), 'KEGG:00')
+
+        
+
+# Done
+class SpeciesTestCase(unittest.TestCase):
+
+    def test_gen_id(self):
+        comp1 = core.Compartment(id='c')
+        met1 = core.MetaboliteSpeciesType(id='met1')
+        species1 = core.Species(species_type=met1, compartment=comp1)
+
+        self.assertEqual(species1.id(), 'met1[c]')
+        self.assertEqual(core.Species.gen_id(met1, comp1), 'met1[c]')
+        self.assertEqual(core.Species.gen_id('met1', 'c'), 'met1[c]')
+
+        with self.assertRaisesRegex(ValueError, 'incorrect species type'):
+            core.Species.gen_id(None, 'c')
+        with self.assertRaisesRegex(ValueError, 'incorrect compartment type'):
+            core.Species.gen_id('met1', None)
+
+    def test_serialize(self):
+        comp1 = core.Compartment(id='c')
+        met1 = core.MetaboliteSpeciesType(id='met1')
+        species1 = core.Species(species_type=met1, compartment=comp1)
+
+        self.assertEqual(species1.serialize(), 'met1[c]')
+
+    def test_deserialize(self):
+        comp1 = core.Compartment(id='c')
+        met1 = core.MetaboliteSpeciesType(id='met1')
+        dna1 = core.DnaSpeciesType(id='dna1')
+
+        objects = {
+            core.Compartment: {
+                'c': comp1,
+            },
+            core.MetaboliteSpeciesType: {
+                'met1': met1,
+            },
+            core.DnaSpeciesType: {
+                'dna1': dna1,
+            },
+        }
+
+        attr = core.SpeciesCoefficient.species
+        result = core.Species.deserialize(attr, 'met1[c]', objects)
+        self.assertEqual(result[0].species_type, met1)
+        self.assertEqual(result[0].compartment, comp1)
+        self.assertEqual(result[1], None)
+
+        result2 = core.Species.deserialize(attr, 'met1[c]', objects)
+        self.assertEqual(result2[0], result[0])
+        self.assertIn(core.Species, objects)
+        self.assertIn('met1[c]', objects[core.Species])
+
+        self.assertNotIn('dna1[c]', objects[core.Species])
+        self.assertEqual(core.Species.deserialize(
+            attr, 'dna1[c]', objects)[1], None)
+        self.assertIn('dna1[c]', objects[core.Species])
+
+        self.assertNotEqual(core.Species.deserialize(
+            attr, 'met2[c]', objects)[1], None)
+        self.assertNotEqual(core.Species.deserialize(
+            attr, 'met1[e]', objects)[1], None)
+        self.assertNotEqual(core.Species.deserialize(
+            attr, 'met1', objects)[1], None)
+
+
+# Done
+class PolymerSpeciesTypeTestCase(unittest.TestCase):
+
+    def setUp(self):
 
         class ConcretePolymerSpeciesType(core.PolymerSpeciesType):
             def get_empirical_formula(self): pass
-
             def get_charge(self): pass
-
             def get_mol_wt(self): pass
-
             def get_seq(self): return Bio.Seq.Seq(
                 'AAATGCCC', alphabet=Bio.Alphabet.DNAAlphabet())
 
-        pst1 = ConcretePolymerSpeciesType(
-            id='pst1', name='pst1', half_life=2)
+        self.pst1 = ConcretePolymerSpeciesType(id='pst1', name='pst1', half_life=2)
 
-        # Test constructor
-        self.assertEqual(pst1.id, 'pst1')
-        self.assertEqual(pst1.name, 'pst1')
-        self.assertEqual(pst1.half_life, 2)
+    def tearDown(self):
+        pass
 
-        # Test methods: linear, single stranded case
-        pst1.circular = False
-        pst1.double_stranded = False
+    def test_get_seq(self):
 
-        self.assertEqual(pst1.get_len(), 8)
-        self.assertEqual(pst1.get_subseq(1, 3), 'AAA')
-        self.assertEqual(pst1.get_subseq(2, 4), 'AAT')
+        with self.assertRaisesRegex(TypeError, 'Can\'t instantiate abstract class'):
+            core.PolymerSpeciesType()
 
+        self.pst1.circular = False
+        self.pst1.double_stranded = False
+        self.assertEqual(self.pst1.get_seq(), 'AAATGCCC')
+
+        self.pst1.circular = True
+        self.pst1.double_stranded = False
+        self.assertEqual(self.pst1.get_seq(), 'AAATGCCC')
+
+        self.pst1.circular = True
+        self.pst1.double_stranded = True
+        self.assertEqual(self.pst1.get_seq(), 'AAATGCCC')
+
+    def test_get_len(self):
+
+        self.pst1.circular = False
+        self.pst1.double_stranded = False
+        self.assertEqual(self.pst1.get_len(), 8)
+
+        self.pst1.circular = True
+        self.pst1.double_stranded = False
+        self.assertEqual(self.pst1.get_len(), 8)
+
+        self.pst1.circular = True
+        self.pst1.double_stranded = True
+        self.assertEqual(self.pst1.get_len(), 8)
+
+    def test_get_subseq(self):
+
+        self.pst1.circular = False
+        self.pst1.double_stranded = False
+        self.assertEqual(self.pst1.get_subseq(1, 3), 'AAA')
+        self.assertEqual(self.pst1.get_subseq(2, 4), 'AAT')
         with self.assertRaisesRegex(ValueError, 'Start and end coordinates'):
-            self.assertEqual(pst1.get_subseq(-1, 3), 'AAA')
+            self.assertEqual(self.pst1.get_subseq(-1, 3), 'AAA')
 
-        # Test methods: circular, single stranded case
-        pst1.circular = True
-        pst1.double_stranded = False
+        self.pst1.circular = True
+        self.pst1.double_stranded = False
+        self.assertEqual(self.pst1.get_subseq(2, 4), 'AAT')
+        self.assertEqual(self.pst1.get_subseq(0, 1), 'CA')
+        self.assertEqual(self.pst1.get_subseq(-3, 1), 'GCCCA')
+        self.assertEqual(self.pst1.get_subseq(6, 10), 'CCCAA')
+        self.assertEqual(self.pst1.get_subseq(-10, 10), 'CCCAAATGCCCAAATGCCCAA')
 
-        self.assertEqual(pst1.get_subseq(2, 4), 'AAT')
-        self.assertEqual(pst1.get_subseq(0, 1), 'CA')
-        self.assertEqual(pst1.get_subseq(-3, 1), 'GCCCA')
-        self.assertEqual(pst1.get_subseq(6, 10), 'CCCAA')
-        self.assertEqual(pst1.get_subseq(-10, 10), 'CCCAAATGCCCAAATGCCCAA')
-
-        # Test methods: circular, double stranded case
-        pst1.circular = True
-        pst1.double_stranded = True
-
-        self.assertEqual(pst1.get_subseq(
+        self.pst1.circular = True
+        self.pst1.double_stranded = True
+        self.assertEqual(self.pst1.get_subseq(
             3,  6, strand=core.PolymerStrand.positive), 'ATGC')
-        self.assertEqual(pst1.get_subseq(
+        self.assertEqual(self.pst1.get_subseq(
             3,  6, strand=core.PolymerStrand.negative), 'GCAT')
-        self.assertEqual(pst1.get_subseq(
+        self.assertEqual(self.pst1.get_subseq(
             6, 26, strand=core.PolymerStrand.positive), 'CCCAAATGCCCAAATGCCCAA')
-        self.assertEqual(pst1.get_subseq(
+        self.assertEqual(self.pst1.get_subseq(
             6, 26, strand=core.PolymerStrand.negative), 'TTGGGCATTTGGGCATTTGGG')
 
 
+#Disorganized
 class DnaSpeciesTypeTestCase(unittest.TestCase):
     def test(self):
         self.tmp_dirname = tempfile.mkdtemp()
@@ -288,45 +399,48 @@ class DnaSpeciesTypeTestCase(unittest.TestCase):
         shutil.rmtree(self.tmp_dirname)
 
 
+# Done
 class PolymerLocusTestCase(unittest.TestCase):
-    def test_constructor(self):
-        cell1 = core.Cell()
 
+    def setUp(self):
+
+        cell1 = core.Cell()
         self.tmp_dirname = tempfile.mkdtemp()
         filepath = os.path.join(self.tmp_dirname, 'test_seq.fasta')
         with open(filepath, 'w') as f:
             f.write('>dna1\nACGTACGTACGTACG\n')
 
-        dna1 = core.DnaSpeciesType(id='dna1', sequence_path=filepath,
+        self.dna1 = core.DnaSpeciesType(id='dna1', sequence_path=filepath,
                                    circular=False, double_stranded=False)
 
-        locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=dna1,
+        self.locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=self.dna1,
                                    strand=core.PolymerStrand.positive, start=1, end=15)
 
-        # test constructor
-        self.assertEqual(locus1.id, 'locus1')
-        self.assertEqual(locus1.cell, cell1)
-        self.assertEqual(locus1.name, 'locus1')
-        self.assertEqual(locus1.polymer, dna1)
-        self.assertEqual(locus1.strand, core.PolymerStrand.positive)
-        self.assertEqual(locus1.start, 1)
-        self.assertEqual(locus1.end, 15)
-
-        # test methods
-        self.assertEqual(locus1.get_seq(), 'ACGTACGTACGTACG')
-        self.assertEqual(locus1.get_len(), 15)
-
-        # flip strand; test methods
-        rev_comp_seq = locus1.get_seq().reverse_complement()
-        locus1.strand = core.PolymerStrand.negative
-        self.assertEqual(locus1.get_seq(), rev_comp_seq)
-        self.assertEqual(locus1.get_len(), 15)
-
+    def tearDown(self):
         shutil.rmtree(self.tmp_dirname)
 
+    def test_seq(self):
 
+        self.assertEqual(self.locus1.get_seq(), 'ACGTACGTACGTACG')
+
+        rev_comp_seq = self.locus1.get_seq().reverse_complement()
+        self.locus1.strand = core.PolymerStrand.negative
+        self.assertEqual(self.locus1.get_seq(), rev_comp_seq)
+
+    def test_len(self):
+
+        self.assertEqual(self.locus1.get_len(), 15)
+
+        # flip strand; test methods
+        rev_comp_seq = self.locus1.get_seq().reverse_complement()
+        self.locus1.strand = core.PolymerStrand.negative
+        self.assertEqual(self.locus1.get_len(), 15)
+
+
+# Proteniation?
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
+
         met = core.MetaboliteSpeciesType(structure=(
             'InChI=1S'
             '/C10H14N5O7P'
@@ -361,7 +475,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             species=species_2, coefficient=1)
 
         self.observable_expression_1 = observable_expression_1 = core.ObservableExpression(
-            expression='{} + {}'.format(species_1.id(), species_2.id()), 
+            expression='{} + {}'.format(species_1.id(), species_2.id()),
             species=[species_1, species_2]
         )
 
@@ -416,7 +530,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             name='test_reaction2',
             cell=cell_1,
             participants=[participant_1, participant_2],
-            reversible=False)        
+            reversible=False)
 
         self.rate_law_expression_2 = rate_law_expression_2 = core.RateLawExpression(
             expression='p1*species_type_1[c]*species_type_2[c]/(p2+(obs1^2/p3))',
@@ -437,7 +551,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             },
             core.MetaboliteSpeciesType: {
                 species_type_1.id: species_type_1,
-                species_type_2.id: species_type_2 
+                species_type_2.id: species_type_2
             },
             core.Species: {
                 species_1.id(): species_1,
@@ -453,6 +567,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             }
         }
 
+    # Junk tests
     def test_Reaction(self):
         self.assertEqual(self.reaction_1.id, 'reaction_1')
         self.assertEqual(self.reaction_1.name, 'test_reaction')
@@ -467,11 +582,12 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         self.assertEqual(self.rate_law_1.direction, core.RateLawDirection.forward)
         self.assertEqual(self.rate_law_1.expression, self.rate_law_expression_1)
         self.assertEqual(self.rate_law_1.gen_id(), 'reaction_1_forward')
-        
+
         self.assertEqual(self.rate_law_2.direction, core.RateLawDirection.backward)
         self.assertEqual(self.rate_law_2.expression, self.rate_law_expression_2)
         self.assertIn(self.rate_law_2.gen_id(), 'reaction_2_backward')
-        
+
+    # Junk test
     def test_Parameter(self):
         self.assertEqual(self.parameter_1.id, 'p1')
         self.assertEqual(self.parameter_2.name, 'test_parameter2')
@@ -482,7 +598,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         self.assertEqual(self.parameter_3.database_references, [])
 
     def test_deserialize_RateLawExpression(self):
-        
+
         # add RateLawExpression to self.objects
         rle_1, error = core.RateLawExpression().deserialize(
             value='species_type_1[c]', objects=self.objects)
@@ -508,116 +624,56 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         obj, error = core.RateLawExpression().deserialize(value=value, objects=self.objects)
         self.assertTrue(obj is None)
 
-
+# Done
 class ComplexSpeciesTypeTestCase(unittest.TestCase):
-    def test_ComplexSpeciesType(self):
 
-        # Test constructor
-        complex1 = core.ComplexSpeciesType()
+    def setUp(self):
 
-        self.assertEqual(complex1.region, '')
-        self.assertEqual(complex1.binding, '')
-        self.assertEqual(complex1.complex_type, '')
-        self.assertEqual(complex1.composition_in_uniprot, '')
-        self.assertEqual(complex1.formation_process, None)
-        self.assertEqual(complex1.subunits, [])
+        self.complex1  = core.ComplexSpeciesType()
+        self.complex2  = core.ComplexSpeciesType()
 
-        cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
+        self.cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
                                                structure='InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2')
-        cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
+        self.cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
                                                structure='InChI=1S/Zn/q+2')
 
-        # Test adding subunit composition
         # Add subunit composition: (2) cofactor1 + (3) cofactor2 ==> complex1
         species_type_coeff1 = core.SpeciesTypeCoefficient(
-            species_type=cofactor1, coefficient=2)
+            species_type=self.cofactor1, coefficient=2)
         species_type_coeff2 = core.SpeciesTypeCoefficient(
-            species_type=cofactor2, coefficient=3)
-        complex1.subunits = [species_type_coeff1, species_type_coeff2]
+            species_type=self.cofactor2, coefficient=3)
+        self.complex1.subunits = [species_type_coeff1, species_type_coeff2]
 
-        self.assertEqual(complex1.get_charge(), 6)
-        self.assertAlmostEqual(complex1.get_mol_wt(),
-                               (2*cofactor1.get_mol_wt() + 3 * cofactor2.get_mol_wt()))
-        self.assertEqual(complex1.get_empirical_formula(),
+        # Add subunit composition: (1) cofactor1 + (1) cofactor2 ==> complex1
+        species_type_coeff1 = core.SpeciesTypeCoefficient(
+            species_type=self.cofactor1, coefficient=1)
+        species_type_coeff2 = core.SpeciesTypeCoefficient(
+            species_type=self.cofactor2, coefficient=1)
+        self.complex2.subunits = [species_type_coeff1, species_type_coeff2]
+
+    def tearDown(self):
+        pass
+
+    def test_get_charge(self):
+        self.assertEqual(self.complex1.get_charge(), 6)
+        self.assertEqual(self.complex2.get_charge(), 2)
+
+    def test_get_mol_wt(self):
+        self.assertAlmostEqual(self.complex1.get_mol_wt(),
+                               (2*self.cofactor1.get_mol_wt() + 3*self.cofactor2.get_mol_wt()))
+
+        self.assertAlmostEqual(self.complex2.get_mol_wt(),
+                               (self.cofactor1.get_mol_wt() + self.cofactor2.get_mol_wt()))
+
+    def test_get_empirical_formula(self):
+        self.assertEqual(self.complex1.get_empirical_formula(),
                          chem.EmpiricalFormula('C16H14N2O6Zn3'))
 
-
-class SpeciesTestCase(unittest.TestCase):
-    def test_SpeciesType(self):
-        comp1 = core.Compartment(id='c')
-        met1 = core.MetaboliteSpeciesType(id='met1')
-        species1 = core.Species(species_type=met1, compartment=comp1)
-
-        self.assertEqual(core.Species.gen_id(met1, comp1), 'met1[c]')
-        self.assertEqual(core.Species.gen_id('met1', 'c'), 'met1[c]')
-        with self.assertRaisesRegex(ValueError, 'incorrect species type'):
-            core.Species.gen_id(None, 'c')
-        with self.assertRaisesRegex(ValueError, 'incorrect compartment type'):
-            core.Species.gen_id('met1', None)
-
-        self.assertEqual(species1.id(), 'met1[c]')
-
-    def test_serialize(self):
-        comp1 = core.Compartment(id='c')
-        met1 = core.MetaboliteSpeciesType(id='met1')
-        species1 = core.Species(species_type=met1, compartment=comp1)
-
-        self.assertEqual(species1.serialize(), 'met1[c]')
-
-    def test_deserialize(self):
-        comp1 = core.Compartment(id='c')
-        met1 = core.MetaboliteSpeciesType(id='met1')
-        dna1 = core.DnaSpeciesType(id='dna1')
-
-        objects = {
-            core.Compartment: {
-                'c': comp1,
-            },
-            core.MetaboliteSpeciesType: {
-                'met1': met1,
-            },
-            core.DnaSpeciesType: {
-                'dna1': dna1,
-            },
-        }
-
-        attr = core.SpeciesCoefficient.species
-        result = core.Species.deserialize(attr, 'met1[c]', objects)
-        self.assertEqual(result[0].species_type, met1)
-        self.assertEqual(result[0].compartment, comp1)
-        self.assertEqual(result[1], None)
-
-        result2 = core.Species.deserialize(attr, 'met1[c]', objects)
-        self.assertEqual(result2[0], result[0])
-        self.assertIn(core.Species, objects)
-        self.assertIn('met1[c]', objects[core.Species])
-
-        self.assertNotIn('dna1[c]', objects[core.Species])
-        self.assertEqual(core.Species.deserialize(
-            attr, 'dna1[c]', objects)[1], None)
-        self.assertIn('dna1[c]', objects[core.Species])
-
-        self.assertNotEqual(core.Species.deserialize(
-            attr, 'met2[c]', objects)[1], None)
-        self.assertNotEqual(core.Species.deserialize(
-            attr, 'met1[e]', objects)[1], None)
-        self.assertNotEqual(core.Species.deserialize(
-            attr, 'met1', objects)[1], None)
+        self.assertEqual(self.complex2.get_empirical_formula(),
+                         chem.EmpiricalFormula('C8H7N1O3Zn1'))
 
 
-class ConcentrationTestCase(unittest.TestCase):
-    def test_constructor(self):
-        comp = core.Compartment(id='c')
-        met = core.MetaboliteSpeciesType(id='met')
-        spec = core.Species(species_type=met, compartment=comp)
-
-        conc = core.Concentration(species=spec, value=0.2)
-
-        self.assertEqual(conc.serialize(), 'met[c]')
-        self.assertEqual(conc.value, 0.2)
-        self.assertEqual(conc.units, unit_registry.parse_units('molar'))
-
-
+#Done
 class SpeciesCoefficientTestCase(unittest.TestCase):
     def test_constructor(self):
         comp = core.Compartment(id='c')
@@ -743,6 +799,7 @@ class SpeciesCoefficientTestCase(unittest.TestCase):
         self.assertEqual(result[1], None)
 
 
+#Done
 class SpeciesTypeCoefficientTestCase(unittest.TestCase):
     def test_constructor(self):
 
@@ -766,6 +823,7 @@ class SpeciesTypeCoefficientTestCase(unittest.TestCase):
             species_type=met, coefficient=2000), '(2.000000e+03) met')
 
 
+#Done
 class SubunitAttributeTestCase(unittest.TestCase):
     def test_SubunitAttribute(self):
         compart1 = core.Compartment(id='c')
@@ -831,80 +889,90 @@ class SubunitAttributeTestCase(unittest.TestCase):
             result[1].messages[0], 'Incorrectly formatted participants: [c]met1 + (2) dna1')
 
 
+# Organized + cover + passes
 class ReactionParticipantAttributeTestCase(unittest.TestCase):
-    def test_ReactionParticipantAttribute(self):
-        compart1 = core.Compartment(id='c')
-        compart2 = core.Compartment(id='m')
 
-        met1 = core.MetaboliteSpeciesType(id='met1')
-        met2 = core.MetaboliteSpeciesType(id='met2')
-        complex1 = core.ComplexSpeciesType(id='complex1')
+    @classmethod
+    def setUpClass(cls):
+        cls.compart1 = core.Compartment(id='c')
+        cls.compart2 = core.Compartment(id='m')
 
-        species1 = core.Species(species_type=met1, compartment=compart1)
-        species2 = core.Species(species_type=met2, compartment=compart1)
-        species3 = core.Species(species_type=complex1, compartment=compart1)
-        species4 = core.Species(species_type=complex1, compartment=compart2)
+        cls.met1 = core.MetaboliteSpeciesType(id='met1')
+        cls.met2 = core.MetaboliteSpeciesType(id='met2')
+        cls.complex1 = core.ComplexSpeciesType(id='complex1')
 
-        species_coeff1 = core.SpeciesCoefficient(
-            species=species1, coefficient=-2)
-        species_coeff2 = core.SpeciesCoefficient(
-            species=species2, coefficient=-3)
-        species_coeff3 = core.SpeciesCoefficient(
-            species=species3, coefficient=5)
-        species_coeff4 = core.SpeciesCoefficient(
-            species=species4, coefficient=7)
+        cls.species1 = core.Species(species_type=cls.met1, compartment=cls.compart1)
+        cls.species2 = core.Species(species_type=cls.met2, compartment=cls.compart1)
+        cls.species3 = core.Species(species_type=cls.complex1, compartment=cls.compart1)
+        cls.species4 = core.Species(species_type=cls.complex1, compartment=cls.compart2)
+
+        cls.species_coeff1 = core.SpeciesCoefficient(
+            species=cls.species1, coefficient=-2)
+        cls.species_coeff2 = core.SpeciesCoefficient(
+            species=cls.species2, coefficient=-3)
+        cls.species_coeff3 = core.SpeciesCoefficient(
+            species=cls.species3, coefficient=5)
+        cls.species_coeff4 = core.SpeciesCoefficient(
+            species=cls.species4, coefficient=7)
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    def test_serialize(self):
 
         self.assertEqual(
             core.ReactionParticipantAttribute().serialize(participants=[]), '')
-        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1]),
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[self.species_coeff1]),
                          '[c]: (2) met1 ==> ')
-        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2]),
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[self.species_coeff1, self.species_coeff2]),
                          '[c]: (2) met1 + (3) met2 ==> ')
-        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2, species_coeff3]),
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[self.species_coeff1, self.species_coeff2, self.species_coeff3]),
                          '[c]: (2) met1 + (3) met2 ==> (5) complex1')
-        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[species_coeff1, species_coeff2, species_coeff4]),
+        self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[self.species_coeff1, self.species_coeff2, self.species_coeff4]),
                          '(2) met1[c] + (3) met2[c] ==> (7) complex1[m]')
+
+    def test_deserialize(self):
 
         objects = {
             core.DnaSpeciesType: {},
             core.MetaboliteSpeciesType: {
-                'met1': met1, 'met2': met2
+                'met1': self.met1, 'met2': self.met2
             },
             core.ComplexSpeciesType: {
-                'complex1': complex1
+                'complex1': self.complex1
             },
             core.Compartment: {
-                'c': compart1, 'm': compart2
+                'c': self.compart1, 'm': self.compart2
             },
             core.Species: {
-                'met1[c]': species1, 'met2[c]': species2, 'complex1[c]': species3, 'complex[m]': species4
-
+                'met1[c]': self.species1, 'met2[c]': self.species2, 'complex1[c]': self.species3, 'complex[m]': self.species4
             },
         }
 
         result = core.ReactionParticipantAttribute().deserialize(
             value='[c]: met1 ==> met2', objects=objects)
-        self.assertEqual(result[0][0].species.species_type, met1)
-        self.assertEqual(result[0][1].species.species_type, met2)
+        self.assertEqual(result[0][0].species.species_type, self.met1)
+        self.assertEqual(result[0][1].species.species_type, self.met2)
         self.assertEqual(result[0][0].coefficient, -1)
         self.assertEqual(result[0][1].coefficient,  1)
-        self.assertEqual(result[0][0].species.compartment, compart1)
-        self.assertEqual(result[0][1].species.compartment, compart1)
+        self.assertEqual(result[0][0].species.compartment, self.compart1)
+        self.assertEqual(result[0][1].species.compartment, self.compart1)
         self.assertEqual(result[0][0].species.id(), 'met1[c]')
         self.assertEqual(result[0][1].species.id(), 'met2[c]')
         self.assertEqual(result[1], None)
 
         result = core.ReactionParticipantAttribute().deserialize(
             value='(2) met1[c] + (3) met2[c] ==> (7) complex1[m]', objects=objects)
-        self.assertEqual(result[0][0].species.species_type, met1)
-        self.assertEqual(result[0][1].species.species_type, met2)
-        self.assertEqual(result[0][2].species.species_type, complex1)
+        self.assertEqual(result[0][0].species.species_type, self.met1)
+        self.assertEqual(result[0][1].species.species_type, self.met2)
+        self.assertEqual(result[0][2].species.species_type, self.complex1)
         self.assertEqual(result[0][0].coefficient, -2)
         self.assertEqual(result[0][1].coefficient, -3)
         self.assertEqual(result[0][2].coefficient, 7.0)
-        self.assertEqual(result[0][0].species.compartment, compart1)
-        self.assertEqual(result[0][1].species.compartment, compart1)
-        self.assertEqual(result[0][2].species.compartment, compart2)
+        self.assertEqual(result[0][0].species.compartment, self.compart1)
+        self.assertEqual(result[0][1].species.compartment, self.compart1)
+        self.assertEqual(result[0][2].species.compartment, self.compart2)
         self.assertEqual(result[0][0].species.id(), 'met1[c]')
         self.assertEqual(result[0][1].species.id(), 'met2[c]')
         self.assertEqual(result[0][2].species.id(), 'complex1[m]')
@@ -922,37 +990,50 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
         self.assertEqual(
             result[1].messages[0], 'Incorrectly formatted participants: ==> met1[c]')
 
-
+# Organized + cover + passes
 class ObservableExpressionTestCase(unittest.TestCase):
 
-    def test_observable_expression(self):
-        cell = core.Cell()
-        comp1 = core.Compartment(id='c')
-        met1 = core.MetaboliteSpeciesType(id='met1')
-        dna1 = core.DnaSpeciesType(id='dna1')
+    @classmethod
+    def setUpClass(cls):
 
-        species1 = core.Species(species_type=met1, compartment=comp1)
-        species2 = core.Species(species_type=dna1, compartment=comp1)
+        cls.cell  = core.Cell()
+        cls.comp1 = core.Compartment(id='c')
+        cls.dna1  = core.DnaSpeciesType(id='dna1')
+        cls.met1  = core.MetaboliteSpeciesType(id='met1')
 
-        exp1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[species1, species2])        
-        observable1 = core.Observable(cell=cell, id='obs1', expression=exp1)
-        exp2 = core.ObservableExpression(expression='met1[c] / obs1', species=[species1], observables=[observable1])
+        cls.species1 = core.Species(species_type=cls.met1, compartment=cls.comp1)
+        cls.species2 = core.Species(species_type=cls.dna1, compartment=cls.comp1)
+
+        cls.exp1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[cls.species1, cls.species2])
+        cls.observable1 = core.Observable(cell=cls.cell, id='obs1', expression=cls.exp1)
+        cls.exp2 = core.ObservableExpression(expression='met1[c] / obs1', species=[cls.species1], observables=[cls.observable1])
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
+    def test_serialize(self):
+
+        self.assertEqual(self.exp1.serialize(), '2 * met1[c] + 3.3 * dna1[c]')
+        self.assertEqual(self.exp2.serialize(), 'met1[c] / obs1')
+
+    def test_deserialize(self):
 
         objects = {
             core.Compartment: {
-                'c': comp1
+                'c': self.comp1
             },
             core.MetaboliteSpeciesType: {
-                'met1': met1
+                'met1': self.met1
             },
             core.DnaSpeciesType: {
-                'dna1': dna1
+                'dna1': self.dna1
             },
             core.Species: {
-                'met1[c]': species1, 'dna1[c]': species2
+                'met1[c]': self.species1, 'dna1[c]': self.species2
             },
             core.Observable: {
-                'obs1': observable1
+                'obs1': self.observable1
             }
         }
 
@@ -960,8 +1041,7 @@ class ObservableExpressionTestCase(unittest.TestCase):
             value='2 * met1[c] + 3.3 * dna1[c]', objects=objects)
         result2 = core.ObservableExpression().deserialize(
             value='met1[c] / obs1', objects=objects)
-        
-        self.assertEqual(exp1.serialize(), '2 * met1[c] + 3.3 * dna1[c]')
+
         self.assertEqual(result1[0].expression, '2 * met1[c] + 3.3 * dna1[c]')
         self.assertEqual(set([i.species_type.id for i in result1[0].species]), set(['met1', 'dna1']))
         self.assertEqual(set([i.compartment.id for i in result1[0].species]), set(['c', 'c']))
@@ -970,31 +1050,39 @@ class ObservableExpressionTestCase(unittest.TestCase):
         self.assertEqual(result2[0].species[0].species_type.id, 'met1')
         self.assertEqual(result2[0].observables[0].id, 'obs1')
         self.assertEqual(result2[1], None)
-        
 
+# Organized + cover + passes (deseralize uses ObservableExpression's method - junk test)
 class ObservableTestCase(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+
+        cls.cell  = core.Cell()
+        cls.comp1 = core.Compartment(id='c')
+        cls.met1  = core.MetaboliteSpeciesType(id='met1')
+        cls.dna1  = core.DnaSpeciesType(id='dna1')
+
+        cls.species1 = core.Species(species_type=cls.met1, compartment=cls.comp1)
+        cls.species2 = core.Species(species_type=cls.dna1, compartment=cls.comp1)
+
+        cls.exp1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[cls.species1, cls.species2])
+        cls.observable1 = core.Observable(cell=cls.cell, id='obs1', expression=cls.exp1)
+
+        cls.exp2 = core.ObservableExpression(expression='met1[c] / obs1', species=[cls.species1], observables=[cls.observable1])
+        cls.observable2 = core.Observable(cell=cls.cell, id='obs2', expression=cls.exp2)
+
+    @classmethod
+    def tearDownClass(cls):
+        pass
+
     def test_observables(self):
-        cell = core.Cell()
-        comp1 = core.Compartment(id='c')
-        met1 = core.MetaboliteSpeciesType(id='met1')
-        dna1 = core.DnaSpeciesType(id='dna1')
 
-        species1 = core.Species(species_type=met1, compartment=comp1)
-        species2 = core.Species(species_type=dna1, compartment=comp1)
+        self.assertEqual(self.cell.observables.get_one(id='obs1').expression.expression, '2 * met1[c] + 3.3 * dna1[c]')
+        self.assertEqual(set([i.species_type.id for i in self.cell.observables.get_one(id='obs1').expression.species]), set(['met1', 'dna1']))
+        self.assertEqual(self.cell.observables.get_one(id='obs1').expression.observables, [])
+        self.assertEqual(self.cell.observables.get_one(id='obs2').expression.observables[0], self.observable1)
 
-        exp1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[species1, species2])        
-        observable1 = core.Observable(cell=cell, id='obs1', expression=exp1)
-
-        exp2 = core.ObservableExpression(expression='met1[c] / obs1', species=[species1], observables=[observable1])
-        observable2 = core.Observable(cell=cell, id='obs2', expression=exp2)
-
-        self.assertEqual(cell.observables.get_one(id='obs1').expression.expression, '2 * met1[c] + 3.3 * dna1[c]')
-        self.assertEqual(set([i.species_type.id for i in cell.observables.get_one(id='obs1').expression.species]), set(['met1', 'dna1']))
-        self.assertEqual(cell.observables.get_one(id='obs1').expression.observables, [])
-        self.assertEqual(cell.observables.get_one(id='obs2').expression.observables[0], observable1)
-
-
+# Organized + cover + passes
 class ValidatorTestCase(unittest.TestCase):
     def test(self):
         kb = core.KnowledgeBase(id='kb', name='test kb', version='0.0.1', wc_kb_version='0.0.1')
