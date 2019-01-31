@@ -158,6 +158,37 @@ class RegulatoryModule(obj_model.Model):
                             'direction', 'comments', 'references', 'database_references')
 
 
+
+class PtmSite(obj_model.Model):
+    """ Knowledge of protein modification sites
+        
+        Attributes:
+        id (:obj:`str`): identifier
+        name (:obj:`str`): name
+        modified_protein (:obj:`ProteinSpeciesType`): modified protein
+        type (:obj:`str`): type of modification (phosphorylation, methylation, etc...)
+        modified_residue (:obj:`str`): residue name and position in protein sequence
+        abundance_ratio (:obj:`int`): ratio of modified protein abundance
+        comments (:obj:`str`): comments
+        references (:obj:`list` of :obj:`Reference`): references
+        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
+    """
+    id = obj_model.SlugAttribute(primary=True, unique=True)
+    name = obj_model.StringAttribute()
+    modified_protein = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='ptm_sites')
+    type = obj_model.StringAttribute()
+    modified_residue = obj_model.StringAttribute()
+    abundance_ratio = obj_model.FloatAttribute()
+    comments = obj_model.LongStringAttribute()
+    references = obj_model.ManyToManyAttribute(core.Reference, related_name='ptm_sites')
+    database_references = core.DatabaseReferenceAttribute(related_name='ptm_sites')
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'name', 'modified_protein', 'type', 'modified_residue',
+                           'abundance_ratio', 'comments', 'references', 'database_references')
+
+
+
 #####################
 #####################
 # Species types
@@ -342,7 +373,8 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     Related attributes:
         regulatory_elements (:obj:`list` of `RegulatoryElementLocus`): potential binding sites
-        regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory DNA binding sites    
+        regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory DNA binding sites 
+        ptm_sites (:obj:list` of `PtmSite`): protein modification sites   
     """
 
     uniprot = obj_model.StringAttribute()

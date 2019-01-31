@@ -62,6 +62,7 @@ EUKARYOTE_MODELS = (
     eukaryote_schema.ExonLocus,
     eukaryote_schema.ProteinSpeciesType,
     eukaryote_schema.CdsLocus,
+    eukaryote_schema.PtmSite,
     core.ComplexSpeciesType,
     core.Concentration,
     core.Observable,

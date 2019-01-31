@@ -527,3 +527,24 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         self.assertEqual(reg_module3.id, 'rm3')
         self.assertEqual(reg_module3.name, 'reg_module3')
         self.assertEqual(set([i.gene for i in enhancer.regulatory_modules]), set([gene1, gene2]))
+
+
+class PtmSiteTestCase(unittest.TestCase):
+    def test_constructor(self):
+        # defining modified protein name
+        mp = eukaryote_schema.ProteinSpeciesType(id='mp')
+        
+        # testing example of modification: one protein one modified site
+        ptm1 = eukaryote_schema.PtmSite(id='protptm1', name='ptm1', modified_protein=mp,
+             type='phosphorylation', modified_residue='s145', abundance_ratio='0.5', comments='oneprot_onesite')
+
+        self.assertEqual(ptm1.id, 'protptm1')
+        self.assertEqual(ptm1.name, 'ptm1')
+        self.assertEqual(ptm1.modified_protein, mp)
+        self.assertEqual(ptm1.type, 'phosphorylation')
+        self.assertEqual(ptm1.modified_residue, 's145')
+        self.assertEqual(ptm1.abundance_ratio, '0.5')
+        self.assertEqual(ptm1.comments, 'oneprot_onesite')
+        self.assertEqual(ptm1.references, [])
+        self.assertEqual(ptm1.database_references, [])
+
