@@ -48,3 +48,6 @@ tests/fixtures/secret/
 .Trashes
 .~lock.*
 Thumbs.db
+
+# flat file index
+*.fai
