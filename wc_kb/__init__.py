@@ -15,6 +15,7 @@ from .core import (KnowledgeBaseObject,
                    PolymerSpeciesType,
                    ComplexSpeciesType,
                    DnaSpeciesType,
+                   ChromosomeFeature,
                    RnaType,
                    PolymerLocus,
                    GeneType,
@@ -26,7 +27,6 @@ from .core import (KnowledgeBaseObject,
                    DatabaseReferenceAttribute,
                    ReactionParticipantAttribute,
                    SubunitAttribute,
-                   Property,
                    Observable,
                    ObservableExpression,
                    PolymerStrand,
@@ -35,7 +35,10 @@ from .core import (KnowledgeBaseObject,
                    RateLaw,
                    RateLawExpression,
                    Reference,
-                   DatabaseReference)
+                   DatabaseReference,
+                   Evidence,
+                   Experiment,
+                   SpeciesTypeProperty)
 
 from . import io
 from . import util
