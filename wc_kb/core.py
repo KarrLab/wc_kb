@@ -1875,16 +1875,18 @@ class Evidence(obj_model.Model):
     """
 
     id       = obj_model.SlugAttribute(primary=True, unique=True)
-    object   = obj_model.StringAttribute() # need to parse object
+    object   =  obj_model.StringAttribute() #obj_model.ManyToOneAttribute(obj_model.Model, related_name='evidences')
     property = obj_model.StringAttribute()
-    value    = obj_model.IntegerAttribute()
-    units    = obj_model.units.UnitAttribute(unit_registry, none=False) # False allows None units
+    values = obj_model.IntegerAttribute()
+    mean = obj_model.IntegerAttribute()
+    standard_error = obj_model.IntegerAttribute()
+    units = obj_model.units.UnitAttribute(unit_registry, none=False) # False allows None units
     database_references = DatabaseReferenceAttribute(related_name='evidence')
     experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='evidence')
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'object', 'property', 'value', 'units', 'experiment', 'database_references', 'comments')
+        attribute_order = ('id', 'object', 'property', 'values', 'mean', 'standard_error', 'units', 'experiment', 'database_references', 'comments')
 
 
 class Experiment(obj_model.Model):
