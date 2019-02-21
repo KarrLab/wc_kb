@@ -17,6 +17,7 @@ from wc_utils.util import chem
 from wc_utils.util.list import det_dedupe
 from wc_utils.util.units import unit_registry
 import abc
+import pdb
 import Bio.Alphabet
 import Bio.Seq
 import enum
@@ -146,6 +147,9 @@ class MetaboliteSpeciesTypeType(enum.Enum):
     modified_nucleobase = 4
     carbohydrate_sugar = 5
     carbohydrate_sugar_phosphate = 6
+    ribonucleotide_monophosphate = 7
+    ribonucleotide_biphosphate = 8
+    ribonucleotide_triphosphate = 9
 
 
 class SignalSequenceType(enum.Enum):
@@ -1416,16 +1420,15 @@ class MetaboliteSpeciesType(SpeciesType):
     Attributes:
         structure (:obj:`str`): InChI-encoded structure
     """
-    structure = obj_model.StringAttribute()
     type = obj_model.EnumAttribute(MetaboliteSpeciesTypeType)
     concentration = obj_model.OneToManyAttribute('Concentration', related_name='metabolites')
     species_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='metabolites')
-    evidence = obj_model. OneToManyAttribute('Evidence', related_name='metabolites')
+    #evidence = obj_model. OneToManyAttribute('Evidence', related_name='metabolites')
 
     class Meta(obj_model.Model.Meta):
-        verbose_name = 'Metabolites'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'structure', 'concentration', 'species_properties',
-                           'evidence', 'database_references', 'references', 'comments')
+        verbose_name = 'Metabolite'
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'concentration', 'species_properties',
+                           'database_references', 'references', 'comments')
 
     def get_structure(self, ph=7.95):
         """ Get the structure
