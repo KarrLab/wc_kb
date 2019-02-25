@@ -200,10 +200,13 @@ class ReactionType(enum.Enum):
 
 class ReferenceType(enum.Enum):
     """ Types of references """
-    journal_publication = 0
-    preprint_publication = 1
+
+    article = 0
+    preprint = 1
     supplementary_material = 2
-    conference_proceedings = 3
+    book = 3
+    thesis = 4
+    misc = 5
 
 
 #####################
@@ -678,15 +681,23 @@ class Reference(obj_model.Model):
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
         observables (:obj:`list` of :obj:`Observable`): observables
     """
+
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
     type = obj_model.EnumAttribute(ReferenceType)
+    authors = obj_model.LongStringAttribute()
+    title = obj_model.LongStringAttribute()
+    volume = obj_model.StringAttribute()
+    issue = obj_model.StringAttribute()
+    journal = obj_model.StringAttribute()
+    pages = obj_model.StringAttribute()
+    year = obj_model.IntegerAttribute()
     cell = obj_model.ManyToOneAttribute(Cell, related_name='references')
-    comments = obj_model.LongStringAttribute()
     database_references = DatabaseReferenceAttribute(related_name='references')
+    comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'type', 'database_references', 'comments')
+        attribute_order = ('id', 'name', 'type', 'title', 'authors', 'journal', 'volume', 'issue', 'pages', 'year', 'database_references', 'comments')
 
 
 class Compartment(KnowledgeBaseObject):
@@ -1527,7 +1538,7 @@ class DnaSpeciesType(PolymerSpeciesType):
     class Meta(obj_model.Model.Meta):
         verbose_name = 'DNA'
         attribute_order = ('id', 'name', 'sequence_path', 'circular', 'double_stranded',
-                           'ploidy', 'half_life', 'database_references', 'references', 'comments')
+                           'ploidy', 'database_references', 'references', 'comments')
 
     def get_seq(self, start=None, end=None):
         """ Get the sequence
