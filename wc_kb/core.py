@@ -652,7 +652,7 @@ class DatabaseReference(obj_model.Model):
         attribute_order = ('id', 'database', 'entry_id', 'comments')
         #tabular_orientation = TabularOrientation.inline
         unique_together = (('database', 'id'), )
-        ordering = ('database', 'id')
+        #ordering = ('database', 'id')
 
     def serialize(self):
         """ Generate string representation
