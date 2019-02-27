@@ -33,7 +33,7 @@ PROKARYOTE_MODELS = (
     core.Compartment,
     core.DnaSpeciesType,
     core.ChromosomeFeature,
-    prokaryote_schema.PromoterLocus,
+    #prokaryote_schema.PromoterLocus,
     prokaryote_schema.TranscriptionUnitLocus,
     prokaryote_schema.GeneLocus,
     core.MetaboliteSpeciesType,

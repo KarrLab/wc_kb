@@ -238,32 +238,6 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 #####################
 # Locus types
 
-
-class PromoterLocus(core.PolymerLocus):
-    """ Knowledge of a promoter for a transcription unit
-
-    Attributes:
-        pribnow_start (:obj:`int`): Pribnow box start coordinate
-        pribnow_end (:obj:`int`): Pribnow box end coordinate
-        up_35_start (:obj:`int`): -35 promoter start coordinate
-        up_35_end (:obj:`int`): -35 promoter  end coordinate
-
-
-    Related attributes:
-        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`)
-
-    """
-    pribnow_start = obj_model.IntegerAttribute()
-    pribnow_end = obj_model.IntegerAttribute()
-    up_35_start = obj_model.IntegerAttribute()
-    up_35_end = obj_model.IntegerAttribute()
-
-    class Meta(obj_model.Model.Meta):
-        verbose_name = 'Promoters'
-        attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end',
-                           'strand', 'start', 'end', 'comments', 'references', 'database_references')
-
-
 class TranscriptionUnitLocus(core.PolymerLocus):
     """ Knowledge about an open reading frame
 
@@ -272,15 +246,16 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         genes (:obj:`list` of :obj:`GeneLocus`): genes
     """
 
-    promoter = obj_model.ManyToOneAttribute(
-        'PromoterLocus', related_name='transcription_units')
+    pribnow_start = obj_model.IntegerAttribute()
+    pribnow_end = obj_model.IntegerAttribute()
+    #promoter = obj_model.ManyToOneAttribute('PromoterLocus', related_name='transcription_units')
     genes = obj_model.OneToManyAttribute(
         'GeneLocus', related_name='transcription_units')
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Transcription units'
-        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end',
-                           'genes', 'comments', 'references', 'database_references')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
+                           'genes', 'database_references', 'references', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -327,3 +302,29 @@ class GeneLocus(core.PolymerLocus):
         attribute_order = ('id', 'name', 'synonyms', 'symbol', 'homologs', 'cog_category', 'type',
             'polymer', 'strand', 'start', 'end', 'is_essential', 'evidence',
             'database_references', 'references', 'comments')
+
+"""
+class PromoterLocus(core.PolymerLocus):
+    " Knowledge of a promoter for a transcription unit
+
+    Attributes:
+        pribnow_start (:obj:`int`): Pribnow box start coordinate
+        pribnow_end (:obj:`int`): Pribnow box end coordinate
+        up_35_start (:obj:`int`): -35 promoter start coordinate
+        up_35_end (:obj:`int`): -35 promoter  end coordinate
+
+
+    Related attributes:
+        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`)
+
+    ""
+    pribnow_start = obj_model.IntegerAttribute()
+    pribnow_end = obj_model.IntegerAttribute()
+    up_35_start = obj_model.IntegerAttribute()
+    up_35_end = obj_model.IntegerAttribute()
+
+    class Meta(obj_model.Model.Meta):
+        verbose_name = 'Promoters'
+        attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end',
+                           'strand', 'start', 'end', 'comments', 'references', 'database_references')
+"""

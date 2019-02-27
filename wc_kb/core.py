@@ -132,9 +132,11 @@ class ChromosomeFeatureType(enum.Enum):
     """ Type of complex formation"""
     LongStructuralRegion = 0
     DnaMethylation = 1
-    GeneWizprediction = 2
+    GeneWizPrediction = 2
     DnaBindingSite = 3
-    DnaABox = 4
+    DnaBindingSite_Lon = 4
+    FunctionalDnaABox = 5
+    DnaABox = 6
 
 
 class MetaboliteSpeciesTypeType(enum.Enum):
@@ -1871,15 +1873,16 @@ class ChromosomeFeature(KnowledgeBaseObject):
     length = obj_model.IntegerAttribute(min=0)
     direction = obj_model.EnumAttribute(DirectionType)
     type = obj_model.EnumAttribute(ChromosomeFeatureType)
+    intensity = obj_model.IntegerAttribute(min=0)
+    unit = obj_model.units.UnitAttribute(unit_registry, none=True)
     chromosome = obj_model.ManyToOneAttribute('DnaSpeciesType', related_name='chromosome_features')
     evidence   = obj_model.OneToManyAttribute('Evidence', related_name='chromosome_features')
     database_references = DatabaseReferenceAttribute(related_name='chromosome_features')
     references = obj_model.ManyToManyAttribute('Reference', related_name='chromosome_features')
 
     class Meta(obj_model.Model.Meta):
-        verbose_name = 'DNA features'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'chromosome', 'coordinate', 'length',
-                           'direction', 'evidence', 'database_references', 'references', 'comments')
+        attribute_order = ('id', 'name', 'type', 'chromosome', 'coordinate', 'length',
+                           'direction', 'intensity', 'unit', 'evidence', 'database_references', 'references', 'comments')
 
 
 class Evidence(obj_model.Model):
@@ -1889,6 +1892,7 @@ class Evidence(obj_model.Model):
     """
 
     id       = obj_model.SlugAttribute(primary=True, unique=True)
+    cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
     object   =  obj_model.StringAttribute() #obj_model.ManyToOneAttribute(obj_model.Model, related_name='evidences')
     property = obj_model.StringAttribute()
     values = obj_model.IntegerAttribute()
@@ -1900,7 +1904,7 @@ class Evidence(obj_model.Model):
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'object', 'property', 'values', 'mean', 'standard_error', 'units', 'experiment', 'database_references', 'comments')
+        attribute_order = ('id', 'cell', 'object', 'property', 'values', 'mean', 'standard_error', 'units', 'experiment', 'database_references', 'comments')
 
 
 class Experiment(obj_model.Model):
