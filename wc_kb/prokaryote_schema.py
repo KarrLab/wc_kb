@@ -248,13 +248,13 @@ class TranscriptionUnitLocus(core.PolymerLocus):
 
     pribnow_start = obj_model.IntegerAttribute()
     pribnow_end = obj_model.IntegerAttribute()
-    #promoter = obj_model.ManyToOneAttribute('PromoterLocus', related_name='transcription_units')
+    type = obj_model.EnumAttribute(core.RnaType)
     genes = obj_model.OneToManyAttribute(
         'GeneLocus', related_name='transcription_units')
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Transcription units'
-        attribute_order = ('id', 'name', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
+        attribute_order = ('id', 'name', 'type', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
                            'genes', 'database_references', 'references', 'comments')
 
     def get_3_prime(self):
@@ -292,39 +292,14 @@ class GeneLocus(core.PolymerLocus):
 
     symbol = obj_model.StringAttribute()
     type = obj_model.EnumAttribute(core.GeneType)
+    direction = obj_model.EnumAttribute(core.DirectionType)
     is_essential = obj_model.BooleanAttribute()
-    homologs = core.DatabaseReferenceAttribute(related_name='genes')
+    homologs = obj_model.LongStringAttribute() #core.DatabaseReferenceAttribute(related_name='genes')
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='genes')
     cog_category = obj_model.EnumAttribute(core.CogCategoryType)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Gene'
         attribute_order = ('id', 'name', 'synonyms', 'symbol', 'homologs', 'cog_category', 'type',
-            'polymer', 'strand', 'start', 'end', 'is_essential', 'evidence',
+            'polymer', 'direction', 'start', 'end', 'is_essential', 'evidence',
             'database_references', 'references', 'comments')
-
-"""
-class PromoterLocus(core.PolymerLocus):
-    " Knowledge of a promoter for a transcription unit
-
-    Attributes:
-        pribnow_start (:obj:`int`): Pribnow box start coordinate
-        pribnow_end (:obj:`int`): Pribnow box end coordinate
-        up_35_start (:obj:`int`): -35 promoter start coordinate
-        up_35_end (:obj:`int`): -35 promoter  end coordinate
-
-
-    Related attributes:
-        transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`)
-
-    ""
-    pribnow_start = obj_model.IntegerAttribute()
-    pribnow_end = obj_model.IntegerAttribute()
-    up_35_start = obj_model.IntegerAttribute()
-    up_35_end = obj_model.IntegerAttribute()
-
-    class Meta(obj_model.Model.Meta):
-        verbose_name = 'Promoters'
-        attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end',
-                           'strand', 'start', 'end', 'comments', 'references', 'database_references')
-"""

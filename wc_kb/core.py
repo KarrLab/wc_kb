@@ -1875,13 +1875,13 @@ class ChromosomeFeature(KnowledgeBaseObject):
     type = obj_model.EnumAttribute(ChromosomeFeatureType)
     intensity = obj_model.IntegerAttribute(min=0)
     unit = obj_model.units.UnitAttribute(unit_registry, none=True)
-    chromosome = obj_model.ManyToOneAttribute('DnaSpeciesType', related_name='chromosome_features')
+    polymer = obj_model.ManyToOneAttribute('DnaSpeciesType', related_name='chromosome_features')
     evidence   = obj_model.OneToManyAttribute('Evidence', related_name='chromosome_features')
     database_references = DatabaseReferenceAttribute(related_name='chromosome_features')
     references = obj_model.ManyToManyAttribute('Reference', related_name='chromosome_features')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'type', 'chromosome', 'coordinate', 'length',
+        attribute_order = ('id', 'name', 'type', 'polymer', 'coordinate', 'length',
                            'direction', 'intensity', 'unit', 'evidence', 'database_references', 'references', 'comments')
 
 
