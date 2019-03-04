@@ -3,7 +3,7 @@ import os
 import shutil
 import tempfile
 import unittest
-
+import openpyxl
 
 class TestKbTranslater(unittest.TestCase):
 
@@ -41,3 +41,20 @@ class TestKbTranslater(unittest.TestCase):
 
         with self.assertRaises(KeyError):
             kb_translater.KbTranslater.concatenateValues([{"a":1, "A":2}, {"a":11,"b":2,"c":3}], ('a', 'A')) == '1:2, 11:3'
+
+    def test_concatenateEviField(self):
+
+        wb = openpyxl.Workbook()
+        wb['Sheet'].cell(column=1, row=1).value = 'test1'
+        wb['Sheet'].cell(column=2, row=1).value = None
+
+        # Testing None case
+        kb_translater.KbTranslater.concatenateEviField(wb['Sheet'].cell(column=2, row=1), 'empty line test')
+        assert wb['Sheet'].cell(column=2, row=1).value == 'empty line test'
+
+        # Testing case with pre-existing entry
+        kb_translater.KbTranslater.concatenateEviField(wb['Sheet'].cell(column=1, row=1), 'test2')
+        assert wb['Sheet'].cell(column=1, row=1).value == 'test1, test2'
+
+        kb_translater.KbTranslater.concatenateEviField(wb['Sheet'].cell(column=2, row=1), 'test3')
+        assert wb['Sheet'].cell(column=2, row=1).value == 'empty line test, test3'

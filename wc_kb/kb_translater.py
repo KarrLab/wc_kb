@@ -30,6 +30,7 @@ class KbTranslater:
 
         coreChromFeats = self.core['Chromosome features']
         kbChromFeats   = self.kb['Chromosome features']
+        kbEviColumn = 10
 
         assert kbChromFeats.cell(column=1, row=1).value  == 'Id'
         assert kbChromFeats.cell(column=2, row=1).value  == 'Name'
@@ -44,10 +45,9 @@ class KbTranslater:
         assert kbChromFeats.cell(column=11, row=1).value == 'Database references' #NO DB REFS IN CORE
         assert kbChromFeats.cell(column=12, row=1).value == 'References'
         assert kbChromFeats.cell(column=13, row=1).value == 'Comments'
-        eviProperty = 'intensity'
 
-        for rowIdx in range(3, 300): # coreChromFeats.max_row+1):
-            print(rowIdx)
+        for rowIdx in range(3, 100): # coreChromFeats.max_row+1):
+            #print(rowIdx)
 
             kbChromFeats.cell(column=1, row=rowIdx-1).value = coreChromFeats.cell(column=1, row=rowIdx).value.replace('-','_') # ID
             kbChromFeats.cell(column=2, row=rowIdx-1).value = coreChromFeats.cell(column=2, row=rowIdx).value # Name
@@ -59,24 +59,28 @@ class KbTranslater:
             kbChromFeats.cell(column=8, row=rowIdx-1).value = coreChromFeats.cell(column=10, row=rowIdx).value #Intensity
             # NO 'unit' entry in core: kbChromFeats.cell(column=9, row=rowIdx-1).value = coreChromFeats.cell(column=11, row=rowIdx).value #Unit
 
-            # Add evidence
+            # Add evidence and experiment(s)
             eviDictStr = coreChromFeats.cell(column=12, row=rowIdx).value
             if eviDictStr is not None:
                 eviDict = json.loads(eviDictStr)
+                objectId = kbChromFeats.cell(column=1, row=rowIdx-1).value
 
-                if rowIdx==3:   # Add experiment once - all data from same experiment
+                if rowIdx==3:   # Add experiment once - all chrom feature data from same experiment
                     expId = self.addExperiment(eviDict)
 
                 self.addEvidence(
-                    objectId = kbChromFeats.cell(column=1, row=rowIdx-1).value,
-                    property = eviProperty,
+                    objectId = objectId,
+                    property = 'intensity',
                     eviDict = eviDict,
-                    eviColumn = 10,
+                    kbEviColumn = kbEviColumn,
                     expId = expId)
 
+                self.concatenateEviField(kbChromFeats.cell(column=kbEviColumn, row=kbChromFeats.max_row),
+                                         self.get_eviId(objectId, 'intensity'))
+
             # NO 'Cross references' entry in core: kbChromFeats.cell(column=11, row=rowIdx-1).value = coreChromFeats.cell(column=11, row=rowIdx).value
-            # kbChromFeats.cell(column=12, row=rowIdx-1).value = coreChromFeats.cell(column=14, row=rowIdx).value # copy references
-            kbChromFeats.cell(column=13, row=rowIdx-1).value = coreChromFeats.cell(column=13, row=rowIdx).value # copy comments
+            kbChromFeats.cell(column=12, row=rowIdx-1).value = coreChromFeats.cell(column=14, row=rowIdx).value # copy references
+            kbChromFeats.cell(column=13, row=rowIdx-1).value = coreChromFeats.cell(column=13, row=rowIdx).value
 
     def translateTranscriptionUnits(self):
         """ Parses information from the core's Transcription unit's sheet and inserts them to the appropiate field(s) in the KB structure. """
@@ -98,8 +102,7 @@ class KbTranslater:
         assert kbTUs.cell(column=12, row=1).value == 'References'
         assert kbTUs.cell(column=13, row=1).value == 'Comments'
 
-        for rowIdx in range(3, 300): #coreTUs.max_row+1):
-            print(rowIdx)
+        for rowIdx in range(3, 100): #coreTUs.max_row+1):
 
             kbTUs.cell(column=1, row=rowIdx-1).value = coreTUs.cell(column=1, row=rowIdx).value #ID
             kbTUs.cell(column=2, row=rowIdx-1).value = coreTUs.cell(column=2, row=rowIdx).value #NAME
@@ -113,13 +116,14 @@ class KbTranslater:
             kbTUs.cell(column=10, row=rowIdx-1).value = coreTUs.cell(column=10, row=rowIdx).value #GENES
             #NO 'Cross references' entry in core: kbTUs.cell(column=11, row=rowIdx-1).value = coreTUs.cell(column=4, row=rowIdx).value # DB REFS
             kbTUs.cell(column=12, row=rowIdx-1).value = coreTUs.cell(column=14, row=rowIdx).value #REFS
-            kbTUs.cell(column=13, row=rowIdx-1).value = coreTUs.cell(column=13, row=rowIdx).value #COMMENTS
+            kbTUs.cell(column=13, row=rowIdx-1).value = coreTUs.cell(column=13, row=rowIdx).value
 
     def translateGenes(self):
         """ Parses information from the core's Genes sheet and inserts them to the appropiate field(s) in the KB structure. """
 
         coreGenes = self.core['Genes']
         kbGenes   = self.kb['Genes']
+        kbEviColumn = 13
 
         assert kbGenes.cell(column=1, row=1).value == 'Id'
         assert kbGenes.cell(column=2, row=1).value == 'Name'
@@ -135,10 +139,8 @@ class KbTranslater:
         assert kbGenes.cell(column=14, row=1).value == 'Database references'
         assert kbGenes.cell(column=15, row=1).value == 'References'
         assert kbGenes.cell(column=16, row=1).value == 'Comments'
-        eviProperty = 'is_essential'
 
-        for rowIdx in range(3, 300): #coreGenes.max_row+1):
-            print(rowIdx)
+        for rowIdx in range(3, 100): #coreGenes.max_row+1):
 
             kbGenes.cell(column=1, row=rowIdx-1).value = coreGenes.cell(column=1, row=rowIdx).value # ID
             kbGenes.cell(column=2, row=rowIdx-1).value = coreGenes.cell(column=2, row=rowIdx).value #NAME
@@ -147,9 +149,7 @@ class KbTranslater:
             kbGenes.cell(column=4, row=rowIdx-1).value = coreGenes.cell(column=3, row=rowIdx).value #SYMBOL
             homologsDicts = self.delinateJSONs(coreGenes.cell(column=6, row=rowIdx).value) #HOMOLOGS
             kbGenes.cell(column=5, row=rowIdx-1).value = self.concatenateValues(homologsDicts, ('species', 'xid'))
-
             # COLUMN 6: add COG categories
-
             kbGenes.cell(column=7, row=rowIdx-1).value = coreGenes.cell(column=7, row=rowIdx).value # TYPE
             kbGenes.cell(column=8, row=rowIdx-1).value = (coreGenes.cell(column=8, row=rowIdx).value).lower() # POLYMER
             kbGenes.cell(column=9, row=rowIdx-1).value = self.decodeDirection(coreGenes.cell(column=11, row=rowIdx).value) # DIRECTION
@@ -157,44 +157,70 @@ class KbTranslater:
             kbGenes.cell(column=11, row=rowIdx-1).value = (coreGenes.cell(column=9, row=rowIdx).value + coreGenes.cell(column=10, row=rowIdx).value)-1 # END
             kbGenes.cell(column=12, row=rowIdx-1).value = self.decodeIsEssential(coreGenes.cell(column=15, row=rowIdx).value) # IS ESSENTIAL
 
-            # Add evidence
+            # Add evidence and experiment(s)
             eviDictStr = coreGenes.cell(column=17, row=rowIdx).value
             if eviDictStr is not None:
                 eviDict = json.loads(eviDictStr)
-                if rowIdx==3:   # Add experiment once - all data from same experiment
+                objectId = kbGenes.cell(column=1, row=rowIdx-1).value
+
+                if rowIdx==3: # Add experiment once - all essentiality data from same experiment
                     expId = self.addExperiment(eviDict)
 
                 self.addEvidence(
-                    objectId = kbGenes.cell(column=1, row=rowIdx-1).value,
-                    property = eviProperty,
+                    objectId = objectId,
+                    property = 'is_essential',
                     eviDict = eviDict,
-                    eviColumn = 13,
+                    kbEviColumn = kbEviColumn,
                     expId = expId)
 
-            if rowIdx==3:   # Add experiment once - all data from same experiment
-                self.addExperiment(eviDict)
-
+                self.concatenateEviField(kbGenes.cell(column=kbEviColumn, row=kbGenes.max_row),
+                                         self.get_eviId(objectId, 'is_essential'))
 
             dbRefsDicts = self.delinateJSONs(coreGenes.cell(column=5, row=rowIdx).value)
-            #kbGenes.cell(column=14, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
-            #kbGenes.cell(column=15, row=rowIdx-1).value = coreGenes.cell(column=19, row=rowIdx).value # References
-            #kbGenes.cell(column=16, row=rowIdx-1).value = coreGenes.cell(column=18, row=rowIdx).value # Comments
+            kbGenes.cell(column=14, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
+
+
+            kbGenes.cell(column=15, row=rowIdx-1).value = coreGenes.cell(column=19, row=rowIdx).value # References
+            kbGenes.cell(column=16, row=rowIdx-1).value = coreGenes.cell(column=18, row=rowIdx).value
 
     def translateReferences(self):
-        """ Parses information from the References's 'Cross references' column and inserts it to the appropiate field(s) in the new kb structure. """
+        """ Parses information from the core's 'References' sheet and inserts it to the appropiate field(s) in the new kb structure. """
 
         coreRefs = self.core['References']
         kbRefs   = self.kb['References']
-        cell2str = lambda myCell: myCell or "" # Convert None to string or return original string
 
-        for rowIdx in range(3, coreRefs.max_row+1):
+        assert kbRefs.cell(column=1, row=1).value  == 'Id'
+        assert kbRefs.cell(column=2, row=1).value  == 'Name'
+        assert kbRefs.cell(column=3, row=1).value  == 'Type'
+        assert kbRefs.cell(column=4, row=1).value  == 'Title'
+        assert kbRefs.cell(column=5, row=1).value  == 'Authors'
+        assert kbRefs.cell(column=6, row=1).value  == 'Journal'
+        assert kbRefs.cell(column=7, row=1).value  == 'Volume'
+        assert kbRefs.cell(column=8, row=1).value  == 'Issue'
+        assert kbRefs.cell(column=9, row=1).value  == 'Pages'
+        assert kbRefs.cell(column=10, row=1).value == 'Year'
+        assert kbRefs.cell(column=11, row=1).value == 'Database references' #NO DB REFS IN CORE
+        assert kbRefs.cell(column=12, row=1).value == 'Comments'
 
-            # Make sure IDs are matching; skip if there is no database ref
-            assert(kbRefs.cell(column=1, row=rowIdx-1).value == coreRefs.cell(column=1, row=rowIdx).value)
-            coreDbref = coreRefs.cell(column=4, row=rowIdx).value
-            if coreDbref is None:
-                continue
+        for rowIdx in range(3, 100): #coreRefs.max_row+1):
 
+            kbRefs.cell(column=1, row=rowIdx-1).value = coreRefs.cell(column=1, row=rowIdx).value # ID
+            kbRefs.cell(column=2, row=rowIdx-1).value = coreRefs.cell(column=2, row=rowIdx).value # Name
+            kbRefs.cell(column=3, row=rowIdx-1).value = coreRefs.cell(column=5, row=rowIdx).value # Type
+            kbRefs.cell(column=4, row=rowIdx-1).value = coreRefs.cell(column=9, row=rowIdx).value # Title
+            kbRefs.cell(column=5, row=rowIdx-1).value = coreRefs.cell(column=6, row=rowIdx).value # Authors
+            kbRefs.cell(column=6, row=rowIdx-1).value = coreRefs.cell(column=10, row=rowIdx).value # Journal
+            kbRefs.cell(column=7, row=rowIdx-1).value = coreRefs.cell(column=12, row=rowIdx).value # Volume
+            kbRefs.cell(column=8, row=rowIdx-1).value = coreRefs.cell(column=13, row=rowIdx).value # Issue
+            kbRefs.cell(column=9, row=rowIdx-1).value = coreRefs.cell(column=14, row=rowIdx).value # Pages
+            kbRefs.cell(column=10, row=rowIdx-1).value = coreRefs.cell(column=8, row=rowIdx).value # Year
+
+            dbRefsDicts = self.delinateJSONs(coreRefs.cell(column=4, row=rowIdx).value)
+            kbRefs.cell(column=11, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
+
+            kbRefs.cell(column=12, row=rowIdx-1).value = coreRefs.cell(column=15, row=rowIdx).value # Comments
+
+            """
             # Get list of JSONs in string add them to DBrefs / comments
             jsons = self.delinateJSONs(coreDbref)
             for json in jsons: # Each JSON is a dict with a single key (DB name) - value pair (xid)
@@ -212,15 +238,16 @@ class KbTranslater:
 
             if kbRefs.cell(column=12, row=rowIdx-1).value is not None:
                 kbRefs.cell(column=12, row=rowIdx-1).value  = kbRefs.cell(column=12, row=rowIdx-1).value[:-2]
+            """
 
 
-    def addEvidence(self, objectId, property, eviDict, eviColumn, expId):
+    def addEvidence(self, objectId, property, eviDict, kbEviColumn, expId):
         if eviDict is None:
             return None
 
         wsName = 'Evidence'
         nextRow = self.kb[wsName].max_row+1
-        eviId   = 'EVI({}:{})'.format(objectId, property)
+        eviId   = self.get_eviId(objectId, property)
 
         #if not self.idExists(wsName, eviId):
         self.kb[wsName].cell(column=1, row=nextRow).value = eviId
@@ -229,27 +256,17 @@ class KbTranslater:
         self.kb[wsName].cell(column=4, row=nextRow).value = property
         self.kb[wsName].cell(column=9, row=nextRow).value = expId
 
+        # Not alll evidence objects in core contans the following keys, thus use try
         try: self.kb[wsName].cell(column=5, row=nextRow).value = eviDict['value']
         except: pass
-
         try: self.kb[wsName].cell(column=6, row=nextRow).value = eviDict['means']
         except: pass
-
         try: self.kb[wsName].cell(column=7, row=nextRow).value = eviDict['STD']
         except: pass
-
         try: self.kb[wsName].cell(column=8, row=nextRow).value = eviDict['units']
         except: pass
-
         try: self.kb[wsName].cell(column=11, row=nextRow).value = eviDict['comments']
         except: pass
-
-        #else:
-        #    warnings.warn('\nTried to create evidence object twice: \n\t {}'.format(eviId))
-
-        kbChromFeats = self.kb['Chromosome features']
-        kbChromFeats.cell(column=eviColumn, row=kbChromFeats.max_row).value = self.addComma(
-            kbChromFeats.cell(column=eviColumn, row=kbChromFeats.max_row).value) + eviId
 
     def addExperiment(self, expDict):
         wsName = 'Experiment'
@@ -386,8 +403,14 @@ class KbTranslater:
             return fieldStr
 
     @staticmethod
-    def addComma(fieldStr):
-        if fieldStr is None:
-            return ''
+    def concatenateEviField(cell, eviId):
+        if cell.value is None:
+            cell.value = '' +  eviId
         else:
-            return fieldStr + ', '
+            cell.value = cell.value + ', ' +  eviId
+
+    @staticmethod
+    def get_eviId(objectId, property):
+        assert isinstance(objectId, str)
+        assert instance(property, str )
+        return 'EVI({}:{})'.format(objectId, property)
