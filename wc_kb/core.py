@@ -1929,7 +1929,7 @@ class Experiment(obj_model.Model):
     measurment_technology = obj_model.StringAttribute()
     analysis_type = obj_model.StringAttribute()
     database_references = DatabaseReferenceAttribute(related_name='experiment')
-    references = obj_model.ManyToOneAttribute('Reference', related_name='experiment')
+    references = obj_model.ManyToManyAttribute('Reference', related_name='experiment')
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):

@@ -7,6 +7,12 @@ import openpyxl
 
 class TestKbTranslater(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.translator = kb_translater.KbTranslater(
+            kb_path = 'kbs/kb_core_empty.xlsx',
+            core_path = 'kbs/original_core.xlsx')
+
     def test_delinateJSONs(self):
 
         assert kb_translater.KbTranslater.delinateJSONs('') == None
@@ -58,3 +64,19 @@ class TestKbTranslater(unittest.TestCase):
 
         kb_translater.KbTranslater.concatenateEviField(wb['Sheet'].cell(column=2, row=1), 'test3')
         assert wb['Sheet'].cell(column=2, row=1).value == 'empty line test, test3'
+
+    def test_getColumnId(self):
+
+        with self.assertRaises(Exception):
+            self.translator.getColumnId(wbName = 'test', sheetName = 'Genes', header = 'Id')
+
+        self.assertEqual(self.translator.getColumnId(wbName='kb', sheetName='Genes', header = 'ID'), 1)
+        self.assertEqual(self.translator.getColumnId(wbName='kb', sheetName='Genes', header = 'id'), 1)
+        self.assertEqual(self.translator.getColumnId(wbName='kb', sheetName='Genes', header = 'Comments'), 16)
+        self.assertEqual(self.translator.getColumnId(wbName='kb', sheetName='Species properties', header = 'Name'), 2)
+        self.assertEqual(self.translator.getColumnId(wbName='kb', sheetName='Species properties', header = 'Half life'), 5)
+
+        self.assertEqual(self.translator.getColumnId(wbName='core', sheetName='Genes', header = 'cross references'), 5)
+        self.assertEqual(self.translator.getColumnId(wbName='core', sheetName='Genes', header = 'Cross references'), 5)
+        self.assertEqual(self.translator.getColumnId(wbName='core', sheetName='Compartments', header = 'NAME'), 2)
+        self.assertEqual(self.translator.getColumnId(wbName='core', sheetName='Protein monomers', header = 'Evidence'), [8, 13, 19, 23, 26, 29, 32])
