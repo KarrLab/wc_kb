@@ -151,7 +151,7 @@ class MetaboliteSpeciesTypeType(enum.Enum):
     carbohydrate_sugar_phosphate = 6
     ribonucleotide_monophosphate = 7
     ribonucleotide_biphosphate = 8
-    ribonucleotide_triphosphate = 9
+    ribonucleotide_triphosphate = 9    
 
 
 class SignalSequenceType(enum.Enum):

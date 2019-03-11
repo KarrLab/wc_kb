@@ -48,7 +48,6 @@ class KbTranslater:
         assert kbChromFeats.cell(column=13, row=1).value == 'Comments'
 
         for rowIdx in range(3, 100): # coreChromFeats.max_row+1):
-            #print(rowIdx)
 
             kbChromFeats.cell(column=1, row=rowIdx-1).value = coreChromFeats.cell(column=1, row=rowIdx).value.replace('-','_') # ID
             kbChromFeats.cell(column=2, row=rowIdx-1).value = coreChromFeats.cell(column=2, row=rowIdx).value # Name
@@ -63,21 +62,20 @@ class KbTranslater:
             # Add evidence and experiment(s)
             eviDictStr = coreChromFeats.cell(column=12, row=rowIdx).value
             if eviDictStr is not None:
+
                 eviDict = json.loads(eviDictStr)
                 objectId = kbChromFeats.cell(column=1, row=rowIdx-1).value
-
                 if rowIdx==3:   # Add experiment once - all chrom feature data from same experiment
                     expId = self.addExperiment(eviDict)
 
-                self.addEvidence(
-                    objectId = objectId,
-                    property = 'intensity',
-                    eviDict = eviDict,
-                    kbEviColumn = kbEviColumn,
-                    expId = expId)
+                eviId = self.addEvidence(
+                            objectId = objectId,
+                            property = 'intensity',
+                            eviDict = eviDict,
+                            kbEviColumn = kbEviColumn,
+                            expId = expId)
 
-                self.concatenateId(kbChromFeats.cell(column=kbEviColumn, row=kbChromFeats.max_row),
-                                         self.get_eviId(objectId, 'intensity'))
+                self.concatenateId(kbChromFeats.cell(column=kbEviColumn, row=kbChromFeats.max_row), eviID)
 
             # NO 'Cross references' entry in core: kbChromFeats.cell(column=11, row=rowIdx-1).value = coreChromFeats.cell(column=11, row=rowIdx).value
             kbChromFeats.cell(column=12, row=rowIdx-1).value = coreChromFeats.cell(column=14, row=rowIdx).value # copy references
@@ -167,7 +165,7 @@ class KbTranslater:
                 if rowIdx==3: # Add experiment once - all essentiality data from same experiment
                     expId = self.addExperiment(eviDict)
 
-                self.addEvidence(
+                eviId = self.addEvidence(
                     objectId = objectId,
                     property = 'is_essential',
                     eviDict = eviDict,
@@ -175,7 +173,7 @@ class KbTranslater:
                     expId = expId)
 
                 self.concatenateId(kbGenes.cell(column=kbEviColumn, row=kbGenes.max_row),
-                                         self.get_eviId(objectId, 'is_essential'))
+                                   eviId)
 
             dbRefsDicts = self.delinateJSONs(coreGenes.cell(column=5, row=rowIdx).value)
             kbGenes.cell(column=14, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
@@ -197,21 +195,38 @@ class KbTranslater:
         assert kbMetas.cell(column=7, row=1).value == 'Database references'
         assert kbMetas.cell(column=8, row=1).value == 'References'
         assert kbMetas.cell(column=9, row=1).value == 'Comments'
+
         concColumn = self.getColumnId(wbName='core', sheetName='Metabolites', header = 'Intracellular concentration (mM)')
+        commentsColumn = self.getColumnId(wbName='core', sheetName='Metabolites', header = 'Comments')
+        refsColumn = self.getColumnId(wbName='core', sheetName='Metabolites', header = 'References')
 
         for rowIdx in range(3, 100): #coreMetas.max_row+1):
 
             kbMetas.cell(column=1, row=rowIdx-1).value = coreMetas.cell(column=1, row=rowIdx).value # ID
             kbMetas.cell(column=2, row=rowIdx-1).value = coreMetas.cell(column=2, row=rowIdx).value # NAME
             # No entry in core: kbMetas.cell(column=3, row=rowIdx-1).value = coreMetas.cell(column=5, row=rowIdx).value # Synonyms
-            kbMetas.cell(column=4, row=rowIdx-1).value = coreMetas.cell(column=7, row=rowIdx).value # TYPE
+            #kbMetas.cell(column=4, row=rowIdx-1).value = coreMetas.cell(column=7, row=rowIdx).value # TYPE
 
-            concId = self.addConcentration(objectId = coreMetas.cell(column=1, row=rowIdx).value,
-                                           fieldStr = coreMetas.cell(column=concColumn, row=rowIdx).value)
-            if concId is None:
-                continue
+            # Add concentration
+            concStr = coreMetas.cell(column=concColumn, row=rowIdx).value
+            if concStr is not None:
+                concId = self.addConcentration(objectId = coreMetas.cell(column=1, row=rowIdx).value, fieldStr = concStr)
+                self.concatenateId(kbMetas.cell(column=5, row=rowIdx-1), concId)
 
-            self.concatenateId(kbMetas.cell(column=5, row=rowIdx-1), concId)
+            # Add species properties
+            kbMetas.cell(column=6, row=rowIdx-1).value = self.addSpeciesProperties(
+                speciesId = coreMetas.cell(column=1, row=rowIdx).value,
+                structure = coreMetas.cell(column=9, row=rowIdx).value,
+                half_life = None,
+                half_life_units = None,
+                domains = None,
+                evidence= None,
+                refs = None)
+
+            dbRefsDicts = self.delinateJSONs(coreMetas.cell(column=6, row=rowIdx).value)
+            kbMetas.cell(column=7, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
+            kbMetas.cell(column=8, row=rowIdx-1).value = coreMetas.cell(column=refsColumn, row=rowIdx).value # REFERENCES
+            kbMetas.cell(column=9, row=rowIdx-1).value = coreMetas.cell(column=commentsColumn, row=rowIdx).value # COMMENTS
 
     def translateReferences(self):
         """ Parses information from the core's 'References' sheet and inserts it to the appropiate field(s) in the new kb structure. """
@@ -232,8 +247,8 @@ class KbTranslater:
         assert kbRefs.cell(column=11, row=1).value == 'Database references' #NO DB REFS IN CORE
         assert kbRefs.cell(column=12, row=1).value == 'Comments'
 
-        for rowIdx in range(3, 100): #coreRefs.max_row+1):
-
+        for rowIdx in range(3, coreRefs.max_row+1):
+            print(rowIdx)
             kbRefs.cell(column=1, row=rowIdx-1).value = coreRefs.cell(column=1, row=rowIdx).value # ID
             kbRefs.cell(column=2, row=rowIdx-1).value = coreRefs.cell(column=2, row=rowIdx).value # Name
             kbRefs.cell(column=3, row=rowIdx-1).value = coreRefs.cell(column=5, row=rowIdx).value # Type
@@ -247,12 +262,40 @@ class KbTranslater:
 
             dbRefsDicts = self.delinateJSONs(coreRefs.cell(column=4, row=rowIdx).value)
             kbRefs.cell(column=11, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
-
             kbRefs.cell(column=12, row=rowIdx-1).value = coreRefs.cell(column=15, row=rowIdx).value # Comments
 
     """ Nested entries """
-    def addConcentration(self, objectId, fieldStr):
+    def addSpeciesProperties(self, speciesId, structure=None, half_life=None, half_life_units=None, domains=None, evidence=None, refs=None):
+        wsName = 'Species properties'
+        nextRow = self.kb[wsName].max_row+1
+        speciePropId = 'PROP({})'.format(speciesId)
 
+        if structure==None and half_life==None and half_life_units=='min' and domains==None and evidence==None and refs==None:
+            return None
+
+        self.kb[wsName].cell(column=1, row=nextRow).value = speciesId
+
+        structureColumn = self.getColumnId(wbName='kb', sheetName=wsName, header = 'Structure')
+        self.kb[wsName].cell(column=structureColumn, row=nextRow).value = structure
+
+        hlColumn = self.getColumnId(wbName='kb', sheetName=wsName, header = 'Half life')
+        self.kb[wsName].cell(column=hlColumn, row=nextRow).value = half_life
+
+        hluColumn = self.getColumnId(wbName='kb', sheetName=wsName, header = 'Half life units')
+        self.kb[wsName].cell(column=hluColumn, row=nextRow).value = half_life_units
+
+        domainsColumn = self.getColumnId(wbName='kb', sheetName=wsName, header = 'Domains')
+        self.kb[wsName].cell(column=domainsColumn, row=nextRow).value = domains
+
+        eviColumn = self.getColumnId(wbName='kb', sheetName=wsName, header = 'Evidence')
+        self.kb[wsName].cell(column=eviColumn, row=nextRow).value = evidence
+
+        refsColumn = self.getColumnId(wbName='kb', sheetName=wsName, header = 'References')
+        self.kb[wsName].cell(column=refsColumn, row=nextRow).value = refs
+
+        return speciePropId
+
+    def addConcentration(self, objectId, fieldStr):
         if fieldStr is None:
             return
 
@@ -280,7 +323,7 @@ class KbTranslater:
 
         return concId
 
-    def addEvidence(self, objectId, property, eviDict, kbEviColumn):
+    def addEvidence(self, objectId, property, eviDict, kbEviColumn, expId = None):
         if eviDict is None:
             return None
 
@@ -293,7 +336,11 @@ class KbTranslater:
         self.kb[wsName].cell(column=2, row=nextRow).value = 'cell' # Need to pass in object ID
         self.kb[wsName].cell(column=3, row=nextRow).value = objectId
         self.kb[wsName].cell(column=4, row=nextRow).value = property
-        self.kb[wsName].cell(column=9, row=nextRow).value = self.addExperiment(eviDict)
+
+        if expId is None:
+            self.kb[wsName].cell(column=9, row=nextRow).value = self.addExperiment(eviDict)
+        else:
+            self.kb[wsName].cell(column=9, row=nextRow).value = expId
 
         # Not all evidence objects in core contans the following keys, thus use try
         try: self.kb[wsName].cell(column=5, row=nextRow).value = eviDict['value']
@@ -384,25 +431,24 @@ class KbTranslater:
         assert isinstance(wbName, str)
         assert isinstance(sheetName, str)
         assert isinstance(header, str)
-        #pdb.set_trace()
 
         if wbName == 'kb':
             wb = self.kb
+            rowIdx = 1
         elif wbName == 'core':
             wb = self.core
+            rowIdx = 2
         else:
             raise Exception('Unrecognised workbook name: \n\t {}'.format(wb))
 
         sheet = wb[sheetName]
         id=[]
 
-        for rowIdx in range(1, 3): #In core 2nd row has headers in some sheets
-            for columnIdx in range(1, sheet.max_column+1):
-                if sheet.cell(column = columnIdx, row = rowIdx).value is None:
-                    continue
-
-                if header.lower() == sheet.cell(column = columnIdx, row = rowIdx).value.lower():
-                    id.append(columnIdx)
+        for columnIdx in range(1, sheet.max_column+1):
+            #if sheet.cell(column = columnIdx, row = rowIdx).value is None:
+            #    continue
+            if header.lower() == sheet.cell(column = columnIdx, row = rowIdx).value.lower():
+                id.append(columnIdx)
 
         if len(id)>1:
             print("Mulitple '{}' headers are matched in sheet {} of workbook {}!".format(
@@ -525,47 +571,3 @@ class KbTranslater:
         fieldStr = fieldStr.replace(']', '')
         fieldStr = fieldStr.replace('"', '')
         return fieldStr
-
-    """
-    def addEvidence(self, objectId, property, eviDict, kbEviColumn, expId):
-        if eviDict is None:
-            return None
-
-        wsName = 'Evidence'
-        nextRow = self.kb[wsName].max_row+1
-        eviId   = self.get_eviId(objectId, property)
-
-        #if not self.idExists(wsName, eviId):
-        self.kb[wsName].cell(column=1, row=nextRow).value = eviId
-        self.kb[wsName].cell(column=2, row=nextRow).value = 'cell' # Need to pass in object ID
-        self.kb[wsName].cell(column=3, row=nextRow).value = objectId
-        self.kb[wsName].cell(column=4, row=nextRow).value = property
-        self.kb[wsName].cell(column=9, row=nextRow).value = expId
-
-        # Not alll evidence objects in core contans the following keys, thus use try
-        try: self.kb[wsName].cell(column=5, row=nextRow).value = eviDict['value']
-        except: pass
-        try: self.kb[wsName].cell(column=6, row=nextRow).value = eviDict['means']
-        except: pass
-        try: self.kb[wsName].cell(column=7, row=nextRow).value = eviDict['STD']
-        except: pass
-        try: self.kb[wsName].cell(column=8, row=nextRow).value = eviDict['units']
-        except: pass
-        try: self.kb[wsName].cell(column=11, row=nextRow).value = eviDict['comments']
-        except: pass
-
-    def addExperiment(self, expDict):
-        wsName = 'Experiment'
-        nextRow = self.kb[wsName].max_row+1
-        expId = 'EXP_{}'.format(str(nextRow-1).zfill(4))
-
-        if not self.idExists(wsName, expId):
-            self.kb[wsName].cell(column=1, row=nextRow).value  = expId
-            self.kb[wsName].cell(column=5, row=nextRow).value  = expDict['species']
-            self.kb[wsName].cell(column=7, row=nextRow).value  = expDict['media']
-            self.kb[wsName].cell(column=8, row=nextRow).value  = expDict['temperature']
-            #self.kb[wsName].cell(column=9, row=nextRow).value  = expDict['temperature_unit']
-            self.kb[wsName].cell(column=13, row=nextRow).value = expDict['references'][0] # Will not work for mulitple references
-
-        return expId
-    """
