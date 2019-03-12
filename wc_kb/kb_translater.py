@@ -47,8 +47,8 @@ class KbTranslater:
         assert kbChromFeats.cell(column=12, row=1).value == 'References'
         assert kbChromFeats.cell(column=13, row=1).value == 'Comments'
 
-        for rowIdx in range(3, 100): # coreChromFeats.max_row+1):
-
+        for rowIdx in range(3, 500): # coreChromFeats.max_row+1):
+            print(rowIdx)
             kbChromFeats.cell(column=1, row=rowIdx-1).value = coreChromFeats.cell(column=1, row=rowIdx).value.replace('-','_') # ID
             kbChromFeats.cell(column=2, row=rowIdx-1).value = coreChromFeats.cell(column=2, row=rowIdx).value # Name
             kbChromFeats.cell(column=3, row=rowIdx-1).value = coreChromFeats.cell(column=5, row=rowIdx).value # Type
@@ -75,7 +75,7 @@ class KbTranslater:
                             kbEviColumn = kbEviColumn,
                             expId = expId)
 
-                self.concatenateId(kbChromFeats.cell(column=kbEviColumn, row=kbChromFeats.max_row), eviID)
+                self.concatenateId(kbChromFeats.cell(column=kbEviColumn, row=kbChromFeats.max_row), eviId)
 
             # NO 'Cross references' entry in core: kbChromFeats.cell(column=11, row=rowIdx-1).value = coreChromFeats.cell(column=11, row=rowIdx).value
             kbChromFeats.cell(column=12, row=rowIdx-1).value = coreChromFeats.cell(column=14, row=rowIdx).value # copy references
@@ -101,8 +101,8 @@ class KbTranslater:
         assert kbTUs.cell(column=12, row=1).value == 'References'
         assert kbTUs.cell(column=13, row=1).value == 'Comments'
 
-        for rowIdx in range(3, 100): #coreTUs.max_row+1):
-
+        for rowIdx in range(3, coreTUs.max_row+1):
+            print(rowIdx)
             kbTUs.cell(column=1, row=rowIdx-1).value = coreTUs.cell(column=1, row=rowIdx).value #ID
             kbTUs.cell(column=2, row=rowIdx-1).value = coreTUs.cell(column=2, row=rowIdx).value #NAME
             kbTUs.cell(column=3, row=rowIdx-1).value = self.decodeRnaType(coreTUs.cell(column=9, row=rowIdx).value) #TYPE
@@ -139,7 +139,8 @@ class KbTranslater:
         assert kbGenes.cell(column=15, row=1).value == 'References'
         assert kbGenes.cell(column=16, row=1).value == 'Comments'
 
-        for rowIdx in range(3, 100): #coreGenes.max_row+1):
+        for rowIdx in range(3, coreGenes.max_row+1):
+            print(rowIdx)
 
             kbGenes.cell(column=1, row=rowIdx-1).value = coreGenes.cell(column=1, row=rowIdx).value # ID
             kbGenes.cell(column=2, row=rowIdx-1).value = coreGenes.cell(column=2, row=rowIdx).value #NAME
@@ -158,7 +159,8 @@ class KbTranslater:
 
             # Add evidence and experiment(s)
             eviDictStr = coreGenes.cell(column=17, row=rowIdx).value
-            if eviDictStr is not None:
+
+            if eviDictStr is not None and eviDictStr!='':
                 eviDict = json.loads(eviDictStr)
                 objectId = kbGenes.cell(column=1, row=rowIdx-1).value
 
@@ -200,12 +202,20 @@ class KbTranslater:
         commentsColumn = self.getColumnId(wbName='core', sheetName='Metabolites', header = 'Comments')
         refsColumn = self.getColumnId(wbName='core', sheetName='Metabolites', header = 'References')
 
-        for rowIdx in range(3, 100): #coreMetas.max_row+1):
+        for rowIdx in range(3, 200): #coreMetas.max_row+1):
+            print(rowIdx)
 
             kbMetas.cell(column=1, row=rowIdx-1).value = coreMetas.cell(column=1, row=rowIdx).value # ID
             kbMetas.cell(column=2, row=rowIdx-1).value = coreMetas.cell(column=2, row=rowIdx).value # NAME
             # No entry in core: kbMetas.cell(column=3, row=rowIdx-1).value = coreMetas.cell(column=5, row=rowIdx).value # Synonyms
-            #kbMetas.cell(column=4, row=rowIdx-1).value = coreMetas.cell(column=7, row=rowIdx).value # TYPE
+
+            metaType = coreMetas.cell(column=7, row=rowIdx).value # TYPE
+            if metaType is None:
+                kbMetas.cell(column=4, row=rowIdx-1).value = 'unknown'
+            elif metaType not in wc_kb.core.MetaboliteSpeciesTypeType:
+                kbMetas.cell(column=4, row=rowIdx-1).value = 'misc'
+            elif metaType not in wc_kb.core.MetaboliteSpeciesTypeType:
+                kbMetas.cell(column=4, row=rowIdx-1).value = metaType
 
             # Add concentration
             concStr = coreMetas.cell(column=concColumn, row=rowIdx).value
@@ -224,9 +234,37 @@ class KbTranslater:
                 refs = None)
 
             dbRefsDicts = self.delinateJSONs(coreMetas.cell(column=6, row=rowIdx).value)
+
             kbMetas.cell(column=7, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
             kbMetas.cell(column=8, row=rowIdx-1).value = coreMetas.cell(column=refsColumn, row=rowIdx).value # REFERENCES
             kbMetas.cell(column=9, row=rowIdx-1).value = coreMetas.cell(column=commentsColumn, row=rowIdx).value # COMMENTS
+
+    def translateProteins(self):
+        """ Parses information from the core's 'protein monomers' sheet and inserts them to the appropiate field(s) in the KB structure. """
+
+        coreProteins = self.core['Protein monomers']
+        kbProteins   = self.kb['Proteins']
+
+        assert kbProteins.cell(column=1, row=1).value == 'Id'
+        assert kbProteins.cell(column=2, row=1).value == 'Name'
+        assert kbProteins.cell(column=3, row=1).value == 'Synonyms'
+        assert kbProteins.cell(column=4, row=1).value == 'Gene'
+        assert kbProteins.cell(column=5, row=1).value == 'RNA'
+        assert kbProteins.cell(column=6, row=1).value == 'Localization'
+        assert kbProteins.cell(column=7, row=1).value == 'Signal sequence type'
+        assert kbProteins.cell(column=8, row=1).value == 'Signal sequence location'
+        assert kbProteins.cell(column=9, row=1).value == 'Signal sequence length'
+        assert kbProteins.cell(column=10, row=1).value == 'Dna footprint length'
+        assert kbProteins.cell(column=11, row=1).value == 'Dna footprint binding'
+        assert kbProteins.cell(column=12, row=1).value == 'Species properties'
+        assert kbProteins.cell(column=13, row=1).value == 'Concentration'
+        assert kbProteins.cell(column=14, row=1).value == 'Evidence'
+        assert kbProteins.cell(column=15, row=1).value == 'Database references'
+        assert kbProteins.cell(column=16, row=1).value == 'References'
+        assert kbProteins.cell(column=17, row=1).value == 'Comments'
+
+        for rowIdx in range(3, coreProteins.max_row+1):
+            print(rowIdx)
 
     def translateReferences(self):
         """ Parses information from the core's 'References' sheet and inserts it to the appropiate field(s) in the new kb structure. """
@@ -268,12 +306,12 @@ class KbTranslater:
     def addSpeciesProperties(self, speciesId, structure=None, half_life=None, half_life_units=None, domains=None, evidence=None, refs=None):
         wsName = 'Species properties'
         nextRow = self.kb[wsName].max_row+1
-        speciePropId = 'PROP({})'.format(speciesId)
+        speciePropId = 'prop_{}'.format(speciesId)
 
         if structure==None and half_life==None and half_life_units=='min' and domains==None and evidence==None and refs==None:
             return None
 
-        self.kb[wsName].cell(column=1, row=nextRow).value = speciesId
+        self.kb[wsName].cell(column=1, row=nextRow).value = speciePropId
 
         structureColumn = self.getColumnId(wbName='kb', sheetName=wsName, header = 'Structure')
         self.kb[wsName].cell(column=structureColumn, row=nextRow).value = structure
@@ -302,7 +340,8 @@ class KbTranslater:
         wsName = 'Concentrations'
         nextRow = self.kb[wsName].max_row+1
         coreConc  = json.loads(fieldStr)
-        concId = 'CONC({}:{})'.format(objectId, coreConc['compartment'])
+        #concId = 'CONC({}:{})'.format(objectId, coreConc['compartment'])
+        concId = 'conc_{}_{}'.format(objectId, coreConc['compartment'])
         assert coreConc['compartment'] in ['c', 'e', 'm']
 
         self.kb[wsName].cell(column=1, row=nextRow).value = concId
@@ -311,12 +350,16 @@ class KbTranslater:
         self.kb[wsName].cell(column=meanColumn, row=nextRow).value = coreConc['concentration']
 
         unitsColumn = self.getColumnId(wbName='kb', sheetName='Concentrations', header = 'Units')
-        self.kb[wsName].cell(column=meanColumn, row=nextRow).value = coreConc['evidence'][0]['units'] #check if all evidence has same unit
+        if 'evidence' in coreConc.keys():
+            self.kb[wsName].cell(column=unitsColumn, row=nextRow).value = coreConc['evidence'][0]['units'] #check if all evidence has same unit
 
         speciesColumn = self.getColumnId(wbName='kb', sheetName='Concentrations', header = 'Species')
         self.kb[wsName].cell(column=speciesColumn, row=nextRow).value = '{}[{}]'.format(objectId, coreConc['compartment'])
 
         evidenceColumn = self.getColumnId(wbName='kb', sheetName='Concentrations', header = 'Evidence')
+        if 'evidence' not in coreConc.keys():
+            return concId
+
         for evidence in coreConc['evidence']:
             evidenceId = self.addEvidence(objectId, 'conc', evidence, evidenceColumn)
             self.concatenateId(self.kb[wsName].cell(column=evidenceColumn, row=nextRow), evidenceId)
@@ -409,7 +452,11 @@ class KbTranslater:
 
         for json in jsons:
             nextRow  = self.kb[wsName].max_row+1
-            dbRefId = "{}:{}".format(json['source'], str(json['xid']))
+
+            if json['source']=='URL':
+                dbRefId = "{}:{}".format(json['source'].lower(), str(nextRow).zfill(4))
+            else:
+                dbRefId = "{}:{}".format(str(json['source']).lower(), str(json['xid']))
 
             # Clean up formatting; can condense code?
             dbRefId = dbRefId.replace('-','_')
@@ -425,7 +472,6 @@ class KbTranslater:
         if returnIds is True:
             return dbRefIds[:-2]
 
-    """ Auxiliary functions """
     def getColumnId(self, wbName, sheetName, header):
 
         assert isinstance(wbName, str)
@@ -483,7 +529,7 @@ class KbTranslater:
     def get_eviId(nextRow, objectId, property):
         assert isinstance(objectId, str)
         assert isinstance(property, str )
-        return 'EVI{}({}:{})'.format(str(nextRow-1).zfill(4) ,objectId, property)
+        return 'EVI{}'.format(str(nextRow-1).zfill(4))
 
     @staticmethod
     def delinateJSONs(fieldStr):
@@ -514,7 +560,6 @@ class KbTranslater:
 
     @staticmethod
     def concatenateValues(jsons, keys):
-        """ Concatenate values from jsons """
 
         assert isinstance(jsons, list) or jsons is None
         assert isinstance(keys, tuple) or isinstance(keys, str)

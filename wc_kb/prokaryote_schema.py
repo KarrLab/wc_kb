@@ -296,7 +296,7 @@ class GeneLocus(core.PolymerLocus):
     is_essential = obj_model.BooleanAttribute()
     homologs = obj_model.LongStringAttribute() #core.DatabaseReferenceAttribute(related_name='genes')
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='genes')
-    cog_category = obj_model.EnumAttribute(core.CogCategoryType)
+    cog_category = obj_model.StringAttribute() #obj_model.EnumAttribute(core.CogCategoryType)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Gene'

@@ -70,6 +70,8 @@ class GeneType(enum.Enum):
     rRna = 1
     sRna = 2
     tRna = 3
+    asRna = 4
+    pseudogene = 5
 
 
 class DirectionType(enum.Enum):
@@ -151,8 +153,10 @@ class MetaboliteSpeciesTypeType(enum.Enum):
     carbohydrate_sugar_phosphate = 6
     ribonucleotide_monophosphate = 7
     ribonucleotide_biphosphate = 8
-    ribonucleotide_triphosphate = 9    
-
+    ribonucleotide_triphosphate = 9
+    carboxy_acid=10
+    misc=12
+    unknown = 11
 
 class SignalSequenceType(enum.Enum):
     """ Types of signal sequences """
@@ -351,6 +355,8 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
             return ([], None)
 
         pattern = r'([a-z][a-z0-9_\-]*)\:([a-z0-9_\-]*)'
+        #pattern = r'DBREF[a-z0-9_\-]*\([a-zA-Z0-9]*:[a-zA-Z0-9]*\)'
+
         if not re.match(pattern, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of database references: {}'.format(value)]))
 
@@ -647,13 +653,14 @@ class DatabaseReference(obj_model.Model):
     """
     database = obj_model.StringAttribute()
     id = obj_model.StringAttribute()
+    #id = obj_model.SlugAttribute(primary=True, unique=True)
     entry_id = obj_model.StringAttribute()
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'database', 'entry_id', 'comments')
         #tabular_orientation = TabularOrientation.inline
-        unique_together = (('database', 'id'), )
+        #unique_together = (('database', 'id'), )
         #ordering = ('database', 'id')
 
     def serialize(self):
@@ -1873,7 +1880,7 @@ class ChromosomeFeature(KnowledgeBaseObject):
     length = obj_model.IntegerAttribute(min=0)
     direction = obj_model.EnumAttribute(DirectionType)
     type = obj_model.EnumAttribute(ChromosomeFeatureType)
-    intensity = obj_model.IntegerAttribute(min=0)
+    intensity = obj_model.FloatAttribute(min=0)
     unit = obj_model.units.UnitAttribute(unit_registry, none=True)
     polymer = obj_model.ManyToOneAttribute('DnaSpeciesType', related_name='chromosome_features')
     evidence   = obj_model.OneToManyAttribute('Evidence', related_name='chromosome_features')
@@ -1895,10 +1902,10 @@ class Evidence(obj_model.Model):
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
     object   =  obj_model.StringAttribute() #obj_model.ManyToOneAttribute(obj_model.Model, related_name='evidences')
     property = obj_model.StringAttribute()
-    values = obj_model.IntegerAttribute()
+    values = obj_model.FloatAttribute()
     mean = obj_model.IntegerAttribute()
     standard_error = obj_model.IntegerAttribute()
-    units = obj_model.units.UnitAttribute(unit_registry, none=False) # False allows None units
+    units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
     database_references = DatabaseReferenceAttribute(related_name='evidence')
     experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='evidence')
     comments = obj_model.LongStringAttribute()
