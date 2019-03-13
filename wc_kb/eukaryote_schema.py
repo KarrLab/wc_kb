@@ -6,12 +6,13 @@
 :License: MIT
 """
 
+from wc_kb import core
 from wc_utils.util import chem
 import Bio.Alphabet
 import Bio.Seq
 import enum
 import obj_model
-from wc_kb import core
+import re
 
 
 #####################
@@ -51,6 +52,71 @@ class RegulatoryDirection(enum.Enum):
 
 #####################
 #####################
+# Attributes
+
+class LocusAttribute(obj_model.ManyToManyAttribute):
+    """ Start and end coordinates attribute """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(LocusAttribute, self).__init__(GenericLocus,
+                                            related_name=related_name, min_related=0, min_related_rev=0,
+                                            verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+
+    def serialize(self, coordinates, encoded=None):
+        """ Serialize related object
+        Args:
+            coordinates (:obj:`list` of :obj:`Model`): a list of instances of GenericLocus Python representation
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        if not coordinates:
+            return ''
+
+        return ', '.join(obj_model.serialize() for obj_model in coordinates)
+
+    def deserialize(self, value, objects, decoded=None):
+        """ Deserialize value
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+        Returns:
+            :obj:`tuple` of :obj:`list` of :obj:`GenericLocus`, :obj:`InvalidAttribute` or :obj:`None`: :obj:`tuple` of cleaned value
+                and cleaning error
+        """
+        if not value:
+            return ([], None)
+
+        pattern = r'([0-9]+)\:([0-9]+)'
+        if not re.match(pattern, value, flags=re.I):
+            return (None, obj_model.InvalidAttribute(self, ['Incorrectly formatted list of coordinates: {}'.format(value)]))
+
+        objs = []
+        for pat_match in re.findall(pattern, value, flags=re.I):
+            start = int(pat_match[0])
+            end = int(pat_match[1])
+            if self.related_class not in objects:
+                objects[self.related_class] = {}
+            serialized_value = self.related_class()._serialize(start, end)
+            if serialized_value in objects[self.related_class]:
+                obj = objects[self.related_class][serialized_value]
+            else:
+                obj = self.related_class(start=start, end=end)
+                objects[self.related_class][serialized_value] = obj
+            objs.append(obj)
+        return (objs, None)
+
+
+#####################
+#####################
 # Locus types
 
 
@@ -62,7 +128,7 @@ class GeneLocus(core.PolymerLocus):
         type (:obj:`GeneType`): type of gene
 
     Related attributes:
-        rna (:obj:`list` of :obj:`PreRnaSpeciesType`): rna
+        transcripts (:obj:`list` of :obj:`TranscriptSpeciesType`): transcripts
         regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory_modules
     """
     symbol = obj_model.StringAttribute()
@@ -71,34 +137,6 @@ class GeneLocus(core.PolymerLocus):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 
                            'end', 'comments', 'references', 'database_references')
-
-
-class ExonLocus(core.PolymerLocus):
-    """ Knowledge of an exon
-
-    Related attributes:
-        transcript (:obj:`TranscriptSpeciesType`): transcript
-    """        
-    class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'start', 'end', 
-                           'comments', 'references', 'database_references')
-
-
-class CdsLocus(core.PolymerLocus):
-    """ Knowledge of an coding region
-
-    Attributes:
-        exon (:obj:`ExonLocus`): exon
-
-    Related attributes:
-        protein (:obj:`ProteinSpeciesType`): protein
-    """        
-    exon = obj_model.ManyToOneAttribute(ExonLocus, related_name='cds_loci')
-
-    class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'exon', 'start', 'end', 
-                           'comments', 'references', 'database_references')
-        verbose_name = 'CDS loci'                           
 
 
 class RegulatoryElementLocus(core.PolymerLocus):
@@ -182,110 +220,67 @@ class PtmSite(core.PolymerLocus):
                            'abundance_ratio', 'comments', 'references', 'database_references')
 
 
+class GenericLocus(obj_model.Model):
+    """ Start and end coordinates of exons and CDSs
+    
+    Attributes:
+        start (:obj:`int`): start coordinate
+        end (:obj:`int`): end coordinate
+    
+    Related attributes:
+        transcripts (:obj:`list` of :obj:`TranscriptSpeciesType`): transcripts
+        proteins (:obj:`list` of :obj:`ProteinSpeciesType`): proteins
+    """
+    start = obj_model.PositiveIntegerAttribute()
+    end = obj_model.PositiveIntegerAttribute()
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('start', 'end')
+        tabular_orientation = obj_model.TabularOrientation.inline
+        ordering = ('start', 'end')
+
+    @staticmethod
+    def _serialize(start, end):
+        """ Generate string representation
+
+        Args:
+            start (:obj:`int`): start coordinate
+            end (:obj:`int`): end coordinate
+
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return '{}:{}'.format(start, end)    
+
+    def serialize(self):
+        """ Generate string representation
+
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return self._serialize(self.start, self.end)
+
 
 #####################
 #####################
 # Species types
 
 
-class PreRnaSpeciesType(core.PolymerSpeciesType):
-    """ Knowledge of a transcribed RNA species before splicing
-
-    Attributes:
-        gene (:obj:`GeneLocus`): gene
-        type (:obj:`RnaType`): type
-
-    Related attributes:
-        transcripts (:obj:`list` of :obj:`TranscriptSpeciesType`): transcript(s)
-    """
-    gene = obj_model.OneToOneAttribute(
-        'GeneLocus', related_name='rna')
-    type = obj_model.EnumAttribute(core.RnaType)
-
-    class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'type', 'gene', 'circular', 'double_stranded', 
-                           'half_life', 'comments', 'references', 'database_references')
-        verbose_name = 'pre-RNA species type'
-
-    def get_seq(self):
-        """ Get the 5' to 3' sequence
-
-        Returns:
-            :obj:`Bio.Seq.Seq`: sequence
-        """
-        
-        dna_seq = self.gene.polymer.get_subseq(
-            start=self.gene.start, end=self.gene.end, strand=self.gene.strand)
-        
-        return dna_seq.transcribe()    
-
-    def get_empirical_formula(self):
-        """ Get the empirical formula for a transcribed RNA species before splicing with
-
-        * 5' monophosphate
-        * Deprotonated phosphate oxygens
-
-        :math:`N_A * AMP + N_C * CMP + N_G * GMP + N_U * UMP - (L-1) * OH`
-
-        Returns:
-           :obj:`chem.EmpiricalFormula`: empirical formula
-        """
-        seq = self.get_seq()
-        n_a = seq.count('A')
-        n_c = seq.count('C')
-        n_g = seq.count('G')
-        n_u = seq.count('U')
-        l = len(seq)
-
-        formula = chem.EmpiricalFormula()
-        formula.C = 10 * n_a + 9 * n_c + 10 * n_g + 9 * n_u
-        formula.H = 12 * n_a + 12 * n_c + 12 * n_g + 11 * n_u - (l - 1)
-        formula.N = 5 * n_a + 3 * n_c + 5 * n_g + 2 * n_u
-        formula.O = 7 * n_a + 8 * n_c + 8 * n_g + 9 * n_u - (l - 1)
-        formula.P = n_a + n_c + n_g + n_u
-
-        return formula
-
-    def get_charge(self):
-        """ Get the charge for a transcribed RNA species before splicing with
-
-        * 5' monophosphate
-        * Deprotonated phosphate oxygens
-
-        :math:`-L - 1`
-
-        Returns:
-           :obj:`int`: charge
-        """
-        return -self.get_len() - 1
-
-    def get_mol_wt(self):
-        """ Get the molecular weight for a transcribed RNA species before splicing with
-
-        * 5' monophosphate
-        * Deprotonated phosphate oxygens
-
-        Returns:
-            :obj:`float`: molecular weight (Da)
-        """
-        return self.get_empirical_formula().get_molecular_weight()
-
-
 class TranscriptSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a transcript (spliced RNA) species
 
     Attributes:
-        rna (:obj:`RnaSpeciesType`): transcribed RNA species before splicing        
-        exons (:obj:`list` of :obj:`ExonLocus`): exons
+        gene (:obj:`GeneLocus`): gene        
+        exons (:obj:`list` of :obj:`LocusAttribute`): exon coordinates
 
     Related attributes:
         protein (:obj:`ProteinSpeciesType`): protein    
     """
-    rna = obj_model.ManyToOneAttribute(PreRnaSpeciesType, related_name='transcripts')
-    exons = obj_model.ManyToManyAttribute(ExonLocus, related_name='transcripts')
+    gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='transcripts')
+    exons = LocusAttribute(related_name='transcripts')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'rna', 'exons', 'half_life', 
+        attribute_order = ('id', 'name', 'gene', 'exons', 'half_life', 
                            'comments', 'references', 'database_references')
 
     def get_seq(self):
@@ -297,10 +292,10 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
         dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet())
 
         for exon in sorted(self.exons, key=lambda x: x.start):                
-            dna_seq += self.rna.gene.polymer.get_subseq(
+            dna_seq += self.gene.polymer.get_subseq(
                     start=exon.start, end=exon.end)
 
-        if self.rna.gene.strand==core.PolymerStrand.negative:
+        if self.gene.strand==core.PolymerStrand.negative:
             dna_seq = dna_seq.reverse_complement()    
 
         return dna_seq.transcribe()    
@@ -363,7 +358,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     Attributes:
         uniprot (:obj:`str`): uniprot id
         transcript (:obj:`TranscriptSpeciesType`): transcript
-        coding_regions (:obj:`list` of :obj:`CdsLocus`): CDS Loci
+        coding_regions (:obj:`list` of :obj:`LocusAttribute`): CDS coordinates
 
     Related attributes:
         regulatory_elements (:obj:`list` of `RegulatoryElementLocus`): potential binding sites
@@ -373,7 +368,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     uniprot = obj_model.StringAttribute()
     transcript = obj_model.OneToOneAttribute(TranscriptSpeciesType, related_name='protein')
-    coding_regions = obj_model.ManyToManyAttribute(CdsLocus, related_name='protein')
+    coding_regions = LocusAttribute(related_name='proteins')
     
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 'half_life', 
@@ -393,10 +388,10 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet())
 
         for cds in sorted(self.coding_regions, key=lambda x: x.start):                
-            dna_seq += self.transcript.rna.gene.polymer.get_subseq(
+            dna_seq += self.transcript.gene.polymer.get_subseq(
                     start=cds.start, end=cds.end)
 
-        if self.transcript.rna.gene.strand == core.PolymerStrand.negative:
+        if self.transcript.gene.strand == core.PolymerStrand.negative:
             dna_seq = dna_seq.reverse_complement()    
                     
         return dna_seq.transcribe().translate(table=table, cds=cds)

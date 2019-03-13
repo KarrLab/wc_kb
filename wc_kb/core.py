@@ -237,12 +237,11 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
 
         objs = []
         for pat_match in re.findall(pattern, value, flags=re.I):
-            match = re.match(pattern, value, flags=re.I)
-            database_name = match.group(1)
-            data_id = match.group(2)
+            database_name = pat_match[0]
+            data_id = pat_match[1]
             if self.related_class not in objects:
                 objects[self.related_class] = {}
-            serialized_value = value
+            serialized_value = self.related_class()._serialize(database=database_name, id=data_id)
             if serialized_value in objects[self.related_class]:
                 obj = objects[self.related_class][serialized_value]
             else:
@@ -464,13 +463,26 @@ class DatabaseReference(obj_model.Model):
         unique_together = (('database', 'id'), )
         ordering = ('database', 'id')
 
+    @staticmethod
+    def _serialize(database, id):
+        """ Generate string representation
+
+        Args:
+            database (:obj:`str`): name of the external database
+            id (:obj:`str`): identifier within the database
+
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return '{}:{}'.format(database, id)
+
     def serialize(self):
         """ Generate string representation
 
         Returns:
             :obj:`str`: value of primary attribute
         """
-        return '{}:{}'.format(self.database, self.id)
+        return self._serialize(self.database, self.id)
 
 
 class KnowledgeBaseObject(obj_model.Model):
