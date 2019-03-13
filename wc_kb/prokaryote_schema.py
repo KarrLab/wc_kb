@@ -124,7 +124,8 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     """
 
     gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
-    rna = obj_model.ManyToOneAttribute('RnaSpeciesType', related_name='proteins')
+    #rna = obj_model.ManyToOneAttribute('RnaSpeciesType', related_name='proteins')
+    type = obj_model.EnumAttribute(core.ProteinType)
     localization = obj_model.ManyToManyAttribute(core.Compartment, related_name='proteins')
     signal_sequence_type = obj_model.EnumAttribute(core.SignalSequenceType)
     signal_sequence_location = obj_model.StringAttribute() # Compartment?
@@ -137,9 +138,9 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
-        attribute_order = ('id', 'name', 'synonyms', 'gene', 'rna', 'localization',
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'species_properties', 'concentration', 'gene', 'localization',
                            'signal_sequence_type', 'signal_sequence_location', 'signal_sequence_length',
-                           'Dna_footprint_length', 'Dna_footprint_binding', 'species_properties', 'concentration',
+                           'Dna_footprint_length', 'Dna_footprint_binding', 
                            'evidence', 'database_references', 'references', 'comments')
 
     def get_seq(self, cds=True):

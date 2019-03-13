@@ -160,49 +160,57 @@ class MetaboliteSpeciesTypeType(enum.Enum):
 
 class SignalSequenceType(enum.Enum):
     """ Types of signal sequences """
-
     secretory = 0
     lipoprotein = 1
 
+class ProteinType(enum.Enum):
+    """ Types of signal sequences """
+    TrnaSynthClassI = 0
+    TrnaSynthClassIB = 1
+    TrnaSynthClassII = 2
+    uncategorized = 3
 
 class DnaBindingType(enum.Enum):
     """ Types of DNA binding """
     ssDNA = 0
     dsDNA = 1
 
-
 class ReactionType(enum.Enum):
     """ Types of DNA binding """
 
-    ChemicalReaction = 0
-    DephosphorylationActivatingProteinModificationReaction = 1
-    DnaDamageBaseAlkylationReaction = 2
-    DnaDamageBaseAminationReaction = 3
-    DnaDamageBaseEthylationReaction = 4
-    DnaDamageBaseGlucosylTransferReaction = 5
-    DnaDamageBaseMethylationReaction = 6
-    DnaDamageRadiationInducedBaseOxidation = 7
-    DnaDamageSpontaneousBaseDeaminationReaction = 8
-    DnaDamageSpontaneousBaseLossReaction = 9
-    DnaDamageStrandBreakReaction = 10
-    DnaDamageUvBPhotodimerization = 11
-    DnaRepairBaseExcisionRepairBaseExcisionReaction = 12
-    DnaRepairDnaCleavageReaction = 13
-    DnaRepairDnaLigationReaction = 14
-    DnaRepairDnaPolymerizationReaction = 15
-    DnaRepairDnaRestrictionModificationReaction = 16
-    DnaRepairHomologousRecombinationReaction = 17
-    DnaRepairNucleotideExcisionRepairReaction = 18
-    GlycationInactivatingProteinModificationReaction = 19
-    IonTransportReaction = 20
-    ModifiedBaseTransportReaction = 21
-    OxidationInactivatingProteinModificationReaction = 22
-    PhosphorylationInactivatingProteinModificationReaction = 23
-    ProteinModificationAdductionReaction = 24
-    TransportReaction = 25
-    TrnaAminoacylationReaction = 26
-    TrnaTransferReaction = 27
-
+    Uncategorized = 0
+    DnaDamageBaseAlkylationReaction = 1
+    DnaDamageBaseEthylationReaction =2
+    DnaDamageRadiationInducedBaseOxidation =3
+    DnaDamageBaseMethylationReaction =4
+    DnaDamageBaseAminationReaction =5
+    DnaDamageUvBPhotodimerization =6
+    DnaDamagePhotooxidationReaction =7
+    DnaDamageStrandBreakReaction=8
+    DnaDamageBaseGlucosylTransferReaction=9
+    DnaDamageSpontaneousBaseDeaminationReaction=10
+    DnaDamageSpontaneousBaseLossReaction=11
+    DnaDamageBaseReductionReaction=12
+    DnaRepairBaseExcisionRepairReaction=13
+    DnaRepairDnaLigationReaction=14
+    DnaRepairDnaPolymerizationReaction=15
+    DnaRepairDnaRestrictionModificationReaction=16
+    DnaRepairDnaCleavageReaction=17
+    DnaRepairHomologousRecombinationReaction=18
+    DnaRepairBaseExcisionRepairBaseExcisionReaction=19
+    DnaRepairNucleotideExcisionRepairReaction=20
+    ChemicalReaction=21
+    TransportReaction=22
+    ModifiedBaseTransportReaction=23
+    IonTransportReaction=24
+    OxidationInactivatingProteinModificationReaction=25
+    ProteinModificationAdductionReaction=26
+    ProteinModificationLigationReaction=27
+    TrnaTransferReaction=28
+    TrnaAminoacylationReaction=29
+    GlycationInactivatingProteinModificationReaction=30
+    PhosphorylationInactivatingProteinModificationReaction=31
+    DephosphorylationActivatingProteinModificationReaction=32
 
 class ReferenceType(enum.Enum):
     """ Types of references """

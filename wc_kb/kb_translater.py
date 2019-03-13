@@ -237,7 +237,7 @@ class KbTranslater:
 
             kbMetas.cell(column=7, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
             kbMetas.cell(column=8, row=rowIdx-1).value = coreMetas.cell(column=refsColumn, row=rowIdx).value # REFERENCES
-            kbMetas.cell(column=9, row=rowIdx-1).value = coreMetas.cell(column=commentsColumn, row=rowIdx).value # COMMENTS
+            kbMetas.cell(column=9, row=rowIdx-1).value = coreMetas.cell(column=commentsColumn, row=rowIdx).value
 
     def translateProteins(self):
         """ Parses information from the core's 'protein monomers' sheet and inserts them to the appropiate field(s) in the KB structure. """
@@ -265,6 +265,79 @@ class KbTranslater:
 
         for rowIdx in range(3, coreProteins.max_row+1):
             print(rowIdx)
+            """ missing
+            Methionine all
+            localization evidence
+            domains
+            prosthetic_groups
+            DNA binding Evidence
+            Chaperones
+            """
+
+            # check if row is correct
+            assert kbProteins.cell(column=1, row=rowIdx-1).value == coreProteins.cell(column=1, row=rowIdx).value
+
+            #kbProteins.cell(column=1, row=rowIdx-1).value = coreProteins.cell(column=1, row=rowIdx).value # ID
+            #kbProteins.cell(column=2, row=rowIdx-1).value = coreProteins.cell(column=2, row=rowIdx).value # Name
+            #kbProteins.cell(column=3, row=rowIdx-1).value = coreProteins.cell(column=3, row=rowIdx).value # Synonyms
+
+            # Copy types
+            proteinType = coreProteins.cell(column=5, row=rowIdx).value
+            if proteinType is None:
+                kbProteins.cell(column=4, row=rowIdx-1).value = 'uncategorized'
+            else:
+                kbProteins.cell(column=4, row=rowIdx-1).value = coreProteins.cell(column=5, row=rowIdx).value
+
+            #kbProteins.cell(column=5, row=rowIdx-1).value = coreProteins.cell(column=16, row=rowIdx).value # Species properties
+            kbProteins.cell(column=6, row=rowIdx-1).value = coreProteins.cell(column=17, row=rowIdx).value # Concentration
+
+            concId = self.addConcentration(objectId = coreProteins.cell(column=1, row=rowIdx),
+                                           fieldStr = coreProteins.cell(column=concColumn, row=rowIdx))
+            self.concatenateId(kbProteins.cell(column=5, row=rowIdx-1), concId)
+
+
+
+            #kbProteins.cell(column=5, row=rowIdx-1).value = coreProteins.cell(column=6, row=rowIdx).value # Gene
+            #kbProteins.cell(column=6, row=rowIdx-1).value = coreProteins.cell(column=9, row=rowIdx).value.replace('t', '') # localization: treat trans- membrane
+            #kbProteins.cell(column=7, row=rowIdx-1).value = coreProteins.cell(column=10, row=rowIdx).value # signal sequence type
+            #kbProteins.cell(column=8, row=rowIdx-1).value = coreProteins.cell(column=11, row=rowIdx).value # signal sequence localization
+            #kbProteins.cell(column=9, row=rowIdx-1).value = coreProteins.cell(column=12, row=rowIdx).value # signal sequence length
+
+            #kbProteins.cell(column=10, row=rowIdx-1).value = coreProteins.cell(column=16, row=rowIdx).value # DNA footprint length
+            #kbProteins.cell(column=11, row=rowIdx-1).value = coreProteins.cell(column=17, row=rowIdx).value # DNA footprint biding
+
+            kbProteins.cell(column=15, row=rowIdx-1).value = self.addDatabaseReference(coreProteins.cell(column=4, row=rowIdx), returnIds=True) # Add DB refs
+            #kbProteins.cell(column=16, row=rowIdx-1).value = coreProteins.cell(column=33, row=rowIdx).value # References
+            #kbProteins.cell(column=17, row=rowIdx-1).value = coreProteins.cell(column=34, row=rowIdx).value # Comments
+
+
+    def translateReactions(self):
+        """ Parses information from the core's 'Reactions' sheet and inserts them to the appropiate field(s) in the KB structure. """
+
+        coreReactions = self.core['Reactions']
+        kbReactions   = self.kb['Reactions']
+
+        for rowIdx in range(3, coreReactions.max_row+1):
+            print(rowIdx)
+            """ missing
+            modification
+            """
+
+            # Check if row is correct
+            assert kbReactions.cell(column=1, row=rowIdx-1).value == coreReactions.cell(column=1, row=rowIdx).value
+
+            #kbReactions.cell(column=1, row=rowIdx-1).value = coreReactions.cell(column=1, row=rowIdx).value # ID
+            #kbReactions.cell(column=2, row=rowIdx-1).value = coreReactions.cell(column=2, row=rowIdx).value # Name
+            #kbReactions.cell(column=3, row=rowIdx-1).value = coreReactions.cell(column=3, row=rowIdx).value # Synonyms
+
+            # Copy types
+            reactionType = coreReactions.cell(column=5, row=rowIdx).value
+            if reactionType is None:
+                kbReactions.cell(column=4, row=rowIdx-1).value = 'Uncategorized'
+            else:
+                kbReactions.cell(column=4, row=rowIdx-1).value = coreReactions.cell(column=5, row=rowIdx).value
+
+
 
     def translateReferences(self):
         """ Parses information from the core's 'References' sheet and inserts it to the appropiate field(s) in the new kb structure. """
@@ -300,7 +373,7 @@ class KbTranslater:
 
             dbRefsDicts = self.delinateJSONs(coreRefs.cell(column=4, row=rowIdx).value)
             kbRefs.cell(column=11, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
-            kbRefs.cell(column=12, row=rowIdx-1).value = coreRefs.cell(column=15, row=rowIdx).value # Comments
+            kbRefs.cell(column=12, row=rowIdx-1).value = coreRefs.cell(column=15, row=rowIdx).value
 
     """ Nested entries """
     def addSpeciesProperties(self, speciesId, structure=None, half_life=None, half_life_units=None, domains=None, evidence=None, refs=None):
@@ -334,8 +407,10 @@ class KbTranslater:
         return speciePropId
 
     def addConcentration(self, objectId, fieldStr):
+        objectId = objectId.value
+        fieldStr = fieldStr.value
         if fieldStr is None:
-            return
+            return None
 
         wsName = 'Concentrations'
         nextRow = self.kb[wsName].max_row+1
@@ -440,7 +515,10 @@ class KbTranslater:
 
         return experimentId
 
-    def addDatabaseReference(self, jsons, returnIds=False):
+    def addDatabaseReference(self, cell, returnIds=False):
+
+        jsons = self.delinateJSONs(cell.value)
+
         if jsons is None:
             return None
 
@@ -520,6 +598,9 @@ class KbTranslater:
 
     @staticmethod
     def concatenateId(cell, entry):
+        if entry is None:
+            return
+
         if cell.value is None:
             cell.value = '' +  entry
         else:
