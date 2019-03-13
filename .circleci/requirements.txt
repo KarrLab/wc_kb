@@ -1,5 +1,5 @@
 # third party forks
-git+https://github.com/KarrLab/wc_utils.git#egg=log
+git+https://github.com/KarrLab/log.git#egg=log
 
 # Karr Lab
 git+https://github.com/KarrLab/wc_utils.git#egg=wc_utils
