@@ -15,7 +15,7 @@ import re
 
 class KbTranslater:
 
-    def __init__(self, core_path=None, kb_path=None):
+    def __init__(self, core_path=None, kb_path=None, column=None):
 
         if core_path is None:
             core_path = 'wc_kb/kbs/original_core.xlsx'
@@ -24,6 +24,24 @@ class KbTranslater:
 
         self.core = openpyxl.load_workbook(core_path, read_only=True)
         self.kb = openpyxl.load_workbook(kb_path)
+
+        # Construct column dictionary
+        self.column={}
+        self.column['kb']={}
+        self.column['core']={}
+
+        for ws in self.kb.worksheets:
+            self.column['kb'][ws.title.lower()]={}
+            for columnIdx in range(1,50):
+                if ws.cell(row=1, column=columnIdx).value is not None:
+                    self.column['kb'][ ws.title.lower()][ws.cell(row=1, column=columnIdx).value.lower()] = columnIdx
+
+        for ws in self.core.worksheets:
+            self.column['core'][ws.title.lower()]={}
+            for columnIdx in range(1,80):
+                if ws.cell(row=2, column=columnIdx).value is not None:
+                    self.column['core'][ ws.title.lower()][ws.cell(row=2, column=columnIdx).value.lower()] = columnIdx
+
 
     """ Translate methods """
     def translateChromosomeFeatures(self):
@@ -72,7 +90,6 @@ class KbTranslater:
                             objectId = objectId,
                             property = 'intensity',
                             eviDict = eviDict,
-                            kbEviColumn = kbEviColumn,
                             expId = expId)
 
                 self.concatenateId(kbChromFeats.cell(column=kbEviColumn, row=kbChromFeats.max_row), eviId)
@@ -171,7 +188,7 @@ class KbTranslater:
                     objectId = objectId,
                     property = 'is_essential',
                     eviDict = eviDict,
-                    kbEviColumn = kbEviColumn,
+                    #kbEviColumn = kbEviColumn,
                     expId = expId)
 
                 self.concatenateId(kbGenes.cell(column=kbEviColumn, row=kbGenes.max_row),
@@ -243,62 +260,85 @@ class KbTranslater:
         """ Parses information from the core's 'protein monomers' sheet and inserts them to the appropiate field(s) in the KB structure. """
 
         coreProteins = self.core['Protein monomers']
-        kbProteins   = self.kb['Proteins']
+        kbProteins = self.kb['Proteins']
+        kbSpeciesProperties = self.kb['Species properties']
+        kbConcentrations = self.kb['Concentrations']
+
+        """ missing
+        Methionine all
+        localization evidence
+        domains
+        prosthetic_groups
+        DNA binding Evidence
+        Chaperones
+        """
 
         assert kbProteins.cell(column=1, row=1).value == 'Id'
         assert kbProteins.cell(column=2, row=1).value == 'Name'
         assert kbProteins.cell(column=3, row=1).value == 'Synonyms'
-        assert kbProteins.cell(column=4, row=1).value == 'Gene'
-        assert kbProteins.cell(column=5, row=1).value == 'RNA'
-        assert kbProteins.cell(column=6, row=1).value == 'Localization'
-        assert kbProteins.cell(column=7, row=1).value == 'Signal sequence type'
-        assert kbProteins.cell(column=8, row=1).value == 'Signal sequence location'
-        assert kbProteins.cell(column=9, row=1).value == 'Signal sequence length'
-        assert kbProteins.cell(column=10, row=1).value == 'Dna footprint length'
-        assert kbProteins.cell(column=11, row=1).value == 'Dna footprint binding'
-        assert kbProteins.cell(column=12, row=1).value == 'Species properties'
-        assert kbProteins.cell(column=13, row=1).value == 'Concentration'
+        assert kbProteins.cell(column=4, row=1).value == 'Type'
+        assert kbProteins.cell(column=5, row=1).value == 'Species properties'
+        assert kbProteins.cell(column=6, row=1).value == 'Concentration'
+        assert kbProteins.cell(column=7, row=1).value == 'Gene'
+        assert kbProteins.cell(column=8, row=1).value == 'Localization'
+        assert kbProteins.cell(column=9, row=1).value == 'Signal sequence type'
+        assert kbProteins.cell(column=10, row=1).value == 'Signal sequence location'
+        assert kbProteins.cell(column=11, row=1).value == 'Signal sequence length'
+        assert kbProteins.cell(column=12, row=1).value == 'Dna footprint length'
+        assert kbProteins.cell(column=13, row=1).value == 'Dna footprint binding'
         assert kbProteins.cell(column=14, row=1).value == 'Evidence'
         assert kbProteins.cell(column=15, row=1).value == 'Database references'
         assert kbProteins.cell(column=16, row=1).value == 'References'
         assert kbProteins.cell(column=17, row=1).value == 'Comments'
 
-        for rowIdx in range(3, coreProteins.max_row+1):
+        for rowIdx in range(3, 50): #coreProteins.max_row+1):
+            speciesTypeId = kbProteins.cell(column=1, row=rowIdx-1).value
             print(rowIdx)
-            """ missing
-            Methionine all
-            localization evidence
-            domains
-            prosthetic_groups
-            DNA binding Evidence
-            Chaperones
-            """
 
             # check if row is correct
-            assert kbProteins.cell(column=1, row=rowIdx-1).value == coreProteins.cell(column=1, row=rowIdx).value
+            assert speciesTypeId == coreProteins.cell(column=1, row=rowIdx).value
 
-            #kbProteins.cell(column=1, row=rowIdx-1).value = coreProteins.cell(column=1, row=rowIdx).value # ID
+            #MANUAL COPY: kbProteins.cell(column=1, row=rowIdx-1).value = coreProteins.cell(column=1, row=rowIdx).value # ID
             #kbProteins.cell(column=2, row=rowIdx-1).value = coreProteins.cell(column=2, row=rowIdx).value # Name
             #kbProteins.cell(column=3, row=rowIdx-1).value = coreProteins.cell(column=3, row=rowIdx).value # Synonyms
 
-            # Copy types
+            # Types
             proteinType = coreProteins.cell(column=5, row=rowIdx).value
             if proteinType is None:
                 kbProteins.cell(column=4, row=rowIdx-1).value = 'uncategorized'
             else:
                 kbProteins.cell(column=4, row=rowIdx-1).value = coreProteins.cell(column=5, row=rowIdx).value
 
-            #kbProteins.cell(column=5, row=rowIdx-1).value = coreProteins.cell(column=16, row=rowIdx).value # Species properties
-            kbProteins.cell(column=6, row=rowIdx-1).value = coreProteins.cell(column=17, row=rowIdx).value # Concentration
+            # Species properties - parse in parallel with Evidence / Experiments
+            if rowIdx==3:
+                expId = self.addExperiment(eviDict = coreProteins.cell(column=29, row=rowIdx).value)
 
-            concId = self.addConcentration(objectId = coreProteins.cell(column=1, row=rowIdx),
-                                           fieldStr = coreProteins.cell(column=concColumn, row=rowIdx))
-            self.concatenateId(kbProteins.cell(column=5, row=rowIdx-1), concId)
+            eviId = self.addEvidence(objectId = speciesTypeId,
+                                     property = 'half_life',
+                                     eviDict = coreProteins.cell(column=29, row=rowIdx).value,
+                                     expId = expId)
 
+            kbProteins.cell(column=5, row=rowIdx-1).value = self.addSpeciesProperties(
+                speciesId = speciesTypeId,
+                structure = None,
+                half_life = coreProteins.cell(column=27, row=rowIdx).value,
+                half_life_units = coreProteins.cell(column=28, row=rowIdx).value,
+                #domains = json.dumps(coreProteins.cell(column=14, row=rowIdx).value),
+                domains = None,
+                evidence = self.concatenateId(kbSpeciesProperties.cell(column=9, row=rowIdx-1), eviId),
+                refs = None)
 
+            # Concentration - unlike other concentrations, for proteins it is not stored as JSON
+            nextRow = kbConcentrations .max_row+1
+            concId = 'conc_{}_{}'.format(speciesTypeId, 'c') #
+            kbConcentrations.cell(column=1, row=nextRow).value = concId
+            kbConcentrations.cell(column=2, row=nextRow).value = '{}[{}]'.format(speciesTypeId, 'c')
+            kbConcentrations.cell(column=3, row=nextRow).value =  coreProteins.cell(column=22, row=rowIdx).value
+            kbConcentrations.cell(column=4, row=nextRow).value =  'molecules'
+            self.concatenateId(kbProteins.cell(column=6, row=rowIdx-1), concId)
 
             #kbProteins.cell(column=5, row=rowIdx-1).value = coreProteins.cell(column=6, row=rowIdx).value # Gene
-            #kbProteins.cell(column=6, row=rowIdx-1).value = coreProteins.cell(column=9, row=rowIdx).value.replace('t', '') # localization: treat trans- membrane
+            kbProteins.cell(column=6, row=rowIdx-1).value = coreProteins.cell(column=9, row=rowIdx).value.replace('t', '') # localization: treat trans- membrane
             #kbProteins.cell(column=7, row=rowIdx-1).value = coreProteins.cell(column=10, row=rowIdx).value # signal sequence type
             #kbProteins.cell(column=8, row=rowIdx-1).value = coreProteins.cell(column=11, row=rowIdx).value # signal sequence localization
             #kbProteins.cell(column=9, row=rowIdx-1).value = coreProteins.cell(column=12, row=rowIdx).value # signal sequence length
@@ -336,7 +376,6 @@ class KbTranslater:
                 kbReactions.cell(column=4, row=rowIdx-1).value = 'Uncategorized'
             else:
                 kbReactions.cell(column=4, row=rowIdx-1).value = coreReactions.cell(column=5, row=rowIdx).value
-
 
 
     def translateReferences(self):
@@ -441,7 +480,7 @@ class KbTranslater:
 
         return concId
 
-    def addEvidence(self, objectId, property, eviDict, kbEviColumn, expId = None):
+    def addEvidence(self, objectId, property, eviDict, expId = None):
         if eviDict is None:
             return None
 
@@ -480,24 +519,25 @@ class KbTranslater:
         refs = None
         specie = None
 
+        try:
+            eviDict = json.loads(eviDict)
+        except:
+            print('Experiment could nto be JSON parsed!')
+
         if eviDict['references'] is not None:
             refs = self.cleanJsonDump(json.dumps(eviDict['references']))
         if eviDict['species'] is not None:
             specie = eviDict['species']
-        #if eviDict['media'] is not None:
-        #    media = eviDict['media']
 
         wsName = 'Experiment'
         nextRow = self.kb[wsName].max_row+1
 
         speciesColumn = self.getColumnId(wbName='kb', sheetName='Experiment', header = 'Species')
         refsColumn   = self.getColumnId(wbName='kb', sheetName='Experiment', header = 'References')
-        #mediaColumn = self.getColumnId(wbName='kb', sheetName='Experiment', header = 'External media')
 
         for rowIdx in range(2,nextRow):
              if self.kb[wsName].cell(row=rowIdx, column=speciesColumn).value == specie and \
                 self.kb[wsName].cell(row=rowIdx, column=refsColumn).value == refs:
-                #self.kb[wsName].cell(row=rowIdx, column=mediaColumn).value == media:
                 experimentId = self.kb[wsName].cell(row=rowIdx, column=1).value
                 return experimentId
 

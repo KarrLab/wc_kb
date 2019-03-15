@@ -920,8 +920,8 @@ class Concentration(KnowledgeBaseObject):
     cell = obj_model.ManyToOneAttribute(Cell, related_name='concentrations')
     species = OneToOneSpeciesAttribute(related_name='concentration')
     medium = obj_model.StringAttribute()
-    mean = FloatAttribute(min=0)
-    std_dev = FloatAttribute(min=0)
+    values = FloatAttribute(min=0)
+    #std_dev = FloatAttribute(min=0)
     database_references = DatabaseReferenceAttribute(related_name='concentrations')
     references = ManyToManyAttribute(Reference, related_name='concentrations')
     units = obj_model.units.UnitAttribute(unit_registry,
@@ -944,7 +944,7 @@ class Concentration(KnowledgeBaseObject):
 
     class Meta(obj_model.Model.Meta):
         unique_together = (('species', 'medium' ), )
-        attribute_order = ('id', 'name', 'species', 'medium', 'mean', 'std_dev', 'units', 'evidence', 'database_references', 'references', 'comments')
+        attribute_order = ('id', 'species', 'values', 'units', 'evidence', 'database_references', 'references', 'comments')
         frozen_columns = 1
         ordering = ('species',)
 
