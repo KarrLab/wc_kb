@@ -13,7 +13,6 @@
 from wc_utils.util import chem
 import obj_model
 from wc_kb import core
-import pdb
 
 #####################
 # Species types

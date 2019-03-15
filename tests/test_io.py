@@ -20,7 +20,6 @@ import shutil
 import tempfile
 import unittest
 import wc_utils.workbook.io
-import pdb
 
 class TestIO(unittest.TestCase):
 
@@ -163,8 +162,6 @@ class TestIO(unittest.TestCase):
             'git@github.com:KarrLab/wc_kb.git',
         ])
 
-        #pdb.set_trace()
-        # Are they not removed by tearDown?
         os.remove(core_path)
         os.remove(seq_path)
 
