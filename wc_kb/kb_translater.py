@@ -25,25 +25,330 @@ class KbTranslater:
         self.core = openpyxl.load_workbook(core_path, read_only=True)
         self.kb = openpyxl.load_workbook(kb_path)
 
-        # Construct column dictionary
-        self.column={}
-        self.column['kb']={}
-        self.column['core']={}
-
+        # Construct header dictionary
+        self.header={}
         for ws in self.kb.worksheets:
-            self.column['kb'][ws.title.lower()]={}
+            self.header[ws.title.lower()]={}
+            self.header[ws.title]={}
             for columnIdx in range(1,50):
                 if ws.cell(row=1, column=columnIdx).value is not None:
-                    self.column['kb'][ ws.title.lower()][ws.cell(row=1, column=columnIdx).value.lower()] = columnIdx
+                    self.header[ws.title.lower()][ws.cell(row=1, column=columnIdx).value.lower()] = columnIdx
+                    self.header[ws.title][ws.cell(row=1, column=columnIdx).value] = columnIdx
 
-        for ws in self.core.worksheets:
-            self.column['core'][ws.title.lower()]={}
-            for columnIdx in range(1,80):
-                if ws.cell(row=2, column=columnIdx).value is not None:
-                    self.column['core'][ ws.title.lower()][ws.cell(row=2, column=columnIdx).value.lower()] = columnIdx
+    def translateMetabolites(self):
+        """ Parses information from the core's Metabolite sheet and inserts them to the appropiate field(s) in the KB structure. """
+
+        coreMetas = self.core['Metabolites']
+        kbMetas   = self.kb['Metabolites']
+
+        for rowIdx in range(3, coreMetas.max_row+1):
+            print(rowIdx)
+            speciesTypeId = kbMetas.cell(column=1, row=rowIdx-1).value
+            assert speciesTypeId == coreMetas.cell(column=1, row=rowIdx).value
+
+            #MANUALLY COPIED: kbMetas.cell(column=1, row=rowIdx-1).value = coreMetas.cell(column=1, row=rowIdx).value # ID
+            #MANUALLY COPIED: kbMetas.cell(column=2, row=rowIdx-1).value = coreMetas.cell(column=2, row=rowIdx).value # NAME
+            #MANUALLY COPIED: kbMetas.cell(column=3, row=rowIdx-1).value = coreMetas.cell(column=5, row=rowIdx).value # Synonyms
+
+            # Type
+            metaType = coreMetas.cell(column=7, row=rowIdx).value # TYPE
+            if metaType is None:
+                kbMetas.cell(column=4, row=rowIdx-1).value = 'unknown'
+            elif metaType not in wc_kb.core.MetaboliteSpeciesTypeType:
+                kbMetas.cell(column=4, row=rowIdx-1).value = 'misc'
+            elif metaType not in wc_kb.core.MetaboliteSpeciesTypeType:
+                kbMetas.cell(column=4, row=rowIdx-1).value = metaType
+
+            # Concentration
+            if coreMetas.cell(column=18, row=rowIdx).value is not None:
+
+                concDict = json.loads(coreMetas.cell(column=18, row=rowIdx).value)
+
+                concentrationEntry = self.createConcentration(
+                    speciesTypeId = speciesTypeId ,
+                    values = concDict['concentration'],
+                    units = 'mM')
+
+                #evidenceEntry = self.createEvidence(
+                #    objectId = speciesTypeId,
+                #    property = 'concentration',
+                #    values = coreMetas.cell(column=22, row=rowIdx).value,
+                #    units = 'molecules',
+                #    experiment = concExpEntry['id'],
+                #    comments=coreMetas.cell(column=23, row=rowIdx).value)
+
+                #if concentrationEntry is not None:
+                #    kbMetas.cell(column=self.header['Metabolites']['Concentration'], row=rowIdx-1).value = concentrationEntry['id']
+                #    if evidenceEntry is not None:
+                #        self.insertCell(insertTo=concentrationEntry, header='Evidence', value=evidenceEntry['id'])
+
+            # Species properties
+            speciesPropsEntry = self.createSpeciesTypeProperties(
+                speciesTypeId = speciesTypeId,
+                structure = coreMetas.cell(column=9, row=rowIdx).value)
+            if speciesPropsEntry is not None:
+                kbMetas.cell(column=self.header['Metabolites']['Species properties'], row=rowIdx-1).value = speciesPropsEntry['id']
+
+            #MANUALLY COPIED: kbMetas.cell(column=8, row=rowIdx-1).value = coreMetas.cell(column=refsColumn, row=rowIdx).value # REFERENCES
+            #MANUALLY COPIED: kbMetas.cell(column=9, row=rowIdx-1).value = coreMetas.cell(column=commentsColumn, row=rowIdx).value #comments
+            kbMetas.cell(column=self.header['Metabolites']['Database references'], row=rowIdx-1).value = \
+                self.parseDatabaseReferences(cell = coreMetas.cell(column=6, row=rowIdx)) # Add DB refs
+
+    def translateProteins(self):
+        """ Parses information from the core's 'protein monomers' sheet and inserts them to the appropiate field(s) in the KB structure. """
+
+        header=self.header
+        coreProteins = self.core['Protein monomers']
+        kbProteins = self.kb['Proteins']
+        kbSpeciesProperties = self.kb['Species properties']
+        kbConcentrations = self.kb['Concentrations']
+
+        # Create experiment entries
+        concExpEntry = self.createExperiment(
+                              species='Mycoplasma Pneumoniae',
+                              geneticVariant='M129',
+                              externalMedia='Hayflick',
+                              temperature=37,
+                              refs='PUB_0932',
+                              comments='Concentrations available at multiple time points, see the Comments in the evidence field')
+        hlExpEntry = self.createExperiment(
+                              species='Mycoplasma Pneumoniae',
+                              geneticVariant='M129',
+                              externalMedia='Hayflick',
+                              temperature=37,
+                              refs='PUB_0956')
+        methionineExpEntry = self.createExperiment(
+                              species='Mycoplasma Pneumoniae',
+                              geneticVariant='M129',
+                              refs='PUB_0937')
+
+        for rowIdx in range(3, coreProteins.max_row+1):
+            print(rowIdx)
+
+            # Check if row is correct
+            speciesTypeId = kbProteins.cell(column=1, row=rowIdx-1).value
+            assert speciesTypeId == coreProteins.cell(column=1, row=rowIdx).value
+
+            #MANUALLY COPIED: kbProteins.cell(column=1, row=rowIdx-1).value = coreProteins.cell(column=1, row=rowIdx).value # ID
+            #MANUALLY COPIED: kbProteins.cell(column=2, row=rowIdx-1).value = coreProteins.cell(column=2, row=rowIdx).value # Name
+            #MANUALLY COPIED: kbProteins.cell(column=3, row=rowIdx-1).value = coreProteins.cell(column=3, row=rowIdx).value # Synonyms
+
+            # Types
+            proteinType = coreProteins.cell(column=5, row=rowIdx).value
+            if proteinType is None:
+                kbProteins.cell(column=4, row=rowIdx-1).value = 'uncategorized'
+            else:
+                kbProteins.cell(column=4, row=rowIdx-1).value = coreProteins.cell(column=5, row=rowIdx).value
+
+            # Species properties
+            speciesPropsEntry = self.createSpeciesTypeProperties(
+                speciesTypeId = speciesTypeId,
+                halfLife = coreProteins.cell(column=27, row=rowIdx).value,
+                domains= coreProteins.cell(column=14, row=rowIdx).value,
+                prostheticGroups = coreProteins.cell(column=15, row=rowIdx).value)
+            evidenceEntry = self.createEvidence(
+                objectId = speciesTypeId,
+                property = 'half life',
+                values = coreProteins.cell(column=27, row=rowIdx).value,
+                units = 'min',
+                experiment = hlExpEntry['id'])
+            if speciesPropsEntry is not None:
+                kbProteins.cell(column=self.header['Proteins']['Species properties'], row=rowIdx-1).value = speciesPropsEntry['id']
+                if evidenceEntry is not None:
+                    self.insertCell(insertTo=speciesPropsEntry, header='Evidence', value=evidenceEntry['id'])
+
+            # Concentration
+            concentrationEntry = self.createConcentration(
+                speciesTypeId = speciesTypeId ,
+                values = coreProteins.cell(column=22, row=rowIdx).value,
+                units = 'molecules')
+            evidenceEntry = self.createEvidence(
+                objectId = speciesTypeId,
+                property = 'concentration',
+                values = coreProteins.cell(column=22, row=rowIdx).value,
+                units = 'molecules',
+                experiment = concExpEntry['id'],
+                comments=coreProteins.cell(column=23, row=rowIdx).value)
+            if concentrationEntry is not None:
+                kbProteins.cell(column=self.header['Proteins']['Concentration'], row=rowIdx-1).value = concentrationEntry['id']
+                if evidenceEntry is not None:
+                    self.insertCell(insertTo=concentrationEntry, header='Evidence', value=evidenceEntry['id'])
+
+            #MANUALLY COPIED: kbProteins.cell(column=5, row=rowIdx-1).value = coreProteins.cell(column=6, row=rowIdx).value # Gene
+            kbProteins.cell(column=self.header['Proteins']['Localization'], row=rowIdx-1).value = coreProteins.cell(column=9, row=rowIdx).value.replace('t', '') # localization: treat trans- membrane
+            #MANUALLY COPIED: kbProteins.cell(column=9, row=rowIdx-1).value = coreProteins.cell(column=6, row=rowIdx).value # Translation rates
+            #MANUALLY COPIED: kbProteins.cell(column=10, row=rowIdx-1).value = coreProteins.cell(column=6, row=rowIdx).value # Translation rate units
+
+            evidenceEntry = self.createEvidence(
+                objectId = speciesTypeId,
+                property = 'translationRate',
+                values = coreProteins.cell(column=24, row=rowIdx).value,
+                units = '1/s/mRNA',
+                experiment = hlExpEntry['id']) #measured in the same experiment as half lifes
+            if evidenceEntry is not None:
+                proteinEntry ={'ws':'Proteins', 'id':speciesTypeId, 'row':rowIdx-1}
+                self.insertCell(insertTo=proteinEntry, header='Evidence', value=evidenceEntry['id'])
+
+            #MANUALLY COPIED: kbProteins.cell(column=11, row=rowIdx-1).value = coreProteins.cell(column=6, row=rowIdx).value # Is methionine cleaved?
+
+            evidenceEntry = self.createEvidence(
+                objectId = speciesTypeId,
+                property = 'Is methionine cleaved',
+                values = coreProteins.cell(column=7, row=rowIdx).value,
+                units = 'dimensionless',
+                experiment = methionineExpEntry['id'])
+            if evidenceEntry is not None:
+                proteinEntry ={'ws':'Proteins', 'id':speciesTypeId, 'row':rowIdx-1}
+                self.insertCell(insertTo=proteinEntry, header='Evidence', value=evidenceEntry['id'])
+
+            #MANUALLY COPIED: kbProteins.cell(column=7, row=rowIdx-1).value = coreProteins.cell(column=10, row=rowIdx).value # signal sequence type
+            #MANUALLY COPIED: kbProteins.cell(column=8, row=rowIdx-1).value = coreProteins.cell(column=11, row=rowIdx).value # signal sequence localization
+            #MANUALLY COPIED: kbProteins.cell(column=9, row=rowIdx-1).value = coreProteins.cell(column=12, row=rowIdx).value # signal sequence length
+            #MANUALLY COPIED: kbProteins.cell(column=10, row=rowIdx-1).value = coreProteins.cell(column=16, row=rowIdx).value # DNA footprint length
+            #MANUALLY COPIED: kbProteins.cell(column=11, row=rowIdx-1).value = coreProteins.cell(column=17, row=rowIdx).value # DNA footprint biding
+            #MANUALLY COPIED: kbProteins.cell(column=16, row=rowIdx-1).value = coreProteins.cell(column=33, row=rowIdx).value # References
+            #MANUALLY COPIED: kbProteins.cell(column=17, row=rowIdx-1).value = coreProteins.cell(column=34, row=rowIdx).value # Comments
+
+            kbProteins.cell(column=self.header['Proteins']['Database references'], row=rowIdx-1).value = \
+                self.parseDatabaseReferences(cell = coreProteins.cell(column=4, row=rowIdx)) # Add DB refs
+
+    def createSpeciesTypeProperties(self, speciesTypeId, structure=None, halfLife=None, halfLifeUnits='min', domains=None, prostheticGroups=None, evidence=None, dbRefs=None, refs=None, comments=None):
+        inputs = [structure, halfLife, domains, prostheticGroups]
+        if all(input is None for input in inputs):
+            return None
+
+        wsName = 'Species properties'
+        nextRow = self.kb[wsName].max_row+1
+        speciesPropId = 'props_{}'.format(speciesTypeId)
+
+        self.kb[wsName].cell(column=self.header['species properties']['id'], row=nextRow).value = speciesPropId
+        self.kb[wsName].cell(column=self.header['species properties']['structure'], row=nextRow).value = structure
+        self.kb[wsName].cell(column=self.header['species properties']['half life'], row=nextRow).value = halfLife
+        self.kb[wsName].cell(column=self.header['species properties']['half life units'], row=nextRow).value = halfLifeUnits
+        self.kb[wsName].cell(column=self.header['species properties']['domains'], row=nextRow).value = domains
+        self.kb[wsName].cell(column=self.header['species properties']['prosthetic groups'], row=nextRow).value = prostheticGroups
+        self.kb[wsName].cell(column=self.header['species properties']['evidence'], row=nextRow).value = evidence
+        self.kb[wsName].cell(column=self.header['species properties']['database references'], row=nextRow).value = dbRefs
+        self.kb[wsName].cell(column=self.header['species properties']['references'], row=nextRow).value = refs
+        self.kb[wsName].cell(column=self.header['species properties']['comments'], row=nextRow).value = comments
+
+        entry ={'ws':wsName, 'id':speciesPropId, 'row':nextRow}
+        return entry
+
+    def createConcentration(self, speciesTypeId, compartment='c', values=None, units=None, evidence=None, dbRefs=None, refs=None, comments=None):
+        assert compartment in ['c', 'e', 'm']
+        if values is None:
+            return None
+
+        wsName = 'Concentrations'
+        nextRow = self.kb[wsName].max_row+1
+        concentrationId = 'conc_{}_{}'.format(speciesTypeId, compartment)
+
+        self.kb[wsName].cell(column=self.header['concentrations']['id'], row=nextRow).value = concentrationId
+        self.kb[wsName].cell(column=self.header['concentrations']['species'], row=nextRow).value = '{}[{}]'.format(speciesTypeId, compartment)
+        self.kb[wsName].cell(column=self.header['concentrations']['values'], row=nextRow).value = values
+        self.kb[wsName].cell(column=self.header['concentrations']['units'], row=nextRow).value = units
+        self.kb[wsName].cell(column=self.header['concentrations']['evidence'], row=nextRow).value = evidence
+        self.kb[wsName].cell(column=self.header['concentrations']['database references'], row=nextRow).value = dbRefs
+        self.kb[wsName].cell(column=self.header['concentrations']['references'], row=nextRow).value = refs
+        self.kb[wsName].cell(column=self.header['concentrations']['comments'], row=nextRow).value = comments
+
+        entry ={'ws':'Concentrations', 'id':concentrationId, 'row':nextRow}
+        return entry
+
+    def createEvidence(self, objectId, property=None, values=None, units=None, experiment=None, dbRefs=None, refs=None, comments=None):
+        inputs = [property, values, units, experiment, dbRefs, refs, comments]
+        #if all(input is None for input in inputs):
+        if values is None:
+            return None
+
+        wsName = 'Evidence'
+        nextRow = self.kb[wsName].max_row+1
+        eviId   = 'EVI{}'.format(str(nextRow-1).zfill(4))
+
+        self.kb[wsName].cell(column=self.header['evidence']['id'], row=nextRow).value = eviId
+        self.kb[wsName].cell(column=self.header['evidence']['cell'], row=nextRow).value = 'cell'
+        self.kb[wsName].cell(column=self.header['evidence']['object'], row=nextRow).value = objectId
+        self.kb[wsName].cell(column=self.header['evidence']['property'], row=nextRow).value = property
+        self.kb[wsName].cell(column=self.header['evidence']['values'], row=nextRow).value = values
+        self.kb[wsName].cell(column=self.header['evidence']['units'], row=nextRow).value = units
+        self.kb[wsName].cell(column=self.header['evidence']['experiment'], row=nextRow).value = experiment
+        self.kb[wsName].cell(column=self.header['evidence']['database references'], row=nextRow).value = dbRefs
+        self.kb[wsName].cell(column=self.header['evidence']['comments'], row=nextRow).value = comments
+
+        entry ={'ws':'Evidence', 'id':eviId, 'row':nextRow}
+        return entry
+
+    def createExperiment(self, experimentDesign=None, measurmentTechnology=None, analysisType=None, species=None, geneticVariant=None, externalMedia=None, temperature=None, temperatureUnits='C', ph=None, dbRefs=None, refs=None, comments=None):
+        wsName = 'Experiment'
+        nextRow = self.kb[wsName].max_row+1
+        expId   = 'EXP{}'.format(str(nextRow-1).zfill(4))
+
+        self.kb[wsName].cell(column=self.header['experiment']['id'], row=nextRow).value = expId
+        self.kb[wsName].cell(column=self.header['experiment']['experiment design'], row=nextRow).value = experimentDesign
+        self.kb[wsName].cell(column=self.header['experiment']['measurment technology'], row=nextRow).value = measurmentTechnology
+        self.kb[wsName].cell(column=self.header['experiment']['analysis type'], row=nextRow).value = analysisType
+        self.kb[wsName].cell(column=self.header['experiment']['species'], row=nextRow).value = species
+        self.kb[wsName].cell(column=self.header['experiment']['genetic variant'], row=nextRow).value = geneticVariant
+        self.kb[wsName].cell(column=self.header['experiment']['external media'], row=nextRow).value = externalMedia
+        self.kb[wsName].cell(column=self.header['experiment']['temperature'], row=nextRow).value = temperature
+        self.kb[wsName].cell(column=self.header['experiment']['temperature units'], row=nextRow).value = temperatureUnits
+        self.kb[wsName].cell(column=self.header['experiment']['ph'], row=nextRow).value = ph
+        self.kb[wsName].cell(column=self.header['experiment']['database references'], row=nextRow).value = dbRefs
+        self.kb[wsName].cell(column=self.header['experiment']['references'], row=nextRow).value = refs
+        self.kb[wsName].cell(column=self.header['experiment']['comments'], row=nextRow).value = comments
+
+        entry ={'ws':'Experiment', 'id':expId, 'row':nextRow}
+        return entry
+
+    def insertCell(self, insertTo, header, value, concatenate=True):
+        wsName = insertTo['ws']
+        rowIdx = insertTo['row']
+
+        if  concatenate is True:
+            self.concatenateId(self.kb[wsName].cell(column=self.header[wsName][header], row=rowIdx), value)
+        else:
+            self.kb[wsName].cell(column=self.header[wsName][header], row=rowIdx).value =value
+
+    @staticmethod
+    def concatenateId(cell, entry):
+        if entry is None:
+            return
+
+        if cell.value is None:
+            cell.value = '' +  entry
+        else:
+            cell.value = cell.value + ', ' +  entry
+
+    def parseDatabaseReferences(self, cell):
+        if cell.value is None:
+            return None
+
+        jsons = self.delinateJSONs(cell.value)
+
+        if jsons is None:
+            return None
+        assert isinstance(jsons, list)
+        assert len(jsons) > 0
+
+        dbRefIds = ''
+        for json in jsons:
+
+            if json['source']=='URL':
+                dbRefId = "{}:{}".format(json['source'].lower(), str(nextRow).zfill(4))
+            else:
+                dbRefId = "{}:{}".format(str(json['source']).lower(), str(json['xid']))
+
+            dbRefId = dbRefId.replace('-','_')
+            dbRefIds += dbRefId + ', '
+
+        return dbRefIds[:-2]
 
 
-    """ Translate methods """
+
+
+
+    """ Old Translate methods """
     def translateChromosomeFeatures(self):
         """ Parses information from the core's 'Chromosome Features' sheet and inserts them to the appropiate field(s) in the KB structure. """
 
@@ -199,158 +504,6 @@ class KbTranslater:
             kbGenes.cell(column=15, row=rowIdx-1).value = coreGenes.cell(column=19, row=rowIdx).value # References
             kbGenes.cell(column=16, row=rowIdx-1).value = coreGenes.cell(column=18, row=rowIdx).value
 
-    def translateMetabolites(self):
-        """ Parses information from the core's Metabolite sheet and inserts them to the appropiate field(s) in the KB structure. """
-
-        coreMetas = self.core['Metabolites']
-        kbMetas   = self.kb['Metabolites']
-
-        assert kbMetas.cell(column=1, row=1).value == 'Id'
-        assert kbMetas.cell(column=2, row=1).value == 'Name'
-        assert kbMetas.cell(column=3, row=1).value == 'Synonyms'
-        assert kbMetas.cell(column=4, row=1).value == 'Type'
-        assert kbMetas.cell(column=5, row=1).value == 'Concentration'
-        assert kbMetas.cell(column=6, row=1).value == 'Species properties'
-        assert kbMetas.cell(column=7, row=1).value == 'Database references'
-        assert kbMetas.cell(column=8, row=1).value == 'References'
-        assert kbMetas.cell(column=9, row=1).value == 'Comments'
-
-        concColumn = self.getColumnId(wbName='core', sheetName='Metabolites', header = 'Intracellular concentration (mM)')
-        commentsColumn = self.getColumnId(wbName='core', sheetName='Metabolites', header = 'Comments')
-        refsColumn = self.getColumnId(wbName='core', sheetName='Metabolites', header = 'References')
-
-        for rowIdx in range(3, 200): #coreMetas.max_row+1):
-            print(rowIdx)
-
-            kbMetas.cell(column=1, row=rowIdx-1).value = coreMetas.cell(column=1, row=rowIdx).value # ID
-            kbMetas.cell(column=2, row=rowIdx-1).value = coreMetas.cell(column=2, row=rowIdx).value # NAME
-            # No entry in core: kbMetas.cell(column=3, row=rowIdx-1).value = coreMetas.cell(column=5, row=rowIdx).value # Synonyms
-
-            metaType = coreMetas.cell(column=7, row=rowIdx).value # TYPE
-            if metaType is None:
-                kbMetas.cell(column=4, row=rowIdx-1).value = 'unknown'
-            elif metaType not in wc_kb.core.MetaboliteSpeciesTypeType:
-                kbMetas.cell(column=4, row=rowIdx-1).value = 'misc'
-            elif metaType not in wc_kb.core.MetaboliteSpeciesTypeType:
-                kbMetas.cell(column=4, row=rowIdx-1).value = metaType
-
-            # Add concentration
-            concStr = coreMetas.cell(column=concColumn, row=rowIdx).value
-            if concStr is not None:
-                concId = self.addConcentration(objectId = coreMetas.cell(column=1, row=rowIdx).value, fieldStr = concStr)
-                self.concatenateId(kbMetas.cell(column=5, row=rowIdx-1), concId)
-
-            # Add species properties
-            kbMetas.cell(column=6, row=rowIdx-1).value = self.addSpeciesProperties(
-                speciesId = coreMetas.cell(column=1, row=rowIdx).value,
-                structure = coreMetas.cell(column=9, row=rowIdx).value,
-                half_life = None,
-                half_life_units = None,
-                domains = None,
-                evidence= None,
-                refs = None)
-
-            dbRefsDicts = self.delinateJSONs(coreMetas.cell(column=6, row=rowIdx).value)
-
-            kbMetas.cell(column=7, row=rowIdx-1).value = self.addDatabaseReference(dbRefsDicts, returnIds=True) # Add DB refs
-            kbMetas.cell(column=8, row=rowIdx-1).value = coreMetas.cell(column=refsColumn, row=rowIdx).value # REFERENCES
-            kbMetas.cell(column=9, row=rowIdx-1).value = coreMetas.cell(column=commentsColumn, row=rowIdx).value
-
-    def translateProteins(self):
-        """ Parses information from the core's 'protein monomers' sheet and inserts them to the appropiate field(s) in the KB structure. """
-
-        coreProteins = self.core['Protein monomers']
-        kbProteins = self.kb['Proteins']
-        kbSpeciesProperties = self.kb['Species properties']
-        kbConcentrations = self.kb['Concentrations']
-
-        """ missing
-        Methionine all
-        localization evidence
-        domains
-        prosthetic_groups
-        DNA binding Evidence
-        Chaperones
-        """
-
-        assert kbProteins.cell(column=1, row=1).value == 'Id'
-        assert kbProteins.cell(column=2, row=1).value == 'Name'
-        assert kbProteins.cell(column=3, row=1).value == 'Synonyms'
-        assert kbProteins.cell(column=4, row=1).value == 'Type'
-        assert kbProteins.cell(column=5, row=1).value == 'Species properties'
-        assert kbProteins.cell(column=6, row=1).value == 'Concentration'
-        assert kbProteins.cell(column=7, row=1).value == 'Gene'
-        assert kbProteins.cell(column=8, row=1).value == 'Localization'
-        assert kbProteins.cell(column=9, row=1).value == 'Signal sequence type'
-        assert kbProteins.cell(column=10, row=1).value == 'Signal sequence location'
-        assert kbProteins.cell(column=11, row=1).value == 'Signal sequence length'
-        assert kbProteins.cell(column=12, row=1).value == 'Dna footprint length'
-        assert kbProteins.cell(column=13, row=1).value == 'Dna footprint binding'
-        assert kbProteins.cell(column=14, row=1).value == 'Evidence'
-        assert kbProteins.cell(column=15, row=1).value == 'Database references'
-        assert kbProteins.cell(column=16, row=1).value == 'References'
-        assert kbProteins.cell(column=17, row=1).value == 'Comments'
-
-        for rowIdx in range(3, 50): #coreProteins.max_row+1):
-            speciesTypeId = kbProteins.cell(column=1, row=rowIdx-1).value
-            print(rowIdx)
-
-            # check if row is correct
-            assert speciesTypeId == coreProteins.cell(column=1, row=rowIdx).value
-
-            #MANUAL COPY: kbProteins.cell(column=1, row=rowIdx-1).value = coreProteins.cell(column=1, row=rowIdx).value # ID
-            #kbProteins.cell(column=2, row=rowIdx-1).value = coreProteins.cell(column=2, row=rowIdx).value # Name
-            #kbProteins.cell(column=3, row=rowIdx-1).value = coreProteins.cell(column=3, row=rowIdx).value # Synonyms
-
-            # Types
-            proteinType = coreProteins.cell(column=5, row=rowIdx).value
-            if proteinType is None:
-                kbProteins.cell(column=4, row=rowIdx-1).value = 'uncategorized'
-            else:
-                kbProteins.cell(column=4, row=rowIdx-1).value = coreProteins.cell(column=5, row=rowIdx).value
-
-            # Species properties - parse in parallel with Evidence / Experiments
-            if rowIdx==3:
-                expId = self.addExperiment(eviDict = coreProteins.cell(column=29, row=rowIdx).value)
-
-            eviId = self.addEvidence(objectId = speciesTypeId,
-                                     property = 'half_life',
-                                     eviDict = coreProteins.cell(column=29, row=rowIdx).value,
-                                     expId = expId)
-
-            kbProteins.cell(column=5, row=rowIdx-1).value = self.addSpeciesProperties(
-                speciesId = speciesTypeId,
-                structure = None,
-                half_life = coreProteins.cell(column=27, row=rowIdx).value,
-                half_life_units = coreProteins.cell(column=28, row=rowIdx).value,
-                #domains = json.dumps(coreProteins.cell(column=14, row=rowIdx).value),
-                domains = None,
-                evidence = self.concatenateId(kbSpeciesProperties.cell(column=9, row=rowIdx-1), eviId),
-                refs = None)
-
-            # Concentration - unlike other concentrations, for proteins it is not stored as JSON
-            nextRow = kbConcentrations .max_row+1
-            concId = 'conc_{}_{}'.format(speciesTypeId, 'c') #
-            kbConcentrations.cell(column=1, row=nextRow).value = concId
-            kbConcentrations.cell(column=2, row=nextRow).value = '{}[{}]'.format(speciesTypeId, 'c')
-            kbConcentrations.cell(column=3, row=nextRow).value =  coreProteins.cell(column=22, row=rowIdx).value
-            kbConcentrations.cell(column=4, row=nextRow).value =  'molecules'
-            self.concatenateId(kbProteins.cell(column=6, row=rowIdx-1), concId)
-
-            #kbProteins.cell(column=5, row=rowIdx-1).value = coreProteins.cell(column=6, row=rowIdx).value # Gene
-            kbProteins.cell(column=6, row=rowIdx-1).value = coreProteins.cell(column=9, row=rowIdx).value.replace('t', '') # localization: treat trans- membrane
-            #kbProteins.cell(column=7, row=rowIdx-1).value = coreProteins.cell(column=10, row=rowIdx).value # signal sequence type
-            #kbProteins.cell(column=8, row=rowIdx-1).value = coreProteins.cell(column=11, row=rowIdx).value # signal sequence localization
-            #kbProteins.cell(column=9, row=rowIdx-1).value = coreProteins.cell(column=12, row=rowIdx).value # signal sequence length
-
-            #kbProteins.cell(column=10, row=rowIdx-1).value = coreProteins.cell(column=16, row=rowIdx).value # DNA footprint length
-            #kbProteins.cell(column=11, row=rowIdx-1).value = coreProteins.cell(column=17, row=rowIdx).value # DNA footprint biding
-
-            kbProteins.cell(column=15, row=rowIdx-1).value = self.addDatabaseReference(coreProteins.cell(column=4, row=rowIdx), returnIds=True) # Add DB refs
-            #kbProteins.cell(column=16, row=rowIdx-1).value = coreProteins.cell(column=33, row=rowIdx).value # References
-            #kbProteins.cell(column=17, row=rowIdx-1).value = coreProteins.cell(column=34, row=rowIdx).value # Comments
-
-
     def translateReactions(self):
         """ Parses information from the core's 'Reactions' sheet and inserts them to the appropiate field(s) in the KB structure. """
 
@@ -376,7 +529,6 @@ class KbTranslater:
                 kbReactions.cell(column=4, row=rowIdx-1).value = 'Uncategorized'
             else:
                 kbReactions.cell(column=4, row=rowIdx-1).value = coreReactions.cell(column=5, row=rowIdx).value
-
 
     def translateReferences(self):
         """ Parses information from the core's 'References' sheet and inserts it to the appropiate field(s) in the new kb structure. """
@@ -415,6 +567,41 @@ class KbTranslater:
             kbRefs.cell(column=12, row=rowIdx-1).value = coreRefs.cell(column=15, row=rowIdx).value
 
     """ Nested entries """
+    def addDatabaseReferenceOLD(self, cell, returnIds=False):
+
+        jsons = self.delinateJSONs(cell.value)
+
+        if jsons is None:
+            return None
+
+        assert isinstance(jsons, list)
+        assert len(jsons) > 0
+
+        wsName = 'Database references'
+        dbRefIds = ''
+
+        for json in jsons:
+            nextRow  = self.kb[wsName].max_row+1
+
+            if json['source']=='URL':
+                dbRefId = "{}:{}".format(json['source'].lower(), str(nextRow).zfill(4))
+            else:
+                dbRefId = "{}:{}".format(str(json['source']).lower(), str(json['xid']))
+
+            # Clean up formatting; can condense code?
+            dbRefId = dbRefId.replace('-','_')
+
+            if returnIds is True:
+                dbRefIds += dbRefId + ', '
+
+            if not self.idExists(wsName, dbRefId):
+                self.kb[wsName].cell(column=1, row=nextRow).value = dbRefId
+                self.kb[wsName].cell(column=2, row=nextRow).value = json['source']
+                self.kb[wsName].cell(column=3, row=nextRow).value = str(json['xid'])
+
+        if returnIds is True:
+            return dbRefIds[:-2]
+
     def addSpeciesProperties(self, speciesId, structure=None, half_life=None, half_life_units=None, domains=None, evidence=None, refs=None):
         wsName = 'Species properties'
         nextRow = self.kb[wsName].max_row+1
@@ -445,7 +632,7 @@ class KbTranslater:
 
         return speciePropId
 
-    def addConcentration(self, objectId, fieldStr):
+    def addConcentrationOLD(self, objectId, fieldStr):
         objectId = objectId.value
         fieldStr = fieldStr.value
         if fieldStr is None:
@@ -480,7 +667,7 @@ class KbTranslater:
 
         return concId
 
-    def addEvidence(self, objectId, property, eviDict, expId = None):
+    def addEvidenceOLD(self, objectId, property, eviDict, expId = None):
         if eviDict is None:
             return None
 
@@ -555,41 +742,6 @@ class KbTranslater:
 
         return experimentId
 
-    def addDatabaseReference(self, cell, returnIds=False):
-
-        jsons = self.delinateJSONs(cell.value)
-
-        if jsons is None:
-            return None
-
-        assert isinstance(jsons, list)
-        assert len(jsons) > 0
-
-        wsName = 'Database references'
-        dbRefIds = ''
-
-        for json in jsons:
-            nextRow  = self.kb[wsName].max_row+1
-
-            if json['source']=='URL':
-                dbRefId = "{}:{}".format(json['source'].lower(), str(nextRow).zfill(4))
-            else:
-                dbRefId = "{}:{}".format(str(json['source']).lower(), str(json['xid']))
-
-            # Clean up formatting; can condense code?
-            dbRefId = dbRefId.replace('-','_')
-
-            if returnIds is True:
-                dbRefIds += dbRefId + ', '
-
-            if not self.idExists(wsName, dbRefId):
-                self.kb[wsName].cell(column=1, row=nextRow).value = dbRefId
-                self.kb[wsName].cell(column=2, row=nextRow).value = json['source']
-                self.kb[wsName].cell(column=3, row=nextRow).value = str(json['xid'])
-
-        if returnIds is True:
-            return dbRefIds[:-2]
-
     def getColumnId(self, wbName, sheetName, header):
 
         assert isinstance(wbName, str)
@@ -635,22 +787,6 @@ class KbTranslater:
                 return True
 
         return False
-
-    @staticmethod
-    def concatenateId(cell, entry):
-        if entry is None:
-            return
-
-        if cell.value is None:
-            cell.value = '' +  entry
-        else:
-            cell.value = cell.value + ', ' +  entry
-
-    @staticmethod
-    def get_eviId(nextRow, objectId, property):
-        assert isinstance(objectId, str)
-        assert isinstance(property, str )
-        return 'EVI{}'.format(str(nextRow-1).zfill(4))
 
     @staticmethod
     def delinateJSONs(fieldStr):

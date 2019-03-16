@@ -114,6 +114,7 @@ class ComplexType(enum.Enum):
     """ Type of complex """
     tRnaSynthClassII = 0
     FattyAcylAcp = 1
+    unknown = 2
 
 
 class ComplexFormationType(enum.Enum):
@@ -155,8 +156,10 @@ class MetaboliteSpeciesTypeType(enum.Enum):
     ribonucleotide_biphosphate = 8
     ribonucleotide_triphosphate = 9
     carboxy_acid=10
-    misc=12
     unknown = 11
+    misc=12
+    ion=13
+    reactive_oxygen_species = 14
 
 class SignalSequenceType(enum.Enum):
     """ Types of signal sequences """
@@ -289,7 +292,7 @@ class OneToOneSpeciesAttribute(OneToOneAttribute):
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_name (:obj:`str`, optional): verbose related name
+            verbose_related_naFclass Metabolieme (:obj:`str`, optional): verbose related name
             help (:obj:`str`, optional): help message
         """
         super(OneToOneSpeciesAttribute, self).__init__('Species',
@@ -1448,7 +1451,8 @@ class MetaboliteSpeciesType(SpeciesType):
     Attributes:
         structure (:obj:`str`): InChI-encoded structure
     """
-    type = obj_model.EnumAttribute(MetaboliteSpeciesTypeType)
+    type = EnumAttribute(MetaboliteSpeciesTypeType)
+    synonyms = obj_model.LongStringAttribute()
     concentration = obj_model.OneToManyAttribute('Concentration', related_name='metabolites')
     species_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='metabolites')
     #evidence = obj_model. OneToManyAttribute('Evidence', related_name='metabolites')
@@ -1681,17 +1685,22 @@ class ComplexSpeciesType(SpeciesType):
     """
 
     formation_process = obj_model.EnumAttribute(ComplexFormationType)
-    subunits = SubunitAttribute(related_name='complex')
+    type = obj_model.StringAttribute() #obj_model.EnumAttribute(ComplexType)
+    species_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='complexes')
+    localization = obj_model.ManyToManyAttribute('Compartment', related_name='complexes')
+    concentration = obj_model.OneToManyAttribute('Concentration', related_name='complexes')
+    subunits = SubunitAttribute(related_name='complexes')
     composition_in_uniprot = obj_model.StringAttribute()
-    complex_type = obj_model.StringAttribute()  # EnumAttribute(ComplexType)
     binding = obj_model.StringAttribute()
     region = obj_model.StringAttribute()
+    Dna_footprint_length = obj_model.IntegerAttribute()
+    Dna_footprint_binding = obj_model.EnumAttribute(DnaBindingType)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Complexes'
-        attribute_order = ('id', 'name', 'formation_process', 'subunits',
-                           'composition_in_uniprot', 'complex_type', 'binding', 'region',
-                           'half_life', 'comments', 'references', 'database_references')
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'species_properties', 'concentration', 'localization',
+                           'subunits', 'formation_process', 'Dna_footprint_binding', 'Dna_footprint_length',
+                           'database_references', 'references', 'comments')
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -1911,15 +1920,15 @@ class Evidence(obj_model.Model):
     object   =  obj_model.StringAttribute() #obj_model.ManyToOneAttribute(obj_model.Model, related_name='evidences')
     property = obj_model.StringAttribute()
     values = obj_model.FloatAttribute()
-    mean = obj_model.IntegerAttribute()
-    standard_error = obj_model.IntegerAttribute()
+    #mean = obj_model.IntegerAttribute()
+    #standard_error = obj_model.IntegerAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
     database_references = DatabaseReferenceAttribute(related_name='evidence')
     experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='evidence')
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'cell', 'object', 'property', 'values', 'mean', 'standard_error', 'units', 'experiment', 'database_references', 'comments')
+        attribute_order = ('id', 'cell', 'object', 'property', 'values', 'units', 'experiment', 'database_references', 'comments')
 
 
 class Experiment(obj_model.Model):
@@ -1939,7 +1948,7 @@ class Experiment(obj_model.Model):
                                  unit_registry.parse_units('K')),
                         default= unit_registry.parse_units('C'))
     ph = obj_model.FloatAttribute()
-    ph_units = obj_model.units.UnitAttribute(unit_registry, none=True)
+    #ph_units = obj_model.units.UnitAttribute(unit_registry, none=True)
     experiment_design = obj_model.StringAttribute()
     measurment_technology = obj_model.StringAttribute()
     analysis_type = obj_model.StringAttribute()
@@ -1949,7 +1958,7 @@ class Experiment(obj_model.Model):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'experiment_design', 'measurment_technology', 'analysis_type', 'species', 'genetic_variant', 'external_media',
-                           'temperature', 'temperature_units', 'ph', 'ph_units', 'database_references',	'references', 'comments')
+                           'temperature', 'temperature_units', 'ph', 'database_references',	'references', 'comments')
 
 
 class Interaction(KnowledgeBaseObject):
