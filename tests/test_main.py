@@ -18,7 +18,6 @@ import unittest
 import wc_kb
 import wc_kb.core
 
-
 class TestCli(unittest.TestCase):
 
     def setUp(self):
@@ -32,6 +31,7 @@ class TestCli(unittest.TestCase):
             with __main__.App(argv=['-v']) as app:
                 with self.assertRaises(SystemExit):
                     app.run()
+                import pdb; pdb.set_trace()    
                 self.assertEqual(capturer.get_text(), wc_kb.__version__)
 
         with CaptureOutput() as capturer:
@@ -115,7 +115,8 @@ class TestCli(unittest.TestCase):
                                     filename_core_3, filename_seq_3,
                                     '--compare-files']) as app:
                 app.run()
-            diff = 'Sheet Knowledge base:\n  Row 8:\n    Cell B: 0.0.0 != 0.0.1'
+            diff = 'Sheet KB:\n  Row 8:\n    Cell B: 0.0.0 != 0.0.1'
+            #diff = 'Sheet KBnowledge base:\n  Row 8:\n    Cell B: 0.0.0 != 0.0.1'
             self.assertEqual(capturer.get_text(), diff)
 
     def test_normalize(self):
@@ -157,7 +158,7 @@ class TestCli(unittest.TestCase):
                                 ]) as app:
             app.run()
 
-        self.assertTrue(path.isfile(path.join(self.tempdir, 'out.core-Knowledge base.csv')))
+        self.assertTrue(path.isfile(path.join(self.tempdir, 'out.core-KB.csv')))
 
     def test_create_template(self):
         filename_core = path.join(self.tempdir, 'core.xlsx')

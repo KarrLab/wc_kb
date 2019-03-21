@@ -295,16 +295,6 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
         self.assertEqual(tu1.get_5_prime(), 15)
 
 # only fake tests
-class PromoterLocusTestCase(unittest.TestCase):
-    def test_constructor(self):
-        promoter = prokaryote_schema.PromoterLocus(
-            id='promoter1', name='promoter1', pribnow_start=1, pribnow_end=2)
-        self.assertEqual(promoter.id, 'promoter1')
-        self.assertEqual(promoter.name, 'promoter1')
-        self.assertEqual(promoter.pribnow_start, 1)
-        self.assertEqual(promoter.pribnow_end, 2)
-
-# only fake tests
 class GeneLocusTestCase(unittest.TestCase):
     def test(self):
         gene = prokaryote_schema.GeneLocus(id='gene1', name='gene1',

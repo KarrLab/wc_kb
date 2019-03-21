@@ -670,13 +670,12 @@ class DatabaseReference(obj_model.Model):
     """
     database = obj_model.StringAttribute()
     id = obj_model.StringAttribute()
-    #cell = obj_model.ManyToOneAttribute(Cell, related_name='database_references')
     entry_id = obj_model.StringAttribute()
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'database', 'entry_id', 'comments')
-        #tabular_orientation = TabularOrientation.inline
+        tabular_orientation = TabularOrientation.inline
         unique_together = (('database', 'id'), )
         ordering = ('database', 'id')
 
@@ -686,7 +685,8 @@ class DatabaseReference(obj_model.Model):
         Returns:
             :obj:`str`: value of primary attribute
         """
-        return 'DBREF({}:{})'.format(self.database, self.id)
+        return '{}:{}'.format(self.database, self.id)
+        #return 'DBREF({}:{})'.format(self.database, self.id)
 
 
 class Reference(obj_model.Model):
@@ -765,9 +765,8 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     cell = obj_model.ManyToOneAttribute(Cell, related_name='species_types')
     half_life = obj_model.FloatAttribute(min=0)
     references = obj_model.ManyToManyAttribute(Reference, related_name='species_types')
-    #database_references = DatabaseReferenceAttribute(related_name='species_types')
-    database_references = obj_model.StringAttribute()
-
+    database_references = DatabaseReferenceAttribute(related_name='species_types')
+    #database_references =obj_model.ManyToManyAttribute(DatabaseReference, related_name='species_types')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'half_life', 'comments', 'references', 'database_references')
