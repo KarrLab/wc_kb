@@ -33,7 +33,6 @@ PROKARYOTE_MODELS = (
     core.Compartment,
     core.DnaSpeciesType,
     core.ChromosomeFeature,
-    #prokaryote_schema.PromoterLocus,
     prokaryote_schema.TranscriptionUnitLocus,
     prokaryote_schema.GeneLocus,
     core.MetaboliteSpeciesType,
@@ -43,13 +42,12 @@ PROKARYOTE_MODELS = (
     core.SpeciesTypeProperty,
     core.Concentration,
     core.Observable,
-    core.Interaction,
     core.Reaction,
     core.RateLaw,
     core.Parameter,
     core.Evidence,
     core.Experiment,
-    core.DatabaseReference,
+    #core.DatabaseReference,
     core.Reference)
 
 EUKARYOTE_MODELS = (

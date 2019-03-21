@@ -54,10 +54,8 @@ class TestCore(unittest.TestCase):
 # JUNK TESTS
 class ReferenceTestCase(unittest.TestCase):
     def test_constructor(self):
-        ref1 = core.Reference(id='ref1', standard_id='10.1000/xyz123')
+        ref1 = core.Reference(id='ref1')
         self.assertEqual(ref1.id, 'ref1')
-        self.assertEqual(ref1.standard_id, '10.1000/xyz123')
-
 
 # JUNK TESTS
 class KnowledgeBaseTestCase(unittest.TestCase):
@@ -116,7 +114,6 @@ class ConcentrationTestCase(unittest.TestCase):
         comp = core.Compartment(id='c')
         met = core.MetaboliteSpeciesType(id='met')
         spec = core.Species(species_type=met, compartment=comp)
-
         conc = core.Concentration(species=spec, value=0.2)
 
         self.assertEqual(conc.serialize(), 'met[c]')
@@ -134,7 +131,7 @@ class DatabaseReferenceTestCase(unittest.TestCase):
         db_ref2 = core.DatabaseReference(database='KEGG', id='00')
         self.assertEqual(db_ref2.serialize(), 'KEGG:00')
 
-        
+
 
 # Done
 class SpeciesTestCase(unittest.TestCase):
@@ -441,22 +438,24 @@ class PolymerLocusTestCase(unittest.TestCase):
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
 
-        met = core.MetaboliteSpeciesType(structure=(
-            'InChI=1S'
-            '/C10H14N5O7P'
-            '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
-            '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
-            '/p-2/t4-,6-,7-,10-'
-            '/m1'
-            '/s1\n'
-        ))
+        speciesTypeProperties = core.SpeciesTypeProperty(
+            structure = (
+                'InChI=1S'
+                '/C10H14N5O7P'
+                '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
+                '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
+                '/p-2/t4-,6-,7-,10-'
+                '/m1'
+                '/s1\n'),
+            half_life = 55)
 
-        self.assertEqual(met.get_structure(), met.structure)
+        met = core.MetaboliteSpeciesType(species_properties = speciesTypeProperties)
+
+        self.assertEqual(met.get_structure(), speciesTypeProperties.structure)
         self.assertEqual(met.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O7P'))
         self.assertEqual(met.get_charge(), -2)
         self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
-
 
 class ReactionAndRelatedClassesTestCase(unittest.TestCase):
 
@@ -504,7 +503,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             name='test_parameter3',
             value=2.3,
             error=0.15,
-            units=unit_registry.parse_units('M')
+            units=unit_registry.parse_units('M'),
         )
 
         self.reaction_1 = reaction_1 = core.Reaction(
@@ -632,10 +631,15 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.complex1  = core.ComplexSpeciesType()
         self.complex2  = core.ComplexSpeciesType()
 
+        speciesProps1 = core.SpeciesTypeProperty(
+            structure = 'InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2')
+        speciesProps2 = core.SpeciesTypeProperty(
+            structure = 'InChI=1S/Zn/q+2')
+
         self.cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
-                                               structure='InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2')
+                                               species_properties = speciesProps1)
         self.cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
-                                               structure='InChI=1S/Zn/q+2')
+                                               species_properties = speciesProps2)
 
         # Add subunit composition: (2) cofactor1 + (3) cofactor2 ==> complex1
         species_type_coeff1 = core.SpeciesTypeCoefficient(

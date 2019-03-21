@@ -32,6 +32,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
 
     transcription_units = obj_model.ManyToManyAttribute('TranscriptionUnitLocus', related_name='rnas')
     type = obj_model.EnumAttribute(core.RnaType)
+    direction = obj_model.EnumAttribute(core.DirectionType)
     genes = obj_model.OneToManyAttribute('GeneLocus', related_name = 'rnas')
     coordinate = obj_model.IntegerAttribute()
     length = obj_model.IntegerAttribute()
@@ -41,8 +42,8 @@ class RnaSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'RNA'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'species_properties', 'concentration',
-                           'database_references', 'references', 'comments')
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'coordinate', 'length', 'direction',
+                           'species_properties', 'concentration', 'database_references', 'references', 'comments')
 
     def get_seq(self):
         """ Get the sequence
