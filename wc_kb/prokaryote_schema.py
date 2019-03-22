@@ -125,18 +125,15 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     """
 
     gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
-    #rna = obj_model.ManyToOneAttribute('RnaSpeciesType', related_name='proteins')
     type = obj_model.EnumAttribute(core.ProteinType)
     localization = obj_model.ManyToManyAttribute(core.Compartment, related_name='proteins')
     #signal_sequence_type = obj_model.EnumAttribute(core.SignalSequenceType)
     signal_sequence_type = obj_model.StringAttribute() #add None to enumeration
-
     signal_sequence_location = obj_model.StringAttribute() # Compartment?
     signal_sequence_length = obj_model.IntegerAttribute()
     Dna_footprint_length = obj_model.IntegerAttribute()
     #Dna_footprint_binding = obj_model.EnumAttribute(core.DnaBindingType)
     Dna_footprint_binding = obj_model.StringAttribute() #add None to enumeration
-
     concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='proteins')
     species_properties = obj_model.OneToOneAttribute(core.SpeciesTypeProperty, related_name='proteins')
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')

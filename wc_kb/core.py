@@ -177,7 +177,6 @@ class ProteinType(enum.Enum):
     TrnaSynthClassII = 2
     uncategorized = 3
 
-
 class DnaBindingType(enum.Enum):
     """ Types of DNA binding """
     ssDNA = 0
@@ -755,6 +754,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     Attributes:
         cell (:obj:`Cell`): cell
         half_life  (:obj:`float`): half life (s)
+
         references (:obj:`list` of :obj:`Reference`): references
         database_references (:obj:`list` of :obj:`DatabaseReference`): database references
 
@@ -1294,8 +1294,8 @@ class PolymerLocus(KnowledgeBaseObject):
     start = obj_model.IntegerAttribute()
     end = obj_model.IntegerAttribute()
     references = obj_model.ManyToManyAttribute(Reference, related_name='loci')
-    #database_references = DatabaseReferenceAttribute(related_name='loci')
-    database_references = obj_model.StringAttribute()
+    database_references = DatabaseReferenceAttribute(related_name='loci')
+    #database_references = obj_model.StringAttribute()
 
 
     class Meta(obj_model.Model.Meta):
@@ -1909,8 +1909,9 @@ class ChromosomeFeature(KnowledgeBaseObject):
     """
 
     coordinate = obj_model.IntegerAttribute(min=0)
-    length = obj_model.IntegerAttribute(min=0)
-    direction = obj_model.EnumAttribute(DirectionType)
+    start = obj_model.IntegerAttribute(min=0)
+    end = obj_model.IntegerAttribute(min=0)
+    #direction = obj_model.EnumAttribute(DirectionType)
     type = obj_model.EnumAttribute(ChromosomeFeatureType)
     intensity = obj_model.FloatAttribute(min=0)
     unit = obj_model.units.UnitAttribute(unit_registry, none=True)
@@ -1921,8 +1922,8 @@ class ChromosomeFeature(KnowledgeBaseObject):
     references = obj_model.ManyToManyAttribute('Reference', related_name='chromosome_features')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'type', 'polymer', 'coordinate', 'length',
-                           'direction', 'intensity', 'unit', 'evidence', 'database_references', 'references', 'comments')
+        attribute_order = ('id', 'name', 'type', 'polymer', 'start', 'end',
+                            'intensity', 'unit', 'evidence', 'database_references', 'references', 'comments')
 
 
 class Evidence(obj_model.Model):

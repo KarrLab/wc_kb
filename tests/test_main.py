@@ -31,7 +31,6 @@ class TestCli(unittest.TestCase):
             with __main__.App(argv=['-v']) as app:
                 with self.assertRaises(SystemExit):
                     app.run()
-                import pdb; pdb.set_trace()    
                 self.assertEqual(capturer.get_text(), wc_kb.__version__)
 
         with CaptureOutput() as capturer:
