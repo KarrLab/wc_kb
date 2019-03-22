@@ -1903,7 +1903,7 @@ class ChromosomeFeature(KnowledgeBaseObject):
         seq_path (:obj:`str`): path to sequence fasta file
         ploidy (:obj:`int`): ploidy
 
-    Related sttributes:
+    Related attributes:
         seq_path (:obj:`str`): path to sequence fasta file
         ploidy (:obj:`int`): ploidy
     """
@@ -1911,20 +1911,34 @@ class ChromosomeFeature(KnowledgeBaseObject):
     coordinate = obj_model.IntegerAttribute(min=0)
     start = obj_model.IntegerAttribute(min=0)
     end = obj_model.IntegerAttribute(min=0)
-    #direction = obj_model.EnumAttribute(DirectionType)
     type = obj_model.EnumAttribute(ChromosomeFeatureType)
     intensity = obj_model.FloatAttribute(min=0)
     unit = obj_model.units.UnitAttribute(unit_registry, none=True)
     polymer = obj_model.ManyToOneAttribute('DnaSpeciesType', related_name='chromosome_features')
     evidence   = obj_model.OneToManyAttribute('Evidence', related_name='chromosome_features')
-    #database_references = DatabaseReferenceAttribute(related_name='chromosome_features')
-    database_references = obj_model.StringAttribute()
+    database_references = DatabaseReferenceAttribute(related_name='chromosome_features')
     references = obj_model.ManyToManyAttribute('Reference', related_name='chromosome_features')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'polymer', 'start', 'end',
                             'intensity', 'unit', 'evidence', 'database_references', 'references', 'comments')
 
+    def get_direction(self):
+        """ Returns the direction of chromosome feature
+
+            Returns:
+                :obj:`str`: direction (in ['forward', 'reverse'])
+
+            Raises:
+                :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
+        """
+
+        if self.start < self.end:
+            return DirectionType.forward
+        elif self.start > self.end:
+            return DirectionType.reverse
+        elif self.start == self.end:
+            raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
 class Evidence(obj_model.Model):
     """ Represents the measurement / observation of a property
@@ -1948,6 +1962,7 @@ class Evidence(obj_model.Model):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'cell', 'object', 'property', 'values', 'units', 'experiment', 'database_references', 'references', 'comments')
+
 
 
 class Experiment(obj_model.Model):

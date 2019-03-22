@@ -270,7 +270,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         Returns:
             :obj:`int`: 3' coordinate
         """
-        if self.strand == core.PolymerStrand.positive:
+        if self.get_direction() == core.DirectionType.forward:
             return self.end
         else:
             return self.start
@@ -281,10 +281,27 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         Returns:
             :obj:`int`: 5' coordinate
         """
-        if self.strand == core.PolymerStrand.positive:
+        if self.get_direction() == core.DirectionType.forward:
             return self.start
         else:
             return self.end
+
+    def get_direction(self):
+        """ Returns the direction of chromosome feature
+
+            Returns:
+                :obj:`str`: direction (in ['forward', 'reverse'])
+
+            Raises:
+                :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
+        """
+
+        if self.start < self.end:
+            return core.DirectionType.forward
+        elif self.start > self.end:
+            return core.DirectionType.reverse
+        elif self.start == self.end:
+            raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
 
 class GeneLocus(core.PolymerLocus):
