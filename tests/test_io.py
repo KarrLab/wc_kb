@@ -99,7 +99,7 @@ class TestIO(unittest.TestCase):
         self.assertTrue(kb.is_equal(tmp_kb))
         self.assertTrue(filecmp.cmp(tmp_seq_path, seq_path, shallow=False))
 
-    @unittest.skip('Test is skippe duntill the updated schema is not mitigated through eukaryotes. Need to discuss w Yin-Hoon once schema is setteled.')
+    @unittest.skip('Test is skipped until the updated schema is not mitigated through eukaryotes. Need to discuss w Yin-Hoon once schema is setteled.')
     def test_read_write_eukaryote(self):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         core_path = os.path.join(fixtures, 'eukaryote_core.xlsx')

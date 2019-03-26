@@ -1318,6 +1318,33 @@ class PolymerLocus(KnowledgeBaseObject):
         """
         return abs(self.start - self.end) + 1
 
+    def get_direction(self):
+        """ Returns the direction of the polymer feature defind by its strand and start/end coordinate
+            Returns:
+                :obj:`str`: direction (in ['forward', 'reverse'])
+
+            Raises:
+                :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
+                :obj::obj:`Exception`: strand is not member of PolymerStrand
+        """
+
+        if self.start < self.end:
+            if self.strand==PolymerStrand.positive:
+                return DirectionType.forward
+            elif self.strand==PolymerStrand.negative:
+                return DirectionType.reverse
+            else:
+                raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+        elif self.start > self.end:
+            if self.strand==PolymerStrand.positive:
+                return DirectionType.reverse
+            elif self.strand==PolymerStrand.negative:
+                return DirectionType.forward
+            else:
+                raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+        elif self.start == self.end:
+            raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
+
 
 class ObservableExpression(obj_model.Model, Expression):
     """ A mathematical expression of Observables and Species
@@ -1896,7 +1923,7 @@ class Reaction(KnowledgeBaseObject):
 #####################
 # Expansion classes
 
-class ChromosomeFeature(KnowledgeBaseObject):
+class ChromosomeFeature(PolymerLocus):
     """ Knowledge of chromosoe features
 
     Attributes:

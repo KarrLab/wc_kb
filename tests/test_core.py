@@ -413,6 +413,9 @@ class PolymerLocusTestCase(unittest.TestCase):
         self.locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=self.dna1,
                                    strand=core.PolymerStrand.positive, start=1, end=15)
 
+        self.locus2 = core.PolymerLocus(id='locus2', cell=cell1, name='locus2', polymer=self.dna1,
+                                   strand=core.PolymerStrand.positive, start=14, end=2)
+
     def tearDown(self):
         shutil.rmtree(self.tmp_dirname)
 
@@ -428,11 +431,24 @@ class PolymerLocusTestCase(unittest.TestCase):
 
         self.assertEqual(self.locus1.get_len(), 15)
 
-        # flip strand; test methods
         rev_comp_seq = self.locus1.get_seq().reverse_complement()
         self.locus1.strand = core.PolymerStrand.negative
         self.assertEqual(self.locus1.get_len(), 15)
 
+    def test_get_direction(self):
+
+        self.assertEqual(self.locus1.get_direction(), core.DirectionType.forward)
+        self.assertEqual(self.locus2.get_direction(), core.DirectionType.reverse)
+
+        self.locus1.strand = core.PolymerStrand.negative
+        self.locus2.strand = core.PolymerStrand.negative
+        self.assertEqual(self.locus1.get_direction(), core.DirectionType.reverse)
+        self.assertEqual(self.locus2.get_direction(), core.DirectionType.forward)
+
+        self.locus1.start = 15
+        self.locus1.end   = 15
+        with self.assertRaises(ValueError):
+            self.locus1.get_direction()
 
 # Proteniation?
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):

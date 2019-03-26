@@ -115,6 +115,35 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
+    def get_direction(self):
+        """ Returns the direction of the polymer feature defind by its strand and start/end coordinate
+            Returns:
+                :obj:`str`: direction (in ['forward', 'reverse'])
+
+            Raises:
+                :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
+                :obj::obj:`Exception`: strand is not member of PolymerStrand
+        """
+
+        if self.start < self.end:
+            if self.strand==core.PolymerStrand.positive:
+                return core.DirectionType.forward
+            elif self.strand==core.PolymerStrand.negative:
+                return core.DirectionType.reverse
+            else:
+                raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+        elif self.start > self.end:
+            if self.strand==core.PolymerStrand.positive:
+                return core.DirectionType.reverse
+            elif self.strand==core.PolymerStrand.negative:
+                return core.DirectionType.forward
+            else:
+                raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+        elif self.start == self.end:
+            raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
+
+
+
 
 class ProteinSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a protein monomer
@@ -285,23 +314,6 @@ class TranscriptionUnitLocus(core.PolymerLocus):
             return self.start
         else:
             return self.end
-
-    def get_direction(self):
-        """ Returns the direction of chromosome feature
-
-            Returns:
-                :obj:`str`: direction (in ['forward', 'reverse'])
-
-            Raises:
-                :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
-        """
-
-        if self.start < self.end:
-            return core.DirectionType.forward
-        elif self.start > self.end:
-            return core.DirectionType.reverse
-        elif self.start == self.end:
-            raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
 
 class GeneLocus(core.PolymerLocus):

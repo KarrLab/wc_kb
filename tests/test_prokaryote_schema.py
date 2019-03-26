@@ -40,7 +40,6 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp_dirname)
 
-    # Taken acre of by obj_model?
     def test_constructor(self):
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
@@ -263,7 +262,6 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.tmp_dirname)
 
-    @unittest.skip('known error skipping to test pushing to circle')
     def test_get_3_prime(self):
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
@@ -279,9 +277,7 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
             id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(tu1.get_3_prime(), 1)
 
-    @unittest.skip('known error skipping to test pushing to circle')
     def test_get_5_prime(self):
-
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
@@ -296,13 +292,31 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
             id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(tu1.get_5_prime(), 15)
 
-# only fake tests
+
 class GeneLocusTestCase(unittest.TestCase):
-    def test(self):
-        gene = prokaryote_schema.GeneLocus(id='gene1', name='gene1',
-                              symbol='gene_1', start=1, end=2)
-        self.assertEqual(gene.id, 'gene1')
-        self.assertEqual(gene.name, 'gene1')
-        self.assertEqual(gene.symbol, 'gene_1')
-        self.assertEqual(gene.start, 1)
-        self.assertEqual(gene.end, 2)
+
+    def test_get_direction(self):
+
+        gene1 = prokaryote_schema.GeneLocus(id='gene1', name='gene1', symbol='gene_1',
+                              strand=core.PolymerStrand.positive, start=1, end=2)
+        gene2 = prokaryote_schema.GeneLocus(id='gene2', name='gene2',
+                              strand=core.PolymerStrand.positive, start=10, end=5)
+
+        self.assertEqual(gene1.id, 'gene1')
+        self.assertEqual(gene1.name, 'gene1')
+        self.assertEqual(gene1.symbol, 'gene_1')
+        self.assertEqual(gene1.start, 1)
+        self.assertEqual(gene1.end, 2)
+
+        self.assertEqual(gene1.get_direction(), core.DirectionType.forward)
+        self.assertEqual(gene2.get_direction(), core.DirectionType.reverse)
+
+        gene1.strand = core.PolymerStrand.negative
+        gene2.strand = core.PolymerStrand.negative
+        self.assertEqual(gene1.get_direction(), core.DirectionType.reverse)
+        self.assertEqual(gene2.get_direction(), core.DirectionType.forward)
+
+        gene1.start = 15
+        gene1.end   = 15
+        with self.assertRaises(ValueError):
+            gene1.get_direction()
