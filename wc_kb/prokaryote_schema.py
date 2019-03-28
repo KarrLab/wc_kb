@@ -35,7 +35,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'transcription_units', 'circular',
-                           'double_stranded', 'half_life', 'comments', 'references', 'database_references')
+                           'double_stranded', 'half_life', 'comments', 'references', 'identifiers')
 
     def get_seq(self):
         """ Get the sequence
@@ -122,7 +122,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'gene', 'rna', 'circular', 'double_stranded',
-                           'half_life', 'comments', 'references', 'database_references')
+                           'half_life', 'comments', 'references', 'identifiers')
 
     def get_seq(self, cds=True):
         """ Get the sequence
@@ -242,7 +242,7 @@ class PromoterLocus(core.PolymerLocus):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end',
-                           'strand', 'start', 'end', 'comments', 'references', 'database_references')
+                           'strand', 'start', 'end', 'comments', 'references', 'identifiers')
 
 
 class TranscriptionUnitLocus(core.PolymerLocus):
@@ -260,7 +260,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end',
-                           'genes', 'comments', 'references', 'database_references')
+                           'genes', 'comments', 'references', 'identifiers')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -300,4 +300,4 @@ class GeneLocus(core.PolymerLocus):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start',
-                           'end', 'comments', 'references', 'database_references')
+                           'end', 'comments', 'references', 'identifiers')

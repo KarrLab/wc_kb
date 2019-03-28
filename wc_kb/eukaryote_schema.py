@@ -136,7 +136,7 @@ class GeneLocus(core.PolymerLocus):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 
-                           'end', 'comments', 'references', 'database_references')
+                           'end', 'comments', 'references', 'identifiers')
 
 
 class RegulatoryElementLocus(core.PolymerLocus):
@@ -161,7 +161,7 @@ class RegulatoryElementLocus(core.PolymerLocus):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'type', 'activity', 'strand', 
                            'start', 'end', 'bound_start', 'bound_end', 'motif_features', 
-                           'comments', 'references', 'database_references')
+                           'comments', 'references', 'identifiers')
 
 
 class RegulatoryModule(obj_model.Model):
@@ -177,7 +177,7 @@ class RegulatoryModule(obj_model.Model):
         direction (:obj:`RegulatoryDirection`): direction of regulation
         comments (:obj:`str`): comments
         references (:obj:`list` of :obj:`Reference`): references
-        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
+        identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
@@ -189,11 +189,11 @@ class RegulatoryModule(obj_model.Model):
     direction = obj_model.EnumAttribute(RegulatoryDirection)
     comments = obj_model.LongStringAttribute()
     references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
-    database_references = core.DatabaseReferenceAttribute(related_name='regulatory_modules')    
+    identifiers = core.IdentifierAttribute(related_name='regulatory_modules')    
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'gene', 'regulatory_element', 'binding_factor', 'type', 
-                            'direction', 'comments', 'references', 'database_references')
+                            'direction', 'comments', 'references', 'identifiers')
 
 
 class PtmSite(core.PolymerLocus):
@@ -208,7 +208,7 @@ class PtmSite(core.PolymerLocus):
         abundance_ratio (:obj:`int`): ratio of modified protein abundance
         comments (:obj:`str`): comments
         references (:obj:`list` of :obj:`Reference`): references
-        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
+        identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
     type = obj_model.StringAttribute()
     modified_protein = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='ptm_sites')
@@ -217,7 +217,7 @@ class PtmSite(core.PolymerLocus):
     
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'modified_protein', 'type', 'modified_residue',
-                           'abundance_ratio', 'comments', 'references', 'database_references')
+                           'abundance_ratio', 'comments', 'references', 'identifiers')
 
 
 class GenericLocus(obj_model.Model):
@@ -281,7 +281,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'gene', 'exons', 'half_life', 
-                           'comments', 'references', 'database_references')
+                           'comments', 'references', 'identifiers')
 
     def get_seq(self):
         """ Get the 5' to 3' sequence
@@ -372,7 +372,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 'half_life', 
-                           'comments', 'references', 'database_references')
+                           'comments', 'references', 'identifiers')
 
     def get_seq(self, table=1, cds=True):
         """ Get the 5' to 3' sequence

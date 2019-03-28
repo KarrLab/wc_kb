@@ -125,42 +125,42 @@ class ConcentrationTestCase(unittest.TestCase):
 
 
 # Organized + cover + passes
-class DatabaseReferenceTestCase(unittest.TestCase):
+class IdentifierTestCase(unittest.TestCase):
 
     def test_serialize(self):
-        db_ref1 = core.DatabaseReference(database='Sabio-Rk', id='123456')
-        self.assertEqual(db_ref1.serialize(), 'Sabio-Rk:123456')
+        identifier1 = core.Identifier(namespace='Sabio-Rk', id='123456')
+        self.assertEqual(identifier1.serialize(), 'Sabio-Rk:123456')
 
-        db_ref2 = core.DatabaseReference(database='KEGG', id='00')
-        self.assertEqual(db_ref2.serialize(), 'KEGG:00')
+        identifier2 = core.Identifier(namespace='KEGG', id='00')
+        self.assertEqual(identifier2.serialize(), 'KEGG:00')
 
 
-class DatabaseReferenceAttributeTestCase(unittest.TestCase):
+class IdentifierAttributeTestCase(unittest.TestCase):
 
     def test_serialize(self):
-        db_ref1 = core.DatabaseReference(database='Sabio-Rk', id='123456')
-        db_ref2 = core.DatabaseReference(database='KEGG', id='00')
+        identifier1 = core.Identifier(namespace='Sabio-Rk', id='123456')
+        identifier2 = core.Identifier(namespace='KEGG', id='00')
         
-        self.assertEqual(core.DatabaseReferenceAttribute().serialize(
-            database_references=[db_ref1, db_ref2]), 'Sabio-Rk:123456, KEGG:00')
+        self.assertEqual(core.IdentifierAttribute().serialize(
+            [identifier1, identifier2]), 'Sabio-Rk:123456, KEGG:00')
 
     def test_deserialize(self):                
-        db_ref1 = core.DatabaseReference(database='Sabio-Rk', id='123456')
-        db_ref2 = core.DatabaseReference(database='KEGG', id='00')
+        identifier1 = core.Identifier(namespace='Sabio-Rk', id='123456')
+        identifier2 = core.Identifier(namespace='KEGG', id='00')
 
         objects = {
-            core.DatabaseReference: {
-                'Sabio-Rk:123456': db_ref1, 
-                'KEGG:00': db_ref2,
+            core.Identifier: {
+                'Sabio-Rk:123456': identifier1, 
+                'KEGG:00': identifier2,
             }
         }
 
-        result = core.DatabaseReferenceAttribute().deserialize(
+        result = core.IdentifierAttribute().deserialize(
             value='Sabio-Rk:123456, KEGG:00', objects=objects)
         self.assertEqual(result[1], None)
-        self.assertEqual(result[0][0].database, 'Sabio-Rk')
+        self.assertEqual(result[0][0].namespace, 'Sabio-Rk')
         self.assertEqual(result[0][0].id, '123456')
-        self.assertEqual(result[0][1].database, 'KEGG')
+        self.assertEqual(result[0][1].namespace, 'KEGG')
         self.assertEqual(result[0][1].id, '00')
         
 
@@ -623,7 +623,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         self.assertEqual(self.parameter_3.error, 0.15)
         self.assertEqual(self.parameter_3.units, unit_registry.parse_units('M'))
         self.assertEqual(self.parameter_3.references, [])
-        self.assertEqual(self.parameter_3.database_references, [])
+        self.assertEqual(self.parameter_3.identifiers, [])
 
     def test_deserialize_RateLawExpression(self):
 

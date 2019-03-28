@@ -23,7 +23,7 @@ from .core import (KnowledgeBaseObject,
                    SpeciesCoefficient,
                    Concentration,
                    OneToOneSpeciesAttribute,
-                   DatabaseReferenceAttribute,
+                   IdentifierAttribute,
                    ReactionParticipantAttribute,
                    SubunitAttribute,
                    Property,
@@ -35,7 +35,7 @@ from .core import (KnowledgeBaseObject,
                    RateLaw,
                    RateLawExpression,
                    Reference,
-                   DatabaseReference)
+                   Identifier)
 
 from . import io
 from . import util

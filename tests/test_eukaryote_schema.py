@@ -112,7 +112,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(transcript1.exons, [])
         self.assertEqual(transcript1.comments, '')
         self.assertEqual(transcript1.references, [])
-        self.assertEqual(transcript1.database_references, [])
+        self.assertEqual(transcript1.identifiers, [])
 
         exon1 = eukaryote_schema.GenericLocus(start=1, end=1)
         exon2 = eukaryote_schema.GenericLocus(start=2, end=2)
@@ -262,7 +262,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(self.prot1.half_life, 0.35)
         self.assertEqual(self.prot1.comments, '')
         self.assertEqual(self.prot1.references, [])
-        self.assertEqual(self.prot1.database_references, [])
+        self.assertEqual(self.prot1.identifiers, [])
         self.assertEqual(self.prot1.cell, None)
 
     def test_get_seq(self):
@@ -341,7 +341,7 @@ class GeneLocusTestCase(unittest.TestCase):
         self.assertEqual(gene.end, 2)
         self.assertEqual(gene.comments, '')
         self.assertEqual(gene.references, [])
-        self.assertEqual(gene.database_references, [])
+        self.assertEqual(gene.identifiers, [])
 
 
 class RegulatoryElementLocusTestCase(unittest.TestCase):
@@ -429,4 +429,4 @@ class PtmSiteTestCase(unittest.TestCase):
         self.assertEqual(ptm1.abundance_ratio, '0.5')
         self.assertEqual(ptm1.comments, 'oneprot_onesite')
         self.assertEqual(ptm1.references, [])
-        self.assertEqual(ptm1.database_references, [])
+        self.assertEqual(ptm1.identifiers, [])
