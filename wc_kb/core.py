@@ -177,10 +177,12 @@ class ProteinType(enum.Enum):
     TrnaSynthClassII = 2
     uncategorized = 3
 
+
 class DnaBindingType(enum.Enum):
     """ Types of DNA binding """
     ssDNA = 0
     dsDNA = 1
+
 
 class ReactionType(enum.Enum):
     """ Types of DNA binding """
@@ -219,6 +221,7 @@ class ReactionType(enum.Enum):
     PhosphorylationInactivatingProteinModificationReaction=31
     DephosphorylationActivatingProteinModificationReaction=32
     misc = 33
+
 
 class ReferenceType(enum.Enum):
     """ Types of references """
@@ -371,9 +374,10 @@ class DatabaseReferenceAttribute(ManyToManyAttribute):
             return ([], None)
 
         pattern = r'([a-z][a-z0-9_\-]*)\:([a-z0-9_\-]*)'
-        #pattern = r'DBREF[a-z0-9_\-]*\([a-zA-Z0-9]*:[a-zA-Z0-9]*\)'
+        #pattern = r'DBREF\([a-zA-Z0-9]*:[a-zA-Z0-9]*\)'
 
         if not re.match(pattern, value, flags=re.I):
+
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of database references: {}'.format(value)]))
 
         objs = []
@@ -593,6 +597,58 @@ class KnowledgeBaseObject(obj_model.Model):
     synonyms = obj_model.StringAttribute()
     comments = obj_model.LongStringAttribute()
 
+    def get_nested_metadata(self):
+        """ Returns a list of wc_kb.core.Reference / wc_kb.core.DatabaseReference / wc_kb.core.Comments objects that
+            appear in the objet's wc_kb.core.Evidence and the associated wc_kb.core.Experiment
+
+        Returns:
+            id (:obj:`list` of :obj:`Reference`): references
+        """
+
+        metadataObjs = {self.id:[], SpeciesTypeProperty:[], Evidence:[], Experiment:[]}
+        metadataObjs = self._append_metadata_entries(key=self.id, metadataObjs=metadataObjs)
+        metadataObjs = self._parse_EviNExperiment(metadataObjs)
+
+        if hasattr(self,'species_properties') and self.species_properties is not None:
+            for property in self.species_properties:
+                metadataObjs = property._append_metadata_entries(key=SpeciesTypeProperty, metadataObjs=metadataObjs)
+                metadataObjs = property._parse_EviNExperiment(metadataObjs)
+
+            return metadataObjs
+
+    def _parse_EviNExperiment(self, metadataObjs):
+        if hasattr(self, 'evidence'):
+            for evidence in self.evidence:
+                metadataObjs = evidence._append_metadata_entries(key=Evidence, metadataObjs=metadataObjs)
+                if evidence.experiment is not None:
+                    metadataObjs = evidence.experiment._append_metadata_entries(key=Experiment, metadataObjs=metadataObjs)
+
+        return metadataObjs
+
+    def _append_metadata_entries(self, key, metadataObjs):
+        """ Appends wc_kb.core.Reference / wc_kb.core.DatabaseReference / wc_kb.core.Comments objects
+            to metadataObjs list
+
+            Input:
+                obj(:obj:`obj_model.Model`): model object
+
+            Return:
+                metadataObjs (:obj:`list` of :obj:`Reference` / :obj:`Database reference` / :obj:`Comments`): list of metadata objects
+        """
+
+        if self.references!=[]:
+            for reference in self.references:
+                metadataObjs[key].append(reference)
+
+        if self.database_references!=[]:
+            for database_reference in self.database_references:
+                metadataObjs[key].append(database_reference)
+
+        if self.comments!='':
+            metadataObjs[key].append(self.comments)
+
+        return metadataObjs
+
 
 class KnowledgeBase(KnowledgeBaseObject):
     """ A knowledge base
@@ -766,7 +822,6 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     half_life = obj_model.FloatAttribute(min=0)
     references = obj_model.ManyToManyAttribute(Reference, related_name='species_types')
     database_references = DatabaseReferenceAttribute(related_name='species_types')
-    #database_references =obj_model.ManyToManyAttribute(DatabaseReference, related_name='species_types')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'half_life', 'comments', 'references', 'database_references')
@@ -933,11 +988,9 @@ class Concentration(KnowledgeBaseObject):
     species = OneToOneSpeciesAttribute(related_name='concentration')
     medium = obj_model.StringAttribute()
     value = FloatAttribute(min=0)
-    #std_dev = FloatAttribute(min=0)
-    #database_references = DatabaseReferenceAttribute(related_name='concentrations')
-    database_references = obj_model.StringAttribute()
-
+    database_references = DatabaseReferenceAttribute(related_name='concentrations')
     references = ManyToManyAttribute(Reference, related_name='concentrations')
+
     units = obj_model.units.UnitAttribute(unit_registry,
                           choices=(
                               unit_registry.parse_units('molecule'),
@@ -954,7 +1007,6 @@ class Concentration(KnowledgeBaseObject):
     references = ManyToManyAttribute(Reference, related_name='concentrations')
     comments = LongStringAttribute()
 
-
     class Meta(obj_model.Model.Meta):
         unique_together = (('species', 'medium' ), )
         attribute_order = ('id', 'species', 'value', 'units', 'evidence', 'database_references', 'references', 'comments')
@@ -966,7 +1018,7 @@ class Concentration(KnowledgeBaseObject):
         Returns:
             :obj:`str`: value of primary attribute
         """
-        return self.species.serialize()
+        return 'CONC({})'.format(self.species.serialize())
 
 
 class SpeciesTypeCoefficient(obj_model.Model):
@@ -1295,7 +1347,6 @@ class PolymerLocus(KnowledgeBaseObject):
     end = obj_model.IntegerAttribute()
     references = obj_model.ManyToManyAttribute(Reference, related_name='loci')
     database_references = DatabaseReferenceAttribute(related_name='loci')
-    #database_references = obj_model.StringAttribute()
 
 
     class Meta(obj_model.Model.Meta):
@@ -1497,7 +1548,7 @@ class MetaboliteSpeciesType(SpeciesType):
     type = EnumAttribute(MetaboliteSpeciesTypeType)
     synonyms = obj_model.LongStringAttribute()
     concentration = obj_model.OneToManyAttribute('Concentration', related_name='metabolites')
-    species_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='metabolites')
+    species_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='metabolites')
     #evidence = obj_model. OneToManyAttribute('Evidence', related_name='metabolites')
 
     class Meta(obj_model.Model.Meta):
@@ -1967,7 +2018,8 @@ class ChromosomeFeature(PolymerLocus):
         elif self.start == self.end:
             raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
-class Evidence(obj_model.Model):
+
+class Evidence(KnowledgeBaseObject):
     """ Represents the measurement / observation of a property
         Attributes:
         Related attributes:
@@ -1975,15 +2027,12 @@ class Evidence(obj_model.Model):
 
     id       = obj_model.SlugAttribute(primary=True, unique=True)
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
-    object   =  obj_model.StringAttribute() #obj_model.ManyToOneAttribute(obj_model.Model, related_name='evidences')
+    object   =  obj_model.StringAttribute()
     property = obj_model.StringAttribute()
     values = obj_model.FloatAttribute()
-    #mean = obj_model.IntegerAttribute()
-    #standard_error = obj_model.IntegerAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    #database_references = DatabaseReferenceAttribute(related_name='evidence')
+    database_references = DatabaseReferenceAttribute(related_name='evidence')
     references = obj_model.ManyToManyAttribute('Reference', related_name='evidence')
-    database_references = obj_model.StringAttribute()
     experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='evidence')
     comments = obj_model.LongStringAttribute()
 
@@ -1991,8 +2040,7 @@ class Evidence(obj_model.Model):
         attribute_order = ('id', 'cell', 'object', 'property', 'values', 'units', 'experiment', 'database_references', 'references', 'comments')
 
 
-
-class Experiment(obj_model.Model):
+class Experiment(KnowledgeBaseObject):
     """ Represents an experiment in which a property was measured
         Attributes:
         Related attributes:
@@ -2051,22 +2099,23 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
         Related attributes:
     """
 
-    structure = obj_model.LongStringAttribute()
-    half_life =  obj_model.FloatAttribute()
-    half_life_units = obj_model.units.UnitAttribute(unit_registry,
-                        choices=(unit_registry.parse_units('s'),
-                                 unit_registry.parse_units('min'),
-                                 unit_registry.parse_units('hr')),
-                        default= unit_registry.parse_units('min'))
-
-    domains =  obj_model.LongStringAttribute()
-    prosthetic_groups =  obj_model.LongStringAttribute()
-    evidence = obj_model.OneToManyAttribute('Evidence', related_name='species_type_properties')
-    #database_references = DatabaseReferenceAttribute(related_name='species_type_properties')
-    database_references = obj_model.StringAttribute()
-    references = obj_model.ManyToManyAttribute('Reference', related_name='species_type_properties')
+    species_type = ManyToOneAttribute(SpeciesType, related_name='properties') #Do we want min_related=1?
+    property = obj_model.StringAttribute()
+    value = obj_model.StringAttribute()
+    units = obj_model.units.UnitAttribute(unit_registry, none=True)
+    database_references = DatabaseReferenceAttribute(related_name='species_type_properties')
+    references = ManyToManyAttribute(Reference, related_name='species_type_properties')
+    evidence = obj_model.OneToManyAttribute(Evidence, related_name='species_type_properties')
 
     class Meta(obj_model.Model.Meta):
-        verbose_name = 'Species properties'
-        attribute_order = ('id', 'structure', 'half_life', 'half_life_units', 'domains',
-                           'prosthetic_groups', 'evidence', 'database_references', 'references', 'comments')
+        verbose_name = 'SpeciesType properties'
+        unique_together = (('species_type', 'property', ), )
+        attribute_order = ('id', 'species_type', 'property', 'value', 'units', 'evidence',
+                           'database_references', 'references', 'comments')
+
+    def gen_id(self):
+        """ Generate id
+        Returns:
+            :obj:`str`: identifier
+        """
+        return 'PROP({}:{})'.format(self.species_type .id, self.property)

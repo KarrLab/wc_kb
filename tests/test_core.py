@@ -24,8 +24,6 @@ import shutil
 import tempfile
 import unittest
 
-# Does it make sense to test enumerations?
-# Organized + cover + passes
 class TestCore(unittest.TestCase):
 
     @classmethod
@@ -57,11 +55,43 @@ class ReferenceTestCase(unittest.TestCase):
         ref1 = core.Reference(id='ref1')
         self.assertEqual(ref1.id, 'ref1')
 
-# JUNK TESTS
+
 class KnowledgeBaseTestCase(unittest.TestCase):
-    def test_constructor(self):
-        kb = core.KnowledgeBase()
-        self.assertEqual(kb.cell, None)
+
+    def test_get_nested_metadata(self):
+
+        cell1 = core.Cell(id='cell1')
+        kb = core.KnowledgeBase(cell = cell1)
+        met = core.MetaboliteSpeciesType(id='met1', cell=cell1)
+
+        # Test null case
+        self.assertEqual(met.get_nested_metadata(),
+                        {'met1': [], core.SpeciesTypeProperty: [],
+                        core.Evidence: [], core.Experiment:[]})
+
+        # Load min KB to test some relationships
+        ref1=core.Reference(id='ref1')
+        ref2=core.Reference(id='ref2')
+
+        met2 = core.MetaboliteSpeciesType(id='met2', cell=cell1, references=[ref1, ref2], comments = 'test comment')
+        self.assertEqual(met2.get_nested_metadata(),
+            {'met2': [ref1, ref2, 'test comment'],
+            core.SpeciesTypeProperty: [],
+            core.Evidence: [],
+            core.Experiment: []})
+
+        ref3 = core.Reference(id='ref3')
+        dbref1 = core.DatabaseReference(id='dbref1')
+        exp1 = core.Experiment(id='exp1', references = [ref3], comments = 'exp comment')
+        evi1 = core.Evidence(id='evi1', experiment=exp1, comments = 'evidence comment')
+        stp = core.SpeciesTypeProperty(id='stp1', evidence=[evi1], database_references=[dbref1], references = [ref1])
+        met3 = core.MetaboliteSpeciesType(id='met3', cell=cell1, species_properties = [stp], comments='met comment')
+
+        self.assertEqual(met3.get_nested_metadata(),
+            {'met3': ['met comment'],
+             core.SpeciesTypeProperty: [ref1, dbref1],
+             core.Evidence: ['evidence comment'],
+             core.Experiment: [ref3, 'exp comment']})
 
 
 # JUNK TESTS
