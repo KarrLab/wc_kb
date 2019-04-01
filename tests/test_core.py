@@ -162,7 +162,6 @@ class DatabaseReferenceTestCase(unittest.TestCase):
         self.assertEqual(db_ref2.serialize(), 'KEGG:00')
 
 
-
 # Done
 class SpeciesTestCase(unittest.TestCase):
 
@@ -502,6 +501,7 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
                          chem.EmpiricalFormula('C10H12N5O7P'))
         self.assertEqual(met.get_charge(), -2)
         self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
+
 
 class ReactionAndRelatedClassesTestCase(unittest.TestCase):
 
@@ -1140,3 +1140,31 @@ class ValidatorTestCase(unittest.TestCase):
 
         kb.id = ''
         self.assertNotEqual(core.Validator().run(kb), None)
+
+
+class SpeciesTypePropertyTestCase(unittest.TestCase):
+
+    def test_get_value(self):
+
+        cell1 = core.Cell(id='cell1')
+        kb = core.KnowledgeBase(cell = cell1)
+        c = core.Compartment(id='c', cell=cell1)
+        met = core.MetaboliteSpeciesType(id='met1', cell=cell1)
+
+        stp1 = core.SpeciesTypeProperty(id='stp1', species_type=met, property='whatever1', value='True', value_type = core.ValueTypeType.boolean)
+        stp2 = core.SpeciesTypeProperty(id='stp2', species_type=met, property='whatever2', value='check_str', value_type = core.ValueTypeType.string)
+        stp3 = core.SpeciesTypeProperty(id='stp3', species_type=met, property='whatever3', value='3', value_type = core.ValueTypeType.integer)
+        stp4 = core.SpeciesTypeProperty(id='stp4', species_type=met, property='whatever4', value='4.6', value_type = core.ValueTypeType.float)
+        stp5 = core.SpeciesTypeProperty(id='stp5', species_type=met, property='whatever5', value='c', value_type = core.ValueTypeType.Compartment)
+        stp6 = core.SpeciesTypeProperty(id='stp6', species_type=met, property='whatever6', value='secretory', value_type = core.ValueTypeType.SignalSequenceType)
+        stp7 = core.SpeciesTypeProperty(id='stp7', species_type=met, property='whatever7', value='raise_test', value_type='raise_test')
+
+        self.assertEqual(met.properties.get_one(id='stp1').get_value(), True)
+        self.assertEqual(met.properties.get_one(id='stp2').get_value(), 'check_str')
+        self.assertEqual(met.properties.get_one(id='stp3').get_value(), int(3))
+        self.assertEqual(met.properties.get_one(id='stp4').get_value(), 4.6)
+        self.assertEqual(met.properties.get_one(id='stp5').get_value(), c)
+        self.assertEqual(met.properties.get_one(id='stp6').get_value(), core.SignalSequenceType.secretory)
+
+        with self.assertRaises(ValueError):
+            met.properties.get_one(id='stp7').get_value()

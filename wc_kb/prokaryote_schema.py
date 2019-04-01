@@ -143,8 +143,6 @@ class RnaSpeciesType(core.PolymerSpeciesType):
             raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
 
-
-
 class ProteinSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a protein monomer
 
@@ -155,27 +153,30 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
     type = obj_model.EnumAttribute(core.ProteinType)
-    localization = obj_model.ManyToManyAttribute(core.Compartment, related_name='proteins')
+
+    # Moved into SpecieTypeProperties
+    #localization = obj_model.ManyToManyAttribute(core.Compartment, related_name='proteins')
     #signal_sequence_type = obj_model.EnumAttribute(core.SignalSequenceType)
-    signal_sequence_type = obj_model.StringAttribute() #add None to enumeration
-    signal_sequence_location = obj_model.StringAttribute() # Compartment?
-    signal_sequence_length = obj_model.IntegerAttribute()
-    Dna_footprint_length = obj_model.IntegerAttribute()
+    #signal_sequence_type = obj_model.StringAttribute() #add None to enumeration
+    #signal_sequence_location = obj_model.StringAttribute() # Compartment?
+    #signal_sequence_length = obj_model.IntegerAttribute()
+    #Dna_footprint_length = obj_model.IntegerAttribute()
     #Dna_footprint_binding = obj_model.EnumAttribute(core.DnaBindingType)
-    Dna_footprint_binding = obj_model.StringAttribute() #add None to enumeration
+    #Dna_footprint_binding = obj_model.StringAttribute() #add None to enumeration
+
     concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='proteins')
-    species_properties = obj_model.OneToOneAttribute(core.SpeciesTypeProperty, related_name='proteins')
+    species_properties = obj_model.OneToManyAttribute(core.SpeciesTypeProperty, related_name='proteins')
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')
     translation_rate = obj_model.FloatAttribute()
-    unit = obj_model.StringAttribute() # Add 1/s/mRNA to units registry
+    unit = obj_model.StringAttribute()
     is_methionine_cleaved = obj_model.BooleanAttribute()
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'species_properties', 'concentration', 'localization', 'gene',
-                           'translation_rate', 'unit', 'is_methionine_cleaved',
-                           'signal_sequence_type', 'signal_sequence_location', 'signal_sequence_length',
-                           'Dna_footprint_binding', 'Dna_footprint_length',
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene', 'species_properties', 'concentration',
+                           #'translation_rate', 'unit', 'is_methionine_cleaved',
+                           #'signal_sequence_type', 'signal_sequence_location', 'signal_sequence_length',
+                           #'Dna_footprint_binding', 'Dna_footprint_length',
                            'evidence', 'database_references', 'references', 'comments')
 
     def get_seq(self, cds=True):

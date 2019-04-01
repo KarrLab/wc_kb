@@ -234,6 +234,16 @@ class ReferenceType(enum.Enum):
     misc = 5
 
 
+class ValueTypeType(enum.Enum):
+    """ Type of ValueTypes """
+
+    boolean = 0
+    string = 1
+    integer = 2
+    float = 3
+    SignalSequenceType = 4
+    Compartment = 5
+
 #####################
 #####################
 # Attributes
@@ -2025,7 +2035,7 @@ class Evidence(KnowledgeBaseObject):
         Related attributes:
     """
 
-    id       = obj_model.SlugAttribute(primary=True, unique=True)
+    id = obj_model.SlugAttribute(primary=True, unique=True)
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
     object   =  obj_model.StringAttribute()
     property = obj_model.StringAttribute()
@@ -2101,8 +2111,9 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
 
     species_type = ManyToOneAttribute(SpeciesType, related_name='properties') #Do we want min_related=1?
     property = obj_model.StringAttribute()
-    value = obj_model.StringAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True)
+    value = obj_model.StringAttribute()
+    value_type = obj_model.EnumAttribute(ValueTypeType)
     database_references = DatabaseReferenceAttribute(related_name='species_type_properties')
     references = ManyToManyAttribute(Reference, related_name='species_type_properties')
     evidence = obj_model.OneToManyAttribute(Evidence, related_name='species_type_properties')
@@ -2110,7 +2121,7 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     class Meta(obj_model.Model.Meta):
         verbose_name = 'SpeciesType properties'
         unique_together = (('species_type', 'property', ), )
-        attribute_order = ('id', 'species_type', 'property', 'value', 'units', 'evidence',
+        attribute_order = ('id', 'species_type', 'property', 'value', 'value_type', 'units', 'evidence',
                            'database_references', 'references', 'comments')
 
     def gen_id(self):
@@ -2119,3 +2130,22 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
             :obj:`str`: identifier
         """
         return 'PROP({}:{})'.format(self.species_type .id, self.property)
+
+    def get_value(self):
+        """ SpecesType property values are stored as strings, this function returns the value as the correct type. """
+
+        if self.value_type == ValueTypeType.boolean:
+            return bool(self.value)
+        elif self.value_type == ValueTypeType.string:
+            return self.value
+        elif self.value_type == ValueTypeType.integer:
+            return int(self.value)
+        elif self.value_type == ValueTypeType.float:
+            return float(self.value)
+        elif self.value_type == ValueTypeType.Compartment:
+            compartment = self.species_type.cell.compartments.get_one(id = self.value)
+            return compartment
+        elif self.value_type == ValueTypeType.SignalSequenceType:
+            return SignalSequenceType.__members__[self.value]
+        else:
+            raise ValueError('SpeciesTypeProperty "{}" has unexpected value type "{}".'.format(self.id, self.value_type))
