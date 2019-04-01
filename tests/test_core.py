@@ -146,7 +146,7 @@ class ConcentrationTestCase(unittest.TestCase):
         spec = core.Species(species_type=met, compartment=comp)
         conc = core.Concentration(species=spec, value=0.2)
 
-        self.assertEqual(conc.serialize(), 'met[c]')
+        self.assertEqual(conc.serialize(), 'CONC(met[c])')
         self.assertEqual(conc.value, 0.2)
         self.assertEqual(conc.units, unit_registry.parse_units('molar'))
 
@@ -484,19 +484,20 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
 
         speciesTypeProperties = core.SpeciesTypeProperty(
-            structure = (
+            property = 'structure',
+            value_type = core.ValueTypeType.string,
+            value = (
                 'InChI=1S'
                 '/C10H14N5O7P'
                 '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
                 '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
                 '/p-2/t4-,6-,7-,10-'
                 '/m1'
-                '/s1\n'),
-            half_life = 55)
+                '/s1\n'))
 
-        met = core.MetaboliteSpeciesType(species_properties = speciesTypeProperties)
+        met = core.MetaboliteSpeciesType(properties = [speciesTypeProperties])
 
-        self.assertEqual(met.get_structure(), speciesTypeProperties.structure)
+        self.assertEqual(met.get_structure(), speciesTypeProperties.value)
         self.assertEqual(met.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O7P'))
         self.assertEqual(met.get_charge(), -2)
@@ -678,14 +679,19 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.complex2  = core.ComplexSpeciesType()
 
         speciesProps1 = core.SpeciesTypeProperty(
-            structure = 'InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2')
+            property = 'structure',
+            value = 'InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2',
+            value_type = core.ValueTypeType.string)
         speciesProps2 = core.SpeciesTypeProperty(
-            structure = 'InChI=1S/Zn/q+2')
+            property = 'structure',
+            value = 'InChI=1S/Zn/q+2',
+            value_type = core.ValueTypeType.string)
+
 
         self.cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
-                                               species_properties = speciesProps1)
+                                               properties = [speciesProps1])
         self.cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
-                                               species_properties = speciesProps2)
+                                               properties = [speciesProps2])
 
         # Add subunit composition: (2) cofactor1 + (3) cofactor2 ==> complex1
         species_type_coeff1 = core.SpeciesTypeCoefficient(

@@ -1576,7 +1576,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.species_properties.structure)
+        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protonated_inchi = conversion.WriteString(mol)
@@ -1591,7 +1591,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = openbabel.OBMol()
         obConversion = openbabel.OBConversion()
         obConversion.SetInFormat('inchi')
-        obConversion.ReadString(mol, self.species_properties.structure)
+        obConversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
 
         return mol
 
@@ -1608,7 +1608,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.species_properties.structure)
+        conversion.ReadString(mol,  self.properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protontated_inchi = conversion.WriteString(mol)
@@ -1623,13 +1623,10 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`int`: charge
         """
 
-        #mol = self.to_openbabel_mol()
-        # return mol.GetTotalCharge()
-
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.species_properties.structure)
+        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
 

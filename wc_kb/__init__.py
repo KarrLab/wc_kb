@@ -42,4 +42,3 @@ from .core import (KnowledgeBaseObject,
 
 from . import io
 from . import util
-from . import kb_translater
