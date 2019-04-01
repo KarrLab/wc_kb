@@ -384,7 +384,7 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         promoter = eukaryote_schema.RegulatoryElementLocus(polymer=dna1, start=6, end=8)
         enhancer = eukaryote_schema.RegulatoryElementLocus(polymer=dna1, start=2, end=4)
 
-        tf = eukaryote_schema.ProteinSpeciesType(id='tf')
+        tf = [eukaryote_schema.ProteinSpeciesType(id='tf')]
 
         reg_module1 = eukaryote_schema.RegulatoryModule(gene=gene1, 
             regulatory_element=promoter, binding_factor=tf, 

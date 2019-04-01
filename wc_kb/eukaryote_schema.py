@@ -184,7 +184,7 @@ class RegulatoryModule(obj_model.Model):
     gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='regulatory_modules')
     regulatory_element = obj_model.ManyToOneAttribute(
         RegulatoryElementLocus, related_name='regulatory_modules')
-    binding_factor = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='regulatory_modules')
+    binding_factor = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_modules')
     type = obj_model.EnumAttribute(RegulationType)
     direction = obj_model.EnumAttribute(RegulatoryDirection)
     comments = obj_model.LongStringAttribute()
