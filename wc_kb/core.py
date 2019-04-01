@@ -459,7 +459,7 @@ class Identifier(obj_model.Model):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('namespace', 'id')
-        tabular_orientation = TabularOrientation.inline
+        tabular_orientation = TabularOrientation.cell
         unique_together = (('namespace', 'id'), )
         ordering = ('namespace', 'id')
 
@@ -670,7 +670,7 @@ class Species(obj_model.Model):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('species_type', 'compartment')
         frozen_columns = 1
-        tabular_orientation = TabularOrientation.inline
+        tabular_orientation = TabularOrientation.cell
         unique_together = (('species_type', 'compartment', ), )
         ordering = ('species_type', 'compartment')
         expression_term_token_pattern = (token.NAME, token.LSQB, token.NAME, token.RSQB)
@@ -828,7 +828,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('species_type', 'coefficient')
         frozen_columns = 1
-        tabular_orientation = TabularOrientation.inline
+        tabular_orientation = TabularOrientation.cell
         ordering = ('species_type',)
 
     def serialize(self):
@@ -939,7 +939,7 @@ class SpeciesCoefficient(obj_model.Model):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('species', 'coefficient')
         frozen_columns = 1
-        tabular_orientation = TabularOrientation.inline
+        tabular_orientation = TabularOrientation.cell
         ordering = ('species',)
 
     def serialize(self, show_compartment=True, show_coefficient_sign=True):
@@ -1177,7 +1177,7 @@ class ObservableExpression(obj_model.Model, Expression):
     observables = ManyToManyAttribute('Observable', related_name='observable_expressions')
 
     class Meta(obj_model.Model.Meta, Expression.Meta):
-        tabular_orientation = TabularOrientation.inline
+        tabular_orientation = TabularOrientation.cell
         expression_term_models = ('Species', 'Observable')
         expression_is_linear = True
         expression_unit_registry = unit_registry
@@ -1569,7 +1569,7 @@ class RateLawExpression(obj_model.Model, Expression):
 
     class Meta(obj_model.Model.Meta, Expression.Meta):
         attribute_order = ('expression', 'parameters', 'species', 'observables')
-        tabular_orientation = TabularOrientation.inline
+        tabular_orientation = TabularOrientation.cell
         ordering = ('expression',)
         expression_term_models = ('Parameter', 'Species', 'Observable')
         expression_unit_registry = unit_registry

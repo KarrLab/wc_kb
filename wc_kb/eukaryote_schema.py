@@ -236,7 +236,7 @@ class GenericLocus(obj_model.Model):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('start', 'end')
-        tabular_orientation = obj_model.TabularOrientation.inline
+        tabular_orientation = obj_model.TabularOrientation.cell
         ordering = ('start', 'end')
 
     @staticmethod
