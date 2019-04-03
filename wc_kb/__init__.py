@@ -35,7 +35,6 @@ from .core import (KnowledgeBaseObject,
                    RateLaw,
                    RateLawExpression,
                    Reference,
-                   DatabaseReference,
                    Evidence,
                    Experiment,
                    SpeciesTypeProperty)

@@ -47,7 +47,6 @@ PROKARYOTE_MODELS = (
     core.Parameter,
     core.Evidence,
     core.Experiment,
-    #core.DatabaseReference,
     core.Reference)
 
 EUKARYOTE_MODELS = (
@@ -65,9 +64,7 @@ EUKARYOTE_MODELS = (
     core.ComplexSpeciesType,
     core.Concentration,
     core.Observable,
-    core.Interaction,
     core.Evidence,
-    core.DatabaseReference,
     core.Reaction,
     core.RateLaw,
     core.Parameter,
