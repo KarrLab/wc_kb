@@ -31,22 +31,24 @@ PROKARYOTE_MODELS = (
     core.KnowledgeBase,
     core.Cell,
     core.Compartment,
-    core.MetaboliteSpeciesType,
     core.DnaSpeciesType,
-    prokaryote_schema.PromoterLocus,
+    core.ChromosomeFeature,
     prokaryote_schema.TranscriptionUnitLocus,
-    prokaryote_schema.RnaSpeciesType,
     prokaryote_schema.GeneLocus,
+    core.MetaboliteSpeciesType,
+    prokaryote_schema.RnaSpeciesType,
     prokaryote_schema.ProteinSpeciesType,
     core.ComplexSpeciesType,
+    core.SpeciesTypeProperty,
     core.Concentration,
+    core.Observable,
     core.Reaction,
     core.RateLaw,
     core.Parameter,
-    core.Property,
-    core.Observable,
-    core.Reference
-)
+    core.Evidence,
+    core.Experiment,
+    #core.DatabaseReference,
+    core.Reference)
 
 EUKARYOTE_MODELS = (
     core.KnowledgeBase,
@@ -63,13 +65,13 @@ EUKARYOTE_MODELS = (
     core.ComplexSpeciesType,
     core.Concentration,
     core.Observable,
+    core.Interaction,
+    core.Evidence,
+    core.DatabaseReference,
     core.Reaction,
     core.RateLaw,
     core.Parameter,
-    core.Property,
-    core.Reference
-)
-
+    core.Reference)
 
 class Writer(obj_model.io.Writer):
     """ Write knowledge base to file(s) """

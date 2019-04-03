@@ -24,8 +24,6 @@ import shutil
 import tempfile
 import unittest
 
-# Does it make sense to test enumerations?
-# Organized + cover + passes
 class TestCore(unittest.TestCase):
 
     @classmethod
@@ -54,16 +52,46 @@ class TestCore(unittest.TestCase):
 # JUNK TESTS
 class ReferenceTestCase(unittest.TestCase):
     def test_constructor(self):
-        ref1 = core.Reference(id='ref1', standard_id='10.1000/xyz123')
+        ref1 = core.Reference(id='ref1')
         self.assertEqual(ref1.id, 'ref1')
-        self.assertEqual(ref1.standard_id, '10.1000/xyz123')
 
 
-# JUNK TESTS
 class KnowledgeBaseTestCase(unittest.TestCase):
-    def test_constructor(self):
-        kb = core.KnowledgeBase()
-        self.assertEqual(kb.cell, None)
+
+    def test_get_nested_metadata(self):
+
+        cell1 = core.Cell(id='cell1')
+        kb = core.KnowledgeBase(cell = cell1)
+        met = core.MetaboliteSpeciesType(id='met1', cell=cell1)
+
+        # Test null case
+        self.assertEqual(met.get_nested_metadata(),
+                        {'met1': [], core.SpeciesTypeProperty: [],
+                        core.Evidence: [], core.Experiment:[]})
+
+        # Load min KB to test some relationships
+        ref1=core.Reference(id='ref1')
+        ref2=core.Reference(id='ref2')
+
+        met2 = core.MetaboliteSpeciesType(id='met2', cell=cell1, references=[ref1, ref2], comments = 'test comment')
+        self.assertEqual(met2.get_nested_metadata(),
+            {'met2': [ref1, ref2, 'test comment'],
+            core.SpeciesTypeProperty: [],
+            core.Evidence: [],
+            core.Experiment: []})
+
+        ref3 = core.Reference(id='ref3')
+        dbref1 = core.DatabaseReference(id='dbref1')
+        exp1 = core.Experiment(id='exp1', references = [ref3], comments = 'exp comment')
+        evi1 = core.Evidence(id='evi1', experiment=exp1, comments = 'evidence comment')
+        stp = core.SpeciesTypeProperty(id='stp1', evidence=[evi1], database_references=[dbref1], references = [ref1])
+        met3 = core.MetaboliteSpeciesType(id='met3', cell=cell1, species_properties = [stp], comments='met comment')
+
+        self.assertEqual(met3.get_nested_metadata(),
+            {'met3': ['met comment'],
+             core.SpeciesTypeProperty: [ref1, dbref1],
+             core.Evidence: ['evidence comment'],
+             core.Experiment: [ref3, 'exp comment']})
 
 
 # JUNK TESTS
@@ -116,10 +144,9 @@ class ConcentrationTestCase(unittest.TestCase):
         comp = core.Compartment(id='c')
         met = core.MetaboliteSpeciesType(id='met')
         spec = core.Species(species_type=met, compartment=comp)
-
         conc = core.Concentration(species=spec, value=0.2)
 
-        self.assertEqual(conc.serialize(), 'met[c]')
+        self.assertEqual(conc.serialize(), 'CONC(met[c])')
         self.assertEqual(conc.value, 0.2)
         self.assertEqual(conc.units, unit_registry.parse_units('molar'))
 
@@ -140,17 +167,17 @@ class IdentifierAttributeTestCase(unittest.TestCase):
     def test_serialize(self):
         identifier1 = core.Identifier(namespace='Sabio-Rk', id='123456')
         identifier2 = core.Identifier(namespace='KEGG', id='00')
-        
+
         self.assertEqual(core.IdentifierAttribute().serialize(
             [identifier1, identifier2]), 'Sabio-Rk:123456, KEGG:00')
 
-    def test_deserialize(self):                
+    def test_deserialize(self):
         identifier1 = core.Identifier(namespace='Sabio-Rk', id='123456')
         identifier2 = core.Identifier(namespace='KEGG', id='00')
 
         objects = {
             core.Identifier: {
-                'Sabio-Rk:123456': identifier1, 
+                'Sabio-Rk:123456': identifier1,
                 'KEGG:00': identifier2,
             }
         }
@@ -162,7 +189,7 @@ class IdentifierAttributeTestCase(unittest.TestCase):
         self.assertEqual(result[0][0].id, '123456')
         self.assertEqual(result[0][1].namespace, 'KEGG')
         self.assertEqual(result[0][1].id, '00')
-        
+
 
 # Done
 class SpeciesTestCase(unittest.TestCase):
@@ -444,6 +471,9 @@ class PolymerLocusTestCase(unittest.TestCase):
         self.locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=self.dna1,
                                    strand=core.PolymerStrand.positive, start=1, end=15)
 
+        self.locus2 = core.PolymerLocus(id='locus2', cell=cell1, name='locus2', polymer=self.dna1,
+                                   strand=core.PolymerStrand.positive, start=14, end=2)
+
     def tearDown(self):
         shutil.rmtree(self.tmp_dirname)
 
@@ -459,27 +489,44 @@ class PolymerLocusTestCase(unittest.TestCase):
 
         self.assertEqual(self.locus1.get_len(), 15)
 
-        # flip strand; test methods
         rev_comp_seq = self.locus1.get_seq().reverse_complement()
         self.locus1.strand = core.PolymerStrand.negative
         self.assertEqual(self.locus1.get_len(), 15)
 
+    def test_get_direction(self):
+
+        self.assertEqual(self.locus1.get_direction(), core.DirectionType.forward)
+        self.assertEqual(self.locus2.get_direction(), core.DirectionType.reverse)
+
+        self.locus1.strand = core.PolymerStrand.negative
+        self.locus2.strand = core.PolymerStrand.negative
+        self.assertEqual(self.locus1.get_direction(), core.DirectionType.reverse)
+        self.assertEqual(self.locus2.get_direction(), core.DirectionType.forward)
+
+        self.locus1.start = 15
+        self.locus1.end   = 15
+        with self.assertRaises(ValueError):
+            self.locus1.get_direction()
 
 # Proteniation?
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
 
-        met = core.MetaboliteSpeciesType(structure=(
-            'InChI=1S'
-            '/C10H14N5O7P'
-            '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
-            '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
-            '/p-2/t4-,6-,7-,10-'
-            '/m1'
-            '/s1\n'
-        ))
+        speciesTypeProperties = core.SpeciesTypeProperty(
+            property = 'structure',
+            value_type = core.ValueTypeType.string,
+            value = (
+                'InChI=1S'
+                '/C10H14N5O7P'
+                '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
+                '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
+                '/p-2/t4-,6-,7-,10-'
+                '/m1'
+                '/s1\n'))
 
-        self.assertEqual(met.get_structure(), met.structure)
+        met = core.MetaboliteSpeciesType(properties = [speciesTypeProperties])
+
+        self.assertEqual(met.get_structure(), speciesTypeProperties.value)
         self.assertEqual(met.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O7P'))
         self.assertEqual(met.get_charge(), -2)
@@ -532,7 +579,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             name='test_parameter3',
             value=2.3,
             error=0.15,
-            units=unit_registry.parse_units('M')
+            units=unit_registry.parse_units('M'),
         )
 
         self.reaction_1 = reaction_1 = core.Reaction(
@@ -660,10 +707,20 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.complex1  = core.ComplexSpeciesType()
         self.complex2  = core.ComplexSpeciesType()
 
+        speciesProps1 = core.SpeciesTypeProperty(
+            property = 'structure',
+            value = 'InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2',
+            value_type = core.ValueTypeType.string)
+        speciesProps2 = core.SpeciesTypeProperty(
+            property = 'structure',
+            value = 'InChI=1S/Zn/q+2',
+            value_type = core.ValueTypeType.string)
+
+
         self.cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
-                                               structure='InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2')
+                                               properties = [speciesProps1])
         self.cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
-                                               structure='InChI=1S/Zn/q+2')
+                                               properties = [speciesProps2])
 
         # Add subunit composition: (2) cofactor1 + (3) cofactor2 ==> complex1
         species_type_coeff1 = core.SpeciesTypeCoefficient(
@@ -1118,3 +1175,31 @@ class ValidatorTestCase(unittest.TestCase):
 
         kb.id = ''
         self.assertNotEqual(core.Validator().run(kb), None)
+
+
+class SpeciesTypePropertyTestCase(unittest.TestCase):
+
+    def test_get_value(self):
+
+        cell1 = core.Cell(id='cell1')
+        kb = core.KnowledgeBase(cell = cell1)
+        c = core.Compartment(id='c', cell=cell1)
+        met = core.MetaboliteSpeciesType(id='met1', cell=cell1)
+
+        stp1 = core.SpeciesTypeProperty(id='stp1', species_type=met, property='whatever1', value='True', value_type = core.ValueTypeType.boolean)
+        stp2 = core.SpeciesTypeProperty(id='stp2', species_type=met, property='whatever2', value='check_str', value_type = core.ValueTypeType.string)
+        stp3 = core.SpeciesTypeProperty(id='stp3', species_type=met, property='whatever3', value='3', value_type = core.ValueTypeType.integer)
+        stp4 = core.SpeciesTypeProperty(id='stp4', species_type=met, property='whatever4', value='4.6', value_type = core.ValueTypeType.float)
+        stp5 = core.SpeciesTypeProperty(id='stp5', species_type=met, property='whatever5', value='c', value_type = core.ValueTypeType.Compartment)
+        stp6 = core.SpeciesTypeProperty(id='stp6', species_type=met, property='whatever6', value='secretory', value_type = core.ValueTypeType.SignalSequenceType)
+        stp7 = core.SpeciesTypeProperty(id='stp7', species_type=met, property='whatever7', value='raise_test', value_type='raise_test')
+
+        self.assertEqual(met.properties.get_one(id='stp1').get_value(), True)
+        self.assertEqual(met.properties.get_one(id='stp2').get_value(), 'check_str')
+        self.assertEqual(met.properties.get_one(id='stp3').get_value(), int(3))
+        self.assertEqual(met.properties.get_one(id='stp4').get_value(), 4.6)
+        self.assertEqual(met.properties.get_one(id='stp5').get_value(), c)
+        self.assertEqual(met.properties.get_one(id='stp6').get_value(), core.SignalSequenceType.secretory)
+
+        with self.assertRaises(ValueError):
+            met.properties.get_one(id='stp7').get_value()

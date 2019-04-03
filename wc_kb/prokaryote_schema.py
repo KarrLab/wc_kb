@@ -29,13 +29,20 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         proteins (:obj:`list` of :obj:`ProteinSpeciesType`): protein(s)
     """
 
-    transcription_units = obj_model.ManyToManyAttribute(
-        'TranscriptionUnitLocus', related_name='rna')
+    transcription_units = obj_model.ManyToManyAttribute('TranscriptionUnitLocus', related_name='rnas')
     type = obj_model.EnumAttribute(core.RnaType)
+    direction = obj_model.EnumAttribute(core.DirectionType)
+    genes = obj_model.OneToManyAttribute('GeneLocus', related_name = 'rnas')
+    coordinate = obj_model.IntegerAttribute()
+    length = obj_model.IntegerAttribute()
+    concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='rnas')
+    species_properties = obj_model.OneToOneAttribute(core.SpeciesTypeProperty, related_name='rnas')
+    #evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='rnas')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'type', 'transcription_units', 'circular',
-                           'double_stranded', 'half_life', 'comments', 'references', 'identifiers')
+        verbose_name = 'RNA'
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'coordinate', 'length', 'direction',
+                           'species_properties', 'concentration', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -66,13 +73,6 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         n_g = seq.count('G')
         n_u = seq.count('U')
         l   = len(seq)
-
-        #formula = chem.EmpiricalFormula()
-        #formula.C = 10 * n_a +  9 * n_c + 10 * n_g +  9 * n_u
-        #formula.H = 12 * n_a + 12 * n_c + 12 * n_g + 11 * n_u - (l - 1)
-        #formula.N =  5 * n_a +  3 * n_c +  5 * n_g +  2 * n_u
-        #formula.O =  7 * n_a +  8 * n_c +  8 * n_g +  9 * n_u - (l - 1)
-        #formula.P = n_a + n_c + n_g + n_u
 
         formula = chem.EmpiricalFormula()
         formula.C = 10 * n_a +  9 * n_c + 10 * n_g +  9 * n_u
@@ -107,6 +107,33 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         """
         return self.get_empirical_formula().get_molecular_weight()
 
+    def get_direction(self):
+        """ Returns the direction of the polymer feature defind by its strand and start/end coordinate
+            Returns:
+                :obj:`str`: direction (in ['forward', 'reverse'])
+
+            Raises:
+                :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
+                :obj::obj:`Exception`: strand is not member of PolymerStrand
+        """
+
+        if self.start < self.end:
+            if self.strand==core.PolymerStrand.positive:
+                return core.DirectionType.forward
+            elif self.strand==core.PolymerStrand.negative:
+                return core.DirectionType.reverse
+            else:
+                raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+        elif self.start > self.end:
+            if self.strand==core.PolymerStrand.positive:
+                return core.DirectionType.reverse
+            elif self.strand==core.PolymerStrand.negative:
+                return core.DirectionType.forward
+            else:
+                raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+        elif self.start == self.end:
+            raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
+
 
 class ProteinSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a protein monomer
@@ -117,12 +144,18 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     """
 
     gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
-    rna = obj_model.ManyToOneAttribute(
-        'RnaSpeciesType', related_name='proteins')
+    type = obj_model.EnumAttribute(core.ProteinType)
+    concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='proteins')
+    species_properties = obj_model.OneToManyAttribute(core.SpeciesTypeProperty, related_name='proteins')
+    evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')
+    translation_rate = obj_model.FloatAttribute()
+    unit = obj_model.StringAttribute()
+    is_methionine_cleaved = obj_model.BooleanAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'rna', 'circular', 'double_stranded',
-                           'half_life', 'comments', 'references', 'identifiers')
+        verbose_name = 'Protein'
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene', 'species_properties', 'concentration',
+                           'evidence', 'identifiers', 'references', 'comments')
 
     def get_seq(self, cds=True):
         """ Get the sequence
@@ -220,9 +253,9 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 #####################
 # Locus types
 
-
+"""
 class PromoterLocus(core.PolymerLocus):
-    """ Knowledge of a promoter for a transcription unit
+    " Knowledge of a promoter for a transcription unit
 
     Attributes:
         pribnow_start (:obj:`int`): Pribnow box start coordinate
@@ -234,7 +267,7 @@ class PromoterLocus(core.PolymerLocus):
     Related attributes:
         transcription_units (:obj:`list` of :obj:`TranscriptionUnitLocus`)
 
-    """
+    "
     pribnow_start = obj_model.IntegerAttribute()
     pribnow_end = obj_model.IntegerAttribute()
     up_35_start = obj_model.IntegerAttribute()
@@ -243,6 +276,7 @@ class PromoterLocus(core.PolymerLocus):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'polymer', 'name', 'pribnow_start', 'pribnow_end',
                            'strand', 'start', 'end', 'comments', 'references', 'identifiers')
+"""
 
 
 class TranscriptionUnitLocus(core.PolymerLocus):
@@ -253,14 +287,16 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         genes (:obj:`list` of :obj:`GeneLocus`): genes
     """
 
-    promoter = obj_model.ManyToOneAttribute(
-        'PromoterLocus', related_name='transcription_units')
-    genes = obj_model.ManyToManyAttribute(
+    pribnow_start = obj_model.IntegerAttribute()
+    pribnow_end = obj_model.IntegerAttribute()
+    type = obj_model.EnumAttribute(core.RnaType)
+    genes = obj_model.OneToManyAttribute(
         'GeneLocus', related_name='transcription_units')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'strand', 'promoter', 'start', 'end',
-                           'genes', 'comments', 'references', 'identifiers')
+        verbose_name = 'Transcription units'
+        attribute_order = ('id', 'name', 'type', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
+                           'genes', 'identifiers', 'references', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -268,7 +304,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         Returns:
             :obj:`int`: 3' coordinate
         """
-        if self.strand == core.PolymerStrand.positive:
+        if self.get_direction() == core.DirectionType.forward:
             return self.end
         else:
             return self.start
@@ -279,7 +315,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         Returns:
             :obj:`int`: 5' coordinate
         """
-        if self.strand == core.PolymerStrand.positive:
+        if self.get_direction() == core.DirectionType.forward:
             return self.start
         else:
             return self.end
@@ -297,7 +333,14 @@ class GeneLocus(core.PolymerLocus):
 
     symbol = obj_model.StringAttribute()
     type = obj_model.EnumAttribute(core.GeneType)
+    direction = obj_model.EnumAttribute(core.DirectionType)
+    is_essential = obj_model.BooleanAttribute()
+    homologs = obj_model.LongStringAttribute() #core.DatabaseReferenceAttribute(related_name='genes')
+    evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='genes')
+    cog_category = obj_model.StringAttribute() #obj_model.EnumAttribute(core.CogCategoryType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start',
-                           'end', 'comments', 'references', 'identifiers')
+        verbose_name = 'Gene'
+        attribute_order = ('id', 'name', 'synonyms', 'symbol', 'homologs', 'cog_category', 'type',
+            'polymer', 'direction', 'start', 'end', 'is_essential', 'evidence',
+            'identifiers', 'references', 'comments')
