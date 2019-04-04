@@ -187,7 +187,7 @@ class DnaBindingType(enum.Enum):
 class ReactionType(enum.Enum):
     """ Types of DNA binding """
 
-    Uncategorized = 0
+    uncategorized = 0
     DnaDamageBaseAlkylationReaction = 1
     DnaDamageBaseEthylationReaction =2
     DnaDamageRadiationInducedBaseOxidation =3
@@ -649,10 +649,9 @@ class KnowledgeBaseObject(obj_model.Model):
         comments (:obj:`str`): comments
     """
 
-    id = obj_model.SlugAttribute(primary=True, unique=True)
+    id = obj_model.StringAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
     synonyms = obj_model.StringAttribute()
-
     comments = obj_model.LongStringAttribute()
 
     def get_nested_metadata(self):
@@ -698,8 +697,8 @@ class KnowledgeBaseObject(obj_model.Model):
             for reference in self.references:
                 metadataObjs[key].append(reference)
 
-        if self.database_references!=[]:
-            for database_reference in self.database_references:
+        if self.identifiers!=[]:
+            for database_reference in self.identifiers:
                 metadataObjs[key].append(database_reference)
 
         if self.comments!='':
@@ -794,12 +793,11 @@ class Reference(obj_model.Model):
     pages = obj_model.StringAttribute()
     year = obj_model.IntegerAttribute()
     cell = obj_model.ManyToOneAttribute(Cell, related_name='references')
-    #database_references = IdentifierAttribute(related_name='references')
-    database_references = obj_model.StringAttribute()
+    identifiers = IdentifierAttribute(related_name='references')
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'type', 'title', 'authors', 'journal', 'volume', 'issue', 'pages', 'year', 'database_references', 'comments')
+        attribute_order = ('id', 'name', 'type', 'title', 'authors', 'journal', 'volume', 'issue', 'pages', 'year', 'identifiers', 'comments')
 
 
 class Compartment(KnowledgeBaseObject):
@@ -820,7 +818,7 @@ class Compartment(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='compartments')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'volumetric_fraction', 'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'volumetric_fraction', 'identifiers', 'references', 'comments')
 
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
@@ -886,13 +884,15 @@ class Species(obj_model.Model):
         rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): participations in the evaluation of rates
         observable_expressions (:obj:`list` of :obj:`ObservableExpression`): participations in observables
     """
+
+    id = obj_model.SlugAttribute(primary=True, unique=True)
     species_type = ManyToOneAttribute(
         SpeciesType, related_name='species', min_related=1)
     compartment = ManyToOneAttribute(
         Compartment, related_name='species', min_related=1)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('species_type', 'compartment')
+        attribute_order = ('id', 'species_type', 'compartment')
         frozen_columns = 1
         tabular_orientation = TabularOrientation.cell
         unique_together = (('species_type', 'compartment', ), )
@@ -1024,7 +1024,7 @@ class Concentration(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='concentrations')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('species', 'value', 'units', 'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'species', 'value', 'units', 'evidence', 'identifiers', 'references', 'comments')
         unique_together = (('species', ), )
         ordering = ('species',)
         frozen_columns = 1
@@ -1485,8 +1485,7 @@ class Observable(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='observables')
 
     class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
-        attribute_order = ('id', 'name', 'expression', 'units',
-                           'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'expression', 'units', 'identifiers', 'references', 'comments')
         expression_term_model = ObservableExpression
         expression_term_units = 'units'
 
@@ -1514,7 +1513,7 @@ class Parameter(KnowledgeBaseObject):
         error (:obj:`float`): measurement error
         units (:obj:`unit_registry.Unit`): units of value
         references (:obj:`list` of :obj:`Reference`): references
-        database_references (:obj:`list` of :obj:`DatabaseReference`): database references
+        identifierss (:obj:`list` of :obj:`DatabaseReference`): reference in external namespaces
 
     Related attributes:
         rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): rate law expressions that use a Parameter
@@ -1526,11 +1525,10 @@ class Parameter(KnowledgeBaseObject):
     units = obj_model.units.UnitAttribute(unit_registry, none=True)
     references = obj_model.ManyToManyAttribute(Reference, related_name='parameters')
     evidence = obj_model. OneToManyAttribute('Evidence', related_name='parameters')
-    database_references = IdentifierAttribute(related_name='parameters')
-    #database_references = obj_model.StringAttribute()
+    identifiers = IdentifierAttribute(related_name='parameters')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'synonyms', 'value', 'units', 'evidence', 'database_references', 'references', 'comments')
+        attribute_order = ('id', 'name', 'synonyms', 'value', 'units', 'evidence', 'identifiers', 'references', 'comments')
         expression_term_token_pattern = (token.NAME, )
 
 
@@ -1565,6 +1563,7 @@ class MetaboliteSpeciesType(SpeciesType):
     species_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='metabolites')
 
     class Meta(obj_model.Model.Meta):
+        verbose_name = 'Metabolite'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'concentration', 'species_properties', 'identifiers', 'references', 'comments')
 
     def get_structure(self, ph=7.95):
@@ -1658,8 +1657,7 @@ class DnaSpeciesType(PolymerSpeciesType):
     class Meta(obj_model.Model.Meta):
         verbose_name = 'DNA'
         attribute_order = ('id', 'name', 'sequence_path', 'circular', 'double_stranded',
-                           'ploidy', 'half_life', 'comments', 'references', 'identifiers')
-        verbose_name = 'DNA species type'
+                           'ploidy', 'identifiers', 'references', 'comments')
 
     def get_seq(self, start=None, end=None):
         """ Get the sequence
@@ -1786,18 +1784,16 @@ class ComplexSpeciesType(SpeciesType):
 
     formation_process = obj_model.EnumAttribute(ComplexFormationType)
     species_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='complexes')
-    localization = obj_model.ManyToManyAttribute('Compartment', related_name='complexes')
     concentration = obj_model.OneToManyAttribute('Concentration', related_name='complexes')
     subunits = SubunitAttribute(related_name='complexes')
-    binding = obj_model.StringAttribute()
-    region = obj_model.StringAttribute()
-    Dna_footprint_length = obj_model.IntegerAttribute()
+    #binding = obj_model.StringAttribute()
+    #region = obj_model.StringAttribute()
     type = obj_model.StringAttribute() #obj_model.EnumAttribute(ComplexType)
-    Dna_footprint_binding = obj_model.StringAttribute() #obj_model.EnumAttribute(DnaBindingType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'species_properties', 'concentration', 'localization',
-                           'subunits', 'formation_process', 'identifiers', 'references', 'comments')
+        verbose_name = 'Complex'
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'formation_process', 'subunits',
+                           'species_properties', 'concentration', 'identifiers', 'references', 'comments')
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -1913,8 +1909,7 @@ class RateLaw(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='rate_laws')
 
     class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
-        attribute_order = ('id', 'reaction', 'direction', 'expression', 'units',
-                           'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'reaction', 'direction', 'expression', 'units', 'identifiers', 'references', 'comments')
         expression_term_model = RateLawExpression
         expression_term_units = 'units'
 
@@ -1958,7 +1953,6 @@ class Reaction(KnowledgeBaseObject):
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='reactions')
     participants = ReactionParticipantAttribute(related_name='reactions')
-    submodel = obj_model.StringAttribute()
     reversible = obj_model.BooleanAttribute()
     references = obj_model.ManyToManyAttribute(Reference, related_name='reactions')
     identifiers = IdentifierAttribute(related_name='reactions')
@@ -1970,7 +1964,7 @@ class Reaction(KnowledgeBaseObject):
     parameters = obj_model.OneToManyAttribute('Parameter', related_name='reactions')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'submodel', 'participants', 'reversible', 'spontenaeous', 'enzyme', 'coenzymes',
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'participants', 'enzyme', 'coenzymes', 'reversible', 'spontenaeous',
                            'parameters', 'evidence', 'identifiers', 'references', 'comments')
 
 #####################
@@ -2065,7 +2059,6 @@ class Experiment(KnowledgeBaseObject):
     experiment_design = obj_model.StringAttribute()
     measurment_technology = obj_model.StringAttribute()
     analysis_type = obj_model.StringAttribute()
-    database_references = obj_model.StringAttribute()
     identifiers = IdentifierAttribute(related_name='experiments')
     references = obj_model.ManyToManyAttribute('Reference', related_name='experiment')
     comments = obj_model.LongStringAttribute()
@@ -2081,6 +2074,7 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
         Related attributes:
     """
 
+    id = obj_model.StringAttribute(primary=True, unique=True)
     species_type = ManyToOneAttribute(SpeciesType, related_name='properties') #Do we want min_related=1?
     property = obj_model.StringAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True)

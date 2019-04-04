@@ -80,11 +80,10 @@ class TestIO(unittest.TestCase):
 
     def test_read_write_prokaryote(self):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
-        core_path = os.path.join(fixtures, 'core_updated.xlsx')
+        core_path = os.path.join(fixtures, 'prokaryote_core.xlsx')
         seq_path = os.path.join(fixtures, 'seq.fna')
 
         reader = io.Reader()
-        #import pdb; pdb.set_trace()
         kb = reader.run(core_path, seq_path=seq_path)[core.KnowledgeBase][0]
 
         tmp_core_path = os.path.join(self.dir, 'tmp_core.xlsx')
@@ -98,7 +97,6 @@ class TestIO(unittest.TestCase):
         self.assertTrue(kb.is_equal(tmp_kb))
         self.assertTrue(filecmp.cmp(tmp_seq_path, seq_path, shallow=False))
 
-    @unittest.skip('Test is skipped until the updated schema is not mitigated through eukaryotes. Need to discuss w Yin-Hoon once schema is setteled.')
     def test_read_write_eukaryote(self):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         core_path = os.path.join(fixtures, 'eukaryote_core.xlsx')
@@ -148,9 +146,6 @@ class TestIO(unittest.TestCase):
 
     def test_write_with_repo_md(self):
 
-        # Is there a reason not to put them into temp? folder
-        #_, core_path = tempfile.mkstemp(suffix='.xlsx', dir=self.dir)
-        #_, seq_path = tempfile.mkstemp(suffix='.fna', dir=self.dir)
         _, core_path = tempfile.mkstemp(suffix='.xlsx', dir='.')
         _, seq_path = tempfile.mkstemp(suffix='.fna', dir='.')
 
@@ -200,7 +195,7 @@ class TestIO(unittest.TestCase):
         wc_utils.workbook.io.write(core_path, wb)
 
         reader = io.Reader()
-        with self.assertRaisesRegex(ValueError, "The rows of worksheet 'Knowledge base' must be defined in this order"):
+        with self.assertRaisesRegex(ValueError, "The model cannot be loaded because"):
             reader.run(core_path, seq_path=self.seq_path)
         env = EnvironmentVarGuard()
         env.set('CONFIG__DOT__wc_kb__DOT__io__DOT__strict', '0')
@@ -304,7 +299,7 @@ class TestIO(unittest.TestCase):
         wb['KB'].insert(1, row)
         wc_utils.workbook.io.write(path_core_1, wb)
 
-        with self.assertRaisesRegex(ValueError, "The rows of worksheet 'Knowledge base' must be defined in this order"):
+        with self.assertRaisesRegex(ValueError, "The model cannot be loaded because"):
             io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
         env = EnvironmentVarGuard()
         env.set('CONFIG__DOT__wc_kb__DOT__io__DOT__strict', '0')

@@ -81,10 +81,10 @@ class KnowledgeBaseTestCase(unittest.TestCase):
             core.Experiment: []})
 
         ref3 = core.Reference(id='ref3')
-        dbref1 = core.DatabaseReference(id='dbref1')
+        dbref1 = core.Identifier(id='dbref1')
         exp1 = core.Experiment(id='exp1', references = [ref3], comments = 'exp comment')
         evi1 = core.Evidence(id='evi1', experiment=exp1, comments = 'evidence comment')
-        stp = core.SpeciesTypeProperty(id='stp1', evidence=[evi1], database_references=[dbref1], references = [ref1])
+        stp = core.SpeciesTypeProperty(id='stp1', evidence=[evi1], identifiers=[dbref1], references = [ref1])
         met3 = core.MetaboliteSpeciesType(id='met3', cell=cell1, species_properties = [stp], comments='met comment')
 
         self.assertEqual(met3.get_nested_metadata(),
@@ -146,7 +146,7 @@ class ConcentrationTestCase(unittest.TestCase):
         spec = core.Species(species_type=met, compartment=comp)
         conc = core.Concentration(species=spec, value=0.2)
 
-        self.assertEqual(conc.serialize(), 'CONC(met[c])')
+        self.assertEqual(conc.serialize(), 'CONC[met[c]]')
         self.assertEqual(conc.value, 0.2)
         self.assertEqual(conc.units, unit_registry.parse_units('molar'))
 
