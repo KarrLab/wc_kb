@@ -289,16 +289,22 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet())
+        ordered_exons = sorted(self.exons, key=lambda x: x.start)
 
-        for exon in sorted(self.exons, key=lambda x: x.start):                
-            dna_seq += self.gene.polymer.get_subseq(
-                    start=exon.start, end=exon.end)
+        dna_seq = self.gene.polymer.get_subseq(
+                    start=ordered_exons[0].start, end=ordered_exons[-1].end)
+        
+        adjusted_exons = [(i.start - ordered_exons[0].start, i.end - ordered_exons[0].start + 1) \
+            for i in ordered_exons]        
+        
+        spliced_dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet()) 
+        for exon in adjusted_exons:
+            spliced_dna_seq += dna_seq[exon[0]:exon[1]]
 
         if self.gene.strand==core.PolymerStrand.negative:
-            dna_seq = dna_seq.reverse_complement()    
-
-        return dna_seq.transcribe()    
+            spliced_dna_seq = spliced_dna_seq.reverse_complement()
+                          
+        return spliced_dna_seq.transcribe()    
 
     def get_empirical_formula(self):
         """ Get the empirical formula for a transcript (spliced RNA) species with
@@ -385,16 +391,22 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet())
+        ordered_cds = sorted(self.coding_regions, key=lambda x: x.start)
 
-        for cds in sorted(self.coding_regions, key=lambda x: x.start):                
-            dna_seq += self.transcript.gene.polymer.get_subseq(
-                    start=cds.start, end=cds.end)
+        dna_seq = self.transcript.gene.polymer.get_subseq(
+                    start=ordered_cds[0].start, end=ordered_cds[-1].end)
+        
+        adjusted_cds = [(i.start - ordered_cds[0].start, i.end - ordered_cds[0].start + 1) \
+            for i in ordered_cds]
+
+        spliced_dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet()) 
+        for cds in adjusted_cds:
+            spliced_dna_seq += dna_seq[cds[0]:cds[1]]    
 
         if self.transcript.gene.strand == core.PolymerStrand.negative:
-            dna_seq = dna_seq.reverse_complement()    
+            spliced_dna_seq = spliced_dna_seq.reverse_complement()    
                     
-        return dna_seq.transcribe().translate(table=table, cds=cds)
+        return spliced_dna_seq.transcribe().translate(table=table, cds=cds)
 
     def get_empirical_formula(self, table=1, cds=True):
         """ Get the empirical formula
