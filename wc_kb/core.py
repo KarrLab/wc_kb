@@ -768,8 +768,18 @@ class Reference(obj_model.Model):
 
     Attributes:
         id (:obj:`str`): identifier
-        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
+        name (:obj:`str`): name
+        type (:obj:`ReferenceType`): type of reference
+        authors (:obj:`str`): authors
+        title (:obj:`str`): title
+        volume (:obj:`str`): volume
+        issue (:obj:`str`): issue
+        journal (:obj:`str`): journal
+        pages (:obj:`str`): pages
+        year (:obj:`int`): year
         cell (:obj:`Cell`): cell
+        identifiers (:obj:`list` of :obj:`Identifier`): external databases
+        comments (:obj:`str`): comments
 
     Related attributes:
         compartments (:obj:`list` of :obj:`Compartment`): compartments
@@ -997,9 +1007,11 @@ class Concentration(KnowledgeBaseObject):
     Attributes:
         cell (:obj:`Cell`): cell
         species (:obj:`Species`): species
+        medium (:obj:`str`): medium
         value (:obj:`float`): value
         units (:obj:`unit_registry.Unit`): units; default units is 'M'
         comments (:obj:`str`): comments
+        evidence (:obj:`list` of :obj:`Evidence`): evidence
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
@@ -1048,7 +1060,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
         complex (:obj:`ComplexSpeciesType`): complex
     """
 
-    name = obj_model.StringAttribute() #DEBUG
+    name = obj_model.StringAttribute()
     species_type = ManyToOneAttribute(SpeciesType, related_name='species_type_coefficients')
     coefficient = FloatAttribute(min=0., nan=False)
 
@@ -1513,6 +1525,7 @@ class Parameter(KnowledgeBaseObject):
         error (:obj:`float`): measurement error
         units (:obj:`unit_registry.Unit`): units of value
         references (:obj:`list` of :obj:`Reference`): references
+        evidence (:obj:`list` of :obj:`Evidence`): evidence
         identifierss (:obj:`list` of :obj:`DatabaseReference`): reference in external namespaces
 
     Related attributes:
@@ -1601,9 +1614,6 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-
-        #mol = self.to_openbabel_mol()
-        # return chem.EmpiricalFormula(mol.GetFormula().rstrip('+-'))
 
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
@@ -1940,11 +1950,16 @@ class Reaction(KnowledgeBaseObject):
 
     Attributes:
         cell (:obj:`Cell`): cell
-        submodel (:obj:`str`): submodel where reaction belongs to
         participants (:obj:`list` of :obj:`SpeciesCoefficient`): participants
         reversible (:obj:`boolean`): denotes whether reaction is reversible
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
+        evidence (:obj:`list` of :obj:`Evidence`): evidence
+        type (:obj:`ReactionType`): type of reaction
+        enzyme (:obj:`list` of :obj:`SpeciesType`): species type of enzymes
+        coenzymes (obj:`list` of :obj:`SpeciesType`): species type of coenzymes
+        spontaneous (:obj:`bool`): spontaneity
+        parameters (:obj:`list` of :obj:`Parameter`): parameters
 
     Related attributes:
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate laws; if present, rate_laws[0] is the forward
@@ -1960,11 +1975,11 @@ class Reaction(KnowledgeBaseObject):
     type = obj_model.EnumAttribute(ReactionType)
     enzyme = obj_model.ManyToManyAttribute(SpeciesType, related_name='reactions')
     coenzymes = obj_model.ManyToManyAttribute(SpeciesType, related_name='reactions')
-    spontenaeous =obj_model.BooleanAttribute()
+    spontaneous =obj_model.BooleanAttribute()
     parameters = obj_model.OneToManyAttribute('Parameter', related_name='reactions')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'participants', 'enzyme', 'coenzymes', 'reversible', 'spontenaeous',
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'participants', 'enzyme', 'coenzymes', 'reversible', 'spontaneous',
                            'parameters', 'evidence', 'identifiers', 'references', 'comments')
 
 #####################
