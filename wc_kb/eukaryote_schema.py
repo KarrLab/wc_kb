@@ -133,10 +133,12 @@ class GeneLocus(core.PolymerLocus):
     """
     symbol = obj_model.StringAttribute()
     type = obj_model.EnumAttribute(core.GeneType)
+    homologs = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'symbol', 'type', 'strand', 'start', 
-                           'end', 'comments', 'references', 'identifiers')
+        verbose_name = 'Gene'
+        attribute_order = ('id', 'name', 'synonyms', 'symbol', 'type', 'homologs', 'polymer', 'strand', 'start',
+                           'end', 'identifiers', 'references', 'comments')
 
 
 class RegulatoryElementLocus(core.PolymerLocus):
@@ -148,7 +150,7 @@ class RegulatoryElementLocus(core.PolymerLocus):
         bound_start (:obj:`int`): start coordinate of binding
         bound_end (:obj:`int`): end coordinate of binding
         motif_features (:obj:`list` of :obj:`ProteinSpeciesType`): proteins that bind to the site
-        
+
     Related attributes:
         regulatory_modules (:obj:`list` of :obj:`RegulatoryModule`): regulatory_modules
     """
@@ -157,11 +159,11 @@ class RegulatoryElementLocus(core.PolymerLocus):
     bound_start = obj_model.PositiveIntegerAttribute()
     bound_end = obj_model.PositiveIntegerAttribute()
     motif_features = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_elements')
-    
+
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'polymer', 'name', 'type', 'activity', 'strand', 
-                           'start', 'end', 'bound_start', 'bound_end', 'motif_features', 
-                           'comments', 'references', 'identifiers')
+        verbose_name = 'Regulatory element'
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'activity', 'polymer', 'strand', 'start', 'end',
+                           'bound_start', 'bound_end', 'motif_features', 'identifiers', 'references', 'comments')
 
 
 class RegulatoryModule(obj_model.Model):
@@ -169,7 +171,7 @@ class RegulatoryModule(obj_model.Model):
 
     Attributes:
         id (:obj:`str`): identifier
-        name (:obj:`str`): name        
+        name (:obj:`str`): name
         gene (:obj:`GeneLocus`): gene
         regulatory_element (:obj:`RegulatoryElementLocus`): regulatory element
         binding_factor (:obj:`ProteinSpeciesType`): binding factor
@@ -189,16 +191,16 @@ class RegulatoryModule(obj_model.Model):
     direction = obj_model.EnumAttribute(RegulatoryDirection)
     comments = obj_model.LongStringAttribute()
     references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
-    identifiers = core.IdentifierAttribute(related_name='regulatory_modules')    
+    identifiers = core.IdentifierAttribute(related_name='regulatory_modules')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'regulatory_element', 'binding_factor', 'type', 
-                            'direction', 'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'gene', 'regulatory_element', 'binding_factor', 'type',
+                            'direction', 'identifiers', 'references', 'comments')
 
 
 class PtmSite(core.PolymerLocus):
     """ Knowledge of protein modification sites
-        
+
     Attributes:
         id (:obj:`str`): identifier
         name (:obj:`str`): name
@@ -214,19 +216,19 @@ class PtmSite(core.PolymerLocus):
     modified_protein = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='ptm_sites')
     modified_residue = obj_model.StringAttribute()
     abundance_ratio = obj_model.FloatAttribute()
-    
+
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'modified_protein', 'type', 'modified_residue',
-                           'abundance_ratio', 'comments', 'references', 'identifiers')
+                           'abundance_ratio', 'identifiers', 'references', 'comments')
 
 
 class GenericLocus(obj_model.Model):
     """ Start and end coordinates of exons and CDSs
-    
+
     Attributes:
         start (:obj:`int`): start coordinate
         end (:obj:`int`): end coordinate
-    
+
     Related attributes:
         transcripts (:obj:`list` of :obj:`TranscriptSpeciesType`): transcripts
         proteins (:obj:`list` of :obj:`ProteinSpeciesType`): proteins
@@ -250,7 +252,7 @@ class GenericLocus(obj_model.Model):
         Returns:
             :obj:`str`: value of primary attribute
         """
-        return '{}:{}'.format(start, end)    
+        return '{}:{}'.format(start, end)
 
     def serialize(self):
         """ Generate string representation
@@ -270,18 +272,17 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a transcript (spliced RNA) species
 
     Attributes:
-        gene (:obj:`GeneLocus`): gene        
+        gene (:obj:`GeneLocus`): gene
         exons (:obj:`list` of :obj:`LocusAttribute`): exon coordinates
 
     Related attributes:
-        protein (:obj:`ProteinSpeciesType`): protein    
+        protein (:obj:`ProteinSpeciesType`): protein
     """
     gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='transcripts')
     exons = LocusAttribute(related_name='transcripts')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'exons', 'half_life', 
-                           'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'gene', 'exons', 'half_life', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the 5' to 3' sequence
@@ -355,7 +356,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`float`: molecular weight (Da)
         """
-        return self.get_empirical_formula().get_molecular_weight()    
+        return self.get_empirical_formula().get_molecular_weight()
 
 
 class ProteinSpeciesType(core.PolymerSpeciesType):
@@ -368,25 +369,26 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     Related attributes:
         regulatory_elements (:obj:`list` of `RegulatoryElementLocus`): potential binding sites
-        regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory DNA binding sites 
-        ptm_sites (:obj:list` of `PtmSite`): protein modification sites   
+        regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory DNA binding sites
+        ptm_sites (:obj:list` of `PtmSite`): protein modification sites
     """
 
     uniprot = obj_model.StringAttribute()
     transcript = obj_model.OneToOneAttribute(TranscriptSpeciesType, related_name='protein')
     coding_regions = LocusAttribute(related_name='proteins')
-    
+
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 'half_life', 
-                           'comments', 'references', 'identifiers')
+        verbose_name = 'Protein'
+        attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 'half_life',
+                           'identifiers', 'references', 'comments')
 
     def get_seq(self, table=1, cds=True):
         """ Get the 5' to 3' sequence
 
         Args:
-            table (:obj:`int`, optional): NCBI identifier for translation table 
+            table (:obj:`int`, optional): NCBI identifier for translation table
                                         (default = standard table)
-            cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS     
+            cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
 
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
@@ -412,7 +414,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         """ Get the empirical formula
 
         Args:
-            table (:obj:`int`, optional): NCBI identifier for translation table 
+            table (:obj:`int`, optional): NCBI identifier for translation table
                                         (default = standard table)
             cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
 
@@ -475,7 +477,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         """ Get the charge at physiological pH
 
         Args:
-            table (:obj:`int`, optional): NCBI identifier for translation table 
+            table (:obj:`int`, optional): NCBI identifier for translation table
                                         (default = standard table)
             cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
 
@@ -496,7 +498,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         """ Get the molecular weight
 
         Args:
-            table (:obj:`int`, optional): NCBI identifier for translation table 
+            table (:obj:`int`, optional): NCBI identifier for translation table
                                         (default = standard table)
             cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
 

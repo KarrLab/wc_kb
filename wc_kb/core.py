@@ -17,6 +17,7 @@ from wc_utils.util import chem
 from wc_utils.util.list import det_dedupe
 from wc_utils.util.units import unit_registry
 import abc
+import pdb
 import Bio.Alphabet
 import Bio.Seq
 import enum
@@ -61,6 +62,7 @@ class RnaType(enum.Enum):
     sRna = 2
     tRna = 3
     mixed = 4
+    intergenic = 4
 
 
 class GeneType(enum.Enum):
@@ -69,12 +71,51 @@ class GeneType(enum.Enum):
     rRna = 1
     sRna = 2
     tRna = 3
+    asRna = 4
+    pseudogene = 5
+
+
+class DirectionType(enum.Enum):
+    """ Type of direction """
+    forward = 1
+    reverse = -1
+
+
+class CogCategoryType(enum.Enum):
+    """ Type of Clusters of Orthologous Groups (COGs)
+        List of categories obtained from: http://ecoliwiki.net/colipedia/index.php/Clusters_of_Orthologous_Groups_(COGs)
+    """
+
+    RNA_processing = 0
+    chromatin_structure_dynamics = 1
+    energy_production_conversion = 2
+    cell_cycle_control_mitosis = 3
+    amino_acid_metabolism_transport = 4
+    nucleotide_metabolism_transport = 5
+    carbohydrate_metabolism_transport = 6
+    coenzyme_metabolis = 7
+    lipid_metabolism = 8
+    tranlsation = 9
+    transcription = 10
+    replication_repair = 11
+    cell_wall_membrane_envelop_biogenesis = 12
+    cell_motility = 13
+    post_translational_modification_protein_turnover_chaperone_functions = 14
+    inorganic_ion_transport_metabolism = 15
+    secondary_structure = 16
+    signal_transduction = 17
+    intracellular_trafficing_secretion = 18
+    nuclear_structure = 19
+    cytoskeleton = 20
+    general_functional_prediction = 21
+    unknown = 22
 
 
 class ComplexType(enum.Enum):
     """ Type of complex """
     tRnaSynthClassII = 0
     FattyAcylAcp = 1
+    unknown = 2
 
 
 class ComplexFormationType(enum.Enum):
@@ -91,10 +132,121 @@ class ComplexFormationType(enum.Enum):
     process_Translation = 9
 
 
+class ChromosomeFeatureType(enum.Enum):
+    """ Type of complex formation"""
+    LongStructuralRegion = 0
+    DnaMethylation = 1
+    GeneWizPrediction = 2
+    DnaBindingSite = 3
+    DnaBindingSite_Lon = 4
+    FunctionalDnaABox = 5
+    DnaABox = 6
+    Uncategorized = 7
+
+
+class MetaboliteSpeciesTypeType(enum.Enum):
+    """ Types of metabolites """
+
+    vitamin = 0
+    amino_acid = 1
+    dipeptide = 2
+    nucleobase = 3
+    modified_nucleobase = 4
+    carbohydrate_sugar = 5
+    carbohydrate_sugar_phosphate = 6
+    ribonucleotide_monophosphate = 7
+    ribonucleotide_biphosphate = 8
+    ribonucleotide_triphosphate = 9
+    carboxy_acid=10
+    unknown = 11
+    misc=12
+    ion=13
+    reactive_oxygen_species = 14
+
+
+class SignalSequenceType(enum.Enum):
+    """ Types of signal sequences """
+    secretory = 0
+    lipoprotein = 1
+
+
+class ProteinType(enum.Enum):
+    """ Types of signal sequences """
+    TrnaSynthClassI = 0
+    TrnaSynthClassIB = 1
+    TrnaSynthClassII = 2
+    uncategorized = 3
+
+
+class DnaBindingType(enum.Enum):
+    """ Types of DNA binding """
+    ssDNA = 0
+    dsDNA = 1
+
+
+class ReactionType(enum.Enum):
+    """ Types of DNA binding """
+
+    uncategorized = 0
+    DnaDamageBaseAlkylationReaction = 1
+    DnaDamageBaseEthylationReaction =2
+    DnaDamageRadiationInducedBaseOxidation =3
+    DnaDamageBaseMethylationReaction =4
+    DnaDamageBaseAminationReaction =5
+    DnaDamageUvBPhotodimerization =6
+    DnaDamagePhotooxidationReaction =7
+    DnaDamageStrandBreakReaction=8
+    DnaDamageBaseGlucosylTransferReaction=9
+    DnaDamageSpontaneousBaseDeaminationReaction=10
+    DnaDamageSpontaneousBaseLossReaction=11
+    DnaDamageBaseReductionReaction=12
+    DnaRepairBaseExcisionRepairReaction=13
+    DnaRepairDnaLigationReaction=14
+    DnaRepairDnaPolymerizationReaction=15
+    DnaRepairDnaRestrictionModificationReaction=16
+    DnaRepairDnaCleavageReaction=17
+    DnaRepairHomologousRecombinationReaction=18
+    DnaRepairBaseExcisionRepairBaseExcisionReaction=19
+    DnaRepairNucleotideExcisionRepairReaction=20
+    ChemicalReaction=21
+    TransportReaction=22
+    ModifiedBaseTransportReaction=23
+    IonTransportReaction=24
+    OxidationInactivatingProteinModificationReaction=25
+    ProteinModificationAdductionReaction=26
+    ProteinModificationLigationReaction=27
+    TrnaTransferReaction=28
+    TrnaAminoacylationReaction=29
+    GlycationInactivatingProteinModificationReaction=30
+    PhosphorylationInactivatingProteinModificationReaction=31
+    DephosphorylationActivatingProteinModificationReaction=32
+    misc = 33
+
+
+class ReferenceType(enum.Enum):
+    """ Types of references """
+
+    article = 0
+    preprint = 1
+    supplementary_material = 2
+    book = 3
+    thesis = 4
+    misc = 5
+
+
+class ValueTypeType(enum.Enum):
+    """ Type of ValueTypes """
+
+    boolean = 0
+    string = 1
+    integer = 2
+    float = 3
+    SignalSequenceType = 4
+    Compartment = 5
+
 #####################
 #####################
 # Attributes
-
 
 class SubunitAttribute(ManyToManyAttribute):
     """ Subunits """
@@ -158,7 +310,7 @@ class OneToOneSpeciesAttribute(OneToOneAttribute):
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_name (:obj:`str`, optional): verbose related name
+            verbose_related_naFclass Metabolieme (:obj:`str`, optional): verbose related name
             help (:obj:`str`, optional): help message
         """
         super(OneToOneSpeciesAttribute, self).__init__('Species',
@@ -232,6 +384,8 @@ class IdentifierAttribute(ManyToManyAttribute):
             return ([], None)
 
         pattern = r'([a-z][a-z0-9_\-]*)\:([a-z0-9_\-]*)'
+        #pattern = r'DBREF\([a-zA-Z0-9]*:[a-zA-Z0-9]*\)'
+
         if not re.match(pattern, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of identifiers: {}'.format(value)]))
 
@@ -491,11 +645,66 @@ class KnowledgeBaseObject(obj_model.Model):
     Attributes:
         id (:obj:`str`): identifier
         name (:obj:`str`): name
+        synonyms (:obj:`str`): synonyms
         comments (:obj:`str`): comments
     """
-    id = obj_model.SlugAttribute(primary=True, unique=True)
+
+    id = obj_model.StringAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
+    synonyms = obj_model.StringAttribute()
     comments = obj_model.LongStringAttribute()
+
+    def get_nested_metadata(self):
+        """ Returns a list of wc_kb.core.Reference / wc_kb.core.DatabaseReference / wc_kb.core.Comments objects that
+            appear in the objet's wc_kb.core.Evidence and the associated wc_kb.core.Experiment
+
+        Returns:
+            id (:obj:`list` of :obj:`Reference`): references
+        """
+
+        metadataObjs = {self.id:[], SpeciesTypeProperty:[], Evidence:[], Experiment:[]}
+        metadataObjs = self._append_metadata_entries(key=self.id, metadataObjs=metadataObjs)
+        metadataObjs = self._parse_EviNExperiment(metadataObjs)
+
+        if hasattr(self,'species_properties') and self.species_properties is not None:
+            for property in self.species_properties:
+                metadataObjs = property._append_metadata_entries(key=SpeciesTypeProperty, metadataObjs=metadataObjs)
+                metadataObjs = property._parse_EviNExperiment(metadataObjs)
+
+            return metadataObjs
+
+    def _parse_EviNExperiment(self, metadataObjs):
+        if hasattr(self, 'evidence'):
+            for evidence in self.evidence:
+                metadataObjs = evidence._append_metadata_entries(key=Evidence, metadataObjs=metadataObjs)
+                if evidence.experiment is not None:
+                    metadataObjs = evidence.experiment._append_metadata_entries(key=Experiment, metadataObjs=metadataObjs)
+
+        return metadataObjs
+
+    def _append_metadata_entries(self, key, metadataObjs):
+        """ Appends wc_kb.core.Reference / wc_kb.core.DatabaseReference / wc_kb.core.Comments objects
+            to metadataObjs list
+
+            Input:
+                obj(:obj:`obj_model.Model`): model object
+
+            Return:
+                metadataObjs (:obj:`list` of :obj:`Reference` / :obj:`Database reference` / :obj:`Comments`): list of metadata objects
+        """
+
+        if self.references!=[]:
+            for reference in self.references:
+                metadataObjs[key].append(reference)
+
+        if self.identifiers!=[]:
+            for database_reference in self.identifiers:
+                metadataObjs[key].append(database_reference)
+
+        if self.comments!='':
+            metadataObjs[key].append(self.comments)
+
+        return metadataObjs
 
 
 class KnowledgeBase(KnowledgeBaseObject):
@@ -523,6 +732,7 @@ class KnowledgeBase(KnowledgeBaseObject):
                                    default=wc_kb_version, verbose_name='wc_kb version')
 
     class Meta(obj_model.Model.Meta):
+        verbose_name = 'KB'
         attribute_order = ('id', 'name', 'translation_table', 'version',
                            'url', 'branch', 'revision', 'wc_kb_version', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
@@ -571,12 +781,23 @@ class Reference(obj_model.Model):
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
         observables (:obj:`list` of :obj:`Observable`): observables
     """
+
     id = obj_model.SlugAttribute(primary=True, unique=True)
-    standard_id = obj_model.StringAttribute()
+    name = obj_model.StringAttribute()
+    type = obj_model.EnumAttribute(ReferenceType)
+    authors = obj_model.LongStringAttribute()
+    title = obj_model.LongStringAttribute()
+    volume = obj_model.StringAttribute()
+    issue = obj_model.StringAttribute()
+    journal = obj_model.StringAttribute()
+    pages = obj_model.StringAttribute()
+    year = obj_model.IntegerAttribute()
     cell = obj_model.ManyToOneAttribute(Cell, related_name='references')
+    identifiers = IdentifierAttribute(related_name='references')
+    comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'standard_id')
+        attribute_order = ('id', 'name', 'type', 'title', 'authors', 'journal', 'volume', 'issue', 'pages', 'year', 'identifiers', 'comments')
 
 
 class Compartment(KnowledgeBaseObject):
@@ -597,7 +818,7 @@ class Compartment(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='compartments')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'volumetric_fraction', 'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'volumetric_fraction', 'identifiers', 'references', 'comments')
 
 
 class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, KnowledgeBaseObject)):
@@ -606,6 +827,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     Attributes:
         cell (:obj:`Cell`): cell
         half_life  (:obj:`float`): half life (s)
+
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
 
@@ -662,13 +884,15 @@ class Species(obj_model.Model):
         rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): participations in the evaluation of rates
         observable_expressions (:obj:`list` of :obj:`ObservableExpression`): participations in observables
     """
+
+    id = obj_model.SlugAttribute(primary=True, unique=True)
     species_type = ManyToOneAttribute(
         SpeciesType, related_name='species', min_related=1)
     compartment = ManyToOneAttribute(
         Compartment, related_name='species', min_related=1)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('species_type', 'compartment')
+        attribute_order = ('id', 'species_type', 'compartment')
         frozen_columns = 1
         tabular_orientation = TabularOrientation.cell
         unique_together = (('species_type', 'compartment', ), )
@@ -767,7 +991,7 @@ class Species(obj_model.Model):
         return (None, InvalidAttribute(attribute, ['Invalid species']))
 
 
-class Concentration(obj_model.Model):
+class Concentration(KnowledgeBaseObject):
     """ Species concentration
 
     Attributes:
@@ -779,8 +1003,10 @@ class Concentration(obj_model.Model):
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
+
     cell = obj_model.ManyToOneAttribute(Cell, related_name='concentrations')
-    species = OneToOneSpeciesAttribute(related_name='concentration')
+    species = OneToOneSpeciesAttribute(related_name='concentrations')
+    medium = obj_model.StringAttribute()
     value = FloatAttribute(min=0)
     units = obj_model.units.UnitAttribute(unit_registry,
                           choices=(
@@ -790,25 +1016,25 @@ class Concentration(obj_model.Model):
                               unit_registry.parse_units('nM'),
                               unit_registry.parse_units('pM'),
                               unit_registry.parse_units('fM'),
-                              unit_registry.parse_units('aM'),
-                          ),
+                              unit_registry.parse_units('aM')),
                           default=unit_registry.parse_units('M'))
-    comments = LongStringAttribute()
+
+    evidence = obj_model.OneToManyAttribute('Evidence', related_name='concentrations')
     references = ManyToManyAttribute(Reference, related_name='concentrations')
     identifiers = IdentifierAttribute(related_name='concentrations')
 
     class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'species', 'value', 'units', 'evidence', 'identifiers', 'references', 'comments')
         unique_together = (('species', ), )
-        attribute_order = ('species', 'value', 'units', 'comments', 'references', 'identifiers')
-        frozen_columns = 1
         ordering = ('species',)
+        frozen_columns = 1
 
     def serialize(self):
         """ Generate string representation
         Returns:
             :obj:`str`: value of primary attribute
         """
-        return self.species.serialize()
+        return 'CONC[{}]'.format(self.species.serialize())
 
 
 class SpeciesTypeCoefficient(obj_model.Model):
@@ -822,6 +1048,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
         complex (:obj:`ComplexSpeciesType`): complex
     """
 
+    name = obj_model.StringAttribute() #DEBUG
     species_type = ManyToOneAttribute(SpeciesType, related_name='species_type_coefficients')
     coefficient = FloatAttribute(min=0., nan=False)
 
@@ -1137,6 +1364,7 @@ class PolymerLocus(KnowledgeBaseObject):
     references = obj_model.ManyToManyAttribute(Reference, related_name='loci')
     identifiers = IdentifierAttribute(related_name='loci')
 
+
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'polymer', 'strand',
                            'start', 'end', 'comments', 'references', 'identifiers')
@@ -1156,6 +1384,33 @@ class PolymerLocus(KnowledgeBaseObject):
             :obj:`int`: length
         """
         return abs(self.start - self.end) + 1
+
+    def get_direction(self):
+        """ Returns the direction of the polymer feature defind by its strand and start/end coordinate
+            Returns:
+                :obj:`str`: direction (in ['forward', 'reverse'])
+
+            Raises:
+                :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
+                :obj::obj:`Exception`: strand is not member of PolymerStrand
+        """
+
+        if self.start < self.end:
+            if self.strand==PolymerStrand.positive:
+                return DirectionType.forward
+            elif self.strand==PolymerStrand.negative:
+                return DirectionType.reverse
+            else:
+                raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+        elif self.start > self.end:
+            if self.strand==PolymerStrand.positive:
+                return DirectionType.reverse
+            elif self.strand==PolymerStrand.negative:
+                return DirectionType.forward
+            else:
+                raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+        elif self.start == self.end:
+            raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
 
 class ObservableExpression(obj_model.Model, Expression):
@@ -1209,7 +1464,7 @@ class Observable(KnowledgeBaseObject):
     """ Observable: a linear function of other Observables and Species
 
     Attributes:
-        cell (:obj:`Cell`): cell        
+        cell (:obj:`Cell`): cell
         expression (:obj:`ObservableExpression`): mathematical expression for an Observable
         units (:obj:`unit_registry.Unit`): units of expression
         references (:obj:`list` of :obj:`Reference`): references
@@ -1230,8 +1485,7 @@ class Observable(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='observables')
 
     class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
-        attribute_order = ('id', 'name', 'expression', 'units',
-                           'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'expression', 'units', 'identifiers', 'references', 'comments')
         expression_term_model = ObservableExpression
         expression_term_units = 'units'
 
@@ -1250,6 +1504,48 @@ class Observable(KnowledgeBaseObject):
         return expression.deserialize()
 
 
+class Parameter(KnowledgeBaseObject):
+    """ Knowledge of parameters
+
+    Attributes:
+        cell (:obj:`Cell`): cell
+        value (:obj:`float`): value
+        error (:obj:`float`): measurement error
+        units (:obj:`unit_registry.Unit`): units of value
+        references (:obj:`list` of :obj:`Reference`): references
+        identifierss (:obj:`list` of :obj:`DatabaseReference`): reference in external namespaces
+
+    Related attributes:
+        rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): rate law expressions that use a Parameter
+    """
+
+    cell = obj_model.ManyToOneAttribute(Cell, related_name='parameters')
+    value = FloatAttribute(min=0)
+    error = FloatAttribute(min=0)
+    units = obj_model.units.UnitAttribute(unit_registry, none=True)
+    references = obj_model.ManyToManyAttribute(Reference, related_name='parameters')
+    evidence = obj_model. OneToManyAttribute('Evidence', related_name='parameters')
+    identifiers = IdentifierAttribute(related_name='parameters')
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'name', 'synonyms', 'value', 'units', 'evidence', 'identifiers', 'references', 'comments')
+        expression_term_token_pattern = (token.NAME, )
+
+
+class Validator(obj_model.Validator):
+    def run(self, knowledge_base, get_related=True):
+        """ Validate a knowledge_base and return its errors
+
+        Args:
+            knowledge_base (:obj:`KnowledgeBase`): knowledge base
+            get_related (:obj:`bool`, optional): if true, get all related objects
+
+        Returns:
+            :obj:`InvalidObjectSet` or `None`: list of invalid objects/models and their errors
+        """
+        return super(Validator, self).run(knowledge_base, get_related=get_related)
+
+
 #####################
 #####################
 # Species types
@@ -1261,11 +1557,14 @@ class MetaboliteSpeciesType(SpeciesType):
     Attributes:
         structure (:obj:`str`): InChI-encoded structure
     """
-    structure = obj_model.StringAttribute()
+    type = EnumAttribute(MetaboliteSpeciesTypeType)
+    synonyms = obj_model.LongStringAttribute()
+    concentration = obj_model.OneToManyAttribute('Concentration', related_name='metabolites')
+    species_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='metabolites')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'structure',
-                           'half_life', 'comments', 'references', 'identifiers')
+        verbose_name = 'Metabolite'
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'concentration', 'species_properties', 'identifiers', 'references', 'comments')
 
     def get_structure(self, ph=7.95):
         """ Get the structure
@@ -1274,16 +1573,13 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`str`: structure
         """
 
-        # return self.structure
-
         mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.structure)
+        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protonated_inchi = conversion.WriteString(mol)
-
         return protonated_inchi
 
     def to_openbabel_mol(self):
@@ -1295,7 +1591,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = openbabel.OBMol()
         obConversion = openbabel.OBConversion()
         obConversion.SetInFormat('inchi')
-        obConversion.ReadString(mol, self.structure)
+        obConversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
 
         return mol
 
@@ -1312,7 +1608,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.structure)
+        conversion.ReadString(mol,  self.properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protontated_inchi = conversion.WriteString(mol)
@@ -1327,13 +1623,10 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`int`: charge
         """
 
-        #mol = self.to_openbabel_mol()
-        # return mol.GetTotalCharge()
-
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.structure)
+        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
 
@@ -1362,9 +1655,9 @@ class DnaSpeciesType(PolymerSpeciesType):
     ploidy = obj_model.IntegerAttribute(min=0)
 
     class Meta(obj_model.Model.Meta):
+        verbose_name = 'DNA'
         attribute_order = ('id', 'name', 'sequence_path', 'circular', 'double_stranded',
-                           'ploidy', 'half_life', 'comments', 'references', 'identifiers')
-        verbose_name = 'DNA species type'
+                           'ploidy', 'identifiers', 'references', 'comments')
 
     def get_seq(self, start=None, end=None):
         """ Get the sequence
@@ -1490,16 +1783,17 @@ class ComplexSpeciesType(SpeciesType):
     """
 
     formation_process = obj_model.EnumAttribute(ComplexFormationType)
-    subunits = SubunitAttribute(related_name='complex')
-    composition_in_uniprot = obj_model.StringAttribute()
-    complex_type = obj_model.StringAttribute()  # EnumAttribute(ComplexType)
-    binding = obj_model.StringAttribute()
-    region = obj_model.StringAttribute()
+    species_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='complexes')
+    concentration = obj_model.OneToManyAttribute('Concentration', related_name='complexes')
+    subunits = SubunitAttribute(related_name='complexes')
+    #binding = obj_model.StringAttribute()
+    #region = obj_model.StringAttribute()
+    type = obj_model.StringAttribute() #obj_model.EnumAttribute(ComplexType)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'formation_process', 'subunits',
-                           'composition_in_uniprot', 'complex_type', 'binding', 'region',
-                           'half_life', 'comments', 'references', 'identifiers')
+        verbose_name = 'Complex'
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'formation_process', 'subunits',
+                           'species_properties', 'concentration', 'identifiers', 'references', 'comments')
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -1542,7 +1836,7 @@ class ComplexSpeciesType(SpeciesType):
 
 #####################
 #####################
-# Reactions
+# Reactions and related classes
 
 class RateLawDirection(int, CaseInsensitiveEnum):
     """ Rate law directions """
@@ -1615,8 +1909,7 @@ class RateLaw(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='rate_laws')
 
     class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
-        attribute_order = ('id', 'reaction', 'direction', 'expression', 'units',
-                           'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'reaction', 'direction', 'expression', 'units', 'identifiers', 'references', 'comments')
         expression_term_model = RateLawExpression
         expression_term_units = 'units'
 
@@ -1660,18 +1953,26 @@ class Reaction(KnowledgeBaseObject):
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='reactions')
     participants = ReactionParticipantAttribute(related_name='reactions')
-    submodel = obj_model.StringAttribute()
     reversible = obj_model.BooleanAttribute()
     references = obj_model.ManyToManyAttribute(Reference, related_name='reactions')
     identifiers = IdentifierAttribute(related_name='reactions')
+    evidence = obj_model.OneToManyAttribute('Evidence', related_name='reactions')
+    type = obj_model.EnumAttribute(ReactionType)
+    enzyme = obj_model.ManyToManyAttribute(SpeciesType, related_name='reactions')
+    coenzymes = obj_model.ManyToManyAttribute(SpeciesType, related_name='reactions')
+    spontenaeous =obj_model.BooleanAttribute()
+    parameters = obj_model.OneToManyAttribute('Parameter', related_name='reactions')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'submodel', 'participants', 'reversible',
-                           'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'participants', 'enzyme', 'coenzymes', 'reversible', 'spontenaeous',
+                           'parameters', 'evidence', 'identifiers', 'references', 'comments')
 
+#####################
+#####################
+# Expansion classes
 
-class Parameter(KnowledgeBaseObject):
-    """ Knowledge of parameters
+class ChromosomeFeature(PolymerLocus):
+    """ Knowledge of chromosoe features
 
     Attributes:
         cell (:obj:`Cell`): cell
@@ -1682,54 +1983,135 @@ class Parameter(KnowledgeBaseObject):
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
 
     Related attributes:
-        rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): rate law expressions that use a Parameter
+        seq_path (:obj:`str`): path to sequence fasta file
+        ploidy (:obj:`int`): ploidy
     """
 
-    cell = obj_model.ManyToOneAttribute(Cell, related_name='parameters')
-    value = FloatAttribute(min=0)
-    error = FloatAttribute(min=0)
-    units = obj_model.units.UnitAttribute(unit_registry, none=True)
-    references = obj_model.ManyToManyAttribute(Reference, related_name='parameters')
-    identifiers = IdentifierAttribute(related_name='parameters')
+    coordinate = obj_model.IntegerAttribute(min=0)
+    start = obj_model.IntegerAttribute(min=0)
+    end = obj_model.IntegerAttribute(min=0)
+    type = obj_model.EnumAttribute(ChromosomeFeatureType)
+    intensity = obj_model.FloatAttribute(min=0)
+    unit = obj_model.units.UnitAttribute(unit_registry, none=True)
+    polymer = obj_model.ManyToOneAttribute('DnaSpeciesType', related_name='chromosome_features')
+    evidence   = obj_model.OneToManyAttribute('Evidence', related_name='chromosome_features')
+    identifiers = IdentifierAttribute(related_name='chromosome_features')
+    references = obj_model.ManyToManyAttribute('Reference', related_name='chromosome_features')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'value', 'error', 'units', 'comments',
-                           'references', 'identifiers')
+        attribute_order = ('id', 'name', 'type', 'polymer', 'start', 'end',
+                            'intensity', 'unit', 'evidence', 'identifiers', 'references', 'comments')
         expression_term_token_pattern = (token.NAME, )
 
+    def get_direction(self):
+        """ Returns the direction of chromosome feature
 
-class Property(KnowledgeBaseObject):
-    """ Other properties of cells
+            Returns:
+                :obj:`str`: direction (in ['forward', 'reverse'])
+        """
 
-    Attributes:
-        cell (:obj:`Cell`): cell
-        value (:obj:`float`): value
-        units (:obj:`unit_registry.Unit`): units
-        references (:obj:`list` of :obj:`Reference`): references
-        identifiers (:obj:`list` of :obj:`Identifier`): identifiers
+        if self.start < self.end:
+            return DirectionType.forward
+        elif self.start > self.end:
+            return DirectionType.reverse
+        elif self.start == self.end:
+            raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
+
+class Evidence(KnowledgeBaseObject):
+    """ Represents the measurement / observation of a property
+        Attributes:
+        Related attributes:
     """
-    cell = obj_model.ManyToOneAttribute(Cell, related_name='properties')
-    value = obj_model.FloatAttribute()
-    units = obj_model.units.UnitAttribute(unit_registry, none=True)
-    references = obj_model.ManyToManyAttribute(Reference, related_name='properties')
-    identifiers = IdentifierAttribute(related_name='properties')
+
+    id = obj_model.SlugAttribute(primary=True, unique=True)
+    cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
+    object   =  obj_model.StringAttribute()
+    property = obj_model.StringAttribute()
+    values = obj_model.FloatAttribute()
+    units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    identifiers = IdentifierAttribute(related_name='evidence')
+    references = obj_model.ManyToManyAttribute('Reference', related_name='evidence')
+    experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='evidence')
+    comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'value', 'units', 'comments',
-                           'references', 'identifiers')
-        verbose_name_plural = 'Properties'
+        attribute_order = ('id', 'cell', 'object', 'property', 'values', 'units', 'experiment', 'identifiers', 'references', 'comments')
 
 
-class Validator(obj_model.Validator):
-    def run(self, knowledge_base, get_related=True):
-        """ Validate a knowledge_base and return its errors
+class Experiment(KnowledgeBaseObject):
+    """ Represents an experiment in which a property was measured
+        Attributes:
+        Related attributes:
+    """
 
-        Args:
-            knowledge_base (:obj:`KnowledgeBase`): knowledge base
-            get_related (:obj:`bool`, optional): if true, get all related objects
+    id = obj_model.SlugAttribute(primary=True, unique=True)
+    species = obj_model.StringAttribute()
+    genetic_variant = obj_model.StringAttribute()
+    external_media  = obj_model.StringAttribute()
+    temperature	= obj_model.FloatAttribute()
+    temperature_units = obj_model.units.UnitAttribute(unit_registry,
+                        choices=(unit_registry.parse_units('F'),
+                                 unit_registry.parse_units('C'),
+                                 unit_registry.parse_units('K')),
+                        default= unit_registry.parse_units('C'))
+    ph = obj_model.FloatAttribute()
+    experiment_design = obj_model.StringAttribute()
+    measurment_technology = obj_model.StringAttribute()
+    analysis_type = obj_model.StringAttribute()
+    identifiers = IdentifierAttribute(related_name='experiments')
+    references = obj_model.ManyToManyAttribute('Reference', related_name='experiment')
+    comments = obj_model.LongStringAttribute()
 
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'experiment_design', 'measurment_technology', 'analysis_type', 'species', 'genetic_variant', 'external_media',
+                           'temperature', 'temperature_units', 'ph', 'identifiers', 'references', 'comments')
+
+
+class SpeciesTypeProperty(KnowledgeBaseObject):
+    """ Knowledge of interactions
+        Attributes:
+        Related attributes:
+    """
+
+    id = obj_model.StringAttribute(primary=True, unique=True)
+    species_type = ManyToOneAttribute(SpeciesType, related_name='properties') #Do we want min_related=1?
+    property = obj_model.StringAttribute()
+    units = obj_model.units.UnitAttribute(unit_registry, none=True)
+    value = obj_model.StringAttribute()
+    value_type = obj_model.EnumAttribute(ValueTypeType)
+    identifiers = IdentifierAttribute(related_name='species_type_properties')
+    references = ManyToManyAttribute(Reference, related_name='species_type_properties')
+    evidence = obj_model.OneToManyAttribute(Evidence, related_name='species_type_properties')
+
+    class Meta(obj_model.Model.Meta):
+        verbose_name = 'SpeciesType properties'
+        unique_together = (('species_type', 'property', ), )
+        attribute_order = ('id', 'species_type', 'property', 'value', 'value_type', 'units', 'evidence',
+                           'identifiers', 'references', 'comments')
+
+    def gen_id(self):
+        """ Generate id
         Returns:
-            :obj:`InvalidObjectSet` or `None`: list of invalid objects/models and their errors
+            :obj:`str`: identifier
         """
-        return super(Validator, self).run(knowledge_base, get_related=get_related)
+        return 'PROP({}:{})'.format(self.species_type .id, self.property)
+
+    def get_value(self):
+        """ SpecesType property values are stored as strings, this function returns the value as the correct type. """
+
+        if self.value_type == ValueTypeType.boolean:
+            return bool(self.value)
+        elif self.value_type == ValueTypeType.string:
+            return self.value
+        elif self.value_type == ValueTypeType.integer:
+            return int(self.value)
+        elif self.value_type == ValueTypeType.float:
+            return float(self.value)
+        elif self.value_type == ValueTypeType.Compartment:
+            compartment = self.species_type.cell.compartments.get_one(id = self.value)
+            return compartment
+        elif self.value_type == ValueTypeType.SignalSequenceType:
+            return SignalSequenceType.__members__[self.value]
+        else:
+            raise ValueError('SpeciesTypeProperty "{}" has unexpected value type "{}".'.format(self.id, self.value_type))
