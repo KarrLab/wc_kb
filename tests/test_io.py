@@ -20,6 +20,11 @@ import shutil
 import tempfile
 import unittest
 import wc_utils.workbook.io
+import pronto
+
+moduleRootDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
+kbOnt = pronto.Ontology(os.path.join(moduleRootDir, 'wc_kb','wc_kb.obo'))
+
 
 class TestIO(unittest.TestCase):
 
@@ -52,7 +57,7 @@ class TestIO(unittest.TestCase):
                 dna.loci.append(trn)
                 trn.start = random.randint(100, 200)
                 trn.end = ((trn.start + random.randint(1, 200) - 1) % seq_len) + 1
-                trn.strand = core.PolymerStrand.positive
+                trn.strand = kbOnt['positive']
 
         with open(self.seq_path, 'w') as file:
             writer = Bio.SeqIO.FastaIO.FastaWriter(

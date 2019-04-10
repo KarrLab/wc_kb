@@ -17,25 +17,10 @@ import os
 import shutil
 import tempfile
 import unittest
+import pronto
 
-
-class TestCore(unittest.TestCase):
-
-    def test_RegulatoryElementType(self):
-        self.assertEqual(eukaryote_schema.RegulatoryElementType.promoter.value, 1)
-        self.assertEqual(eukaryote_schema.RegulatoryElementType.promoter_flanking_region.value, 2)
-        self.assertEqual(eukaryote_schema.RegulatoryElementType.enhancer.value, 3)
-        self.assertEqual(eukaryote_schema.RegulatoryElementType.CTCF_binding_site.value, 4)
-        self.assertEqual(eukaryote_schema.RegulatoryElementType.TF_binding_site.value, 5)
-        self.assertEqual(eukaryote_schema.RegulatoryElementType.open_chromatin_region.value, 6)
-
-    def test_ActivityLevel(self):
-        self.assertEqual(eukaryote_schema.ActivityLevel.active.value, 1)
-        self.assertEqual(eukaryote_schema.ActivityLevel.poised.value, 2)
-        self.assertEqual(eukaryote_schema.ActivityLevel.repressed.value, 3)
-        self.assertEqual(eukaryote_schema.ActivityLevel.inactive.value, 4)
-        self.assertEqual(eukaryote_schema.ActivityLevel.na.value, 5)
-
+moduleRootDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
+kbOnt = pronto.Ontology(os.path.join(moduleRootDir, 'wc_kb','wc_kb.obo'))
 
 class CellTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -127,14 +112,14 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         dna1 = core.DnaSpeciesType(id='dna2', sequence_path=self.sequence_path)
 
         gene1 = eukaryote_schema.GeneLocus(
-            polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
+            polymer=dna1, start=1, end=15, strand=kbOnt['positive'])
         exon1_1 = eukaryote_schema.GenericLocus(start=1, end=4)
         exon1_2 = eukaryote_schema.GenericLocus(start=7, end=8)
         transcript1 = eukaryote_schema.TranscriptSpeciesType(
             gene=gene1, exons=[exon1_1, exon1_2])
 
         gene2 = eukaryote_schema.GeneLocus(
-            polymer=dna1, start=4, end=18, strand=core.PolymerStrand.negative)
+            polymer=dna1, start=4, end=18, strand=kbOnt['negative'])
         exon2_1 = eukaryote_schema.GenericLocus(start=4, end=10)
         exon2_2 = eukaryote_schema.GenericLocus(start=14, end=16)
         transcript2 = eukaryote_schema.TranscriptSpeciesType(
@@ -235,7 +220,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
             uniprot='Q12X34', transcript=transcript1, coding_regions=[cds1], half_life=0.35)
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1,
-            start=30, end=75, strand=core.PolymerStrand.positive)
+            start=30, end=75, strand=kbOnt['positive'])
         exon2_1 = eukaryote_schema.GenericLocus(start=32, end=35)
         exon2_2 = eukaryote_schema.GenericLocus(start=38, end=45)
         exon2_3 = eukaryote_schema.GenericLocus(start=49, end=54)
@@ -332,11 +317,11 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
 class GeneLocusTestCase(unittest.TestCase):
     def test_constructor(self):
         gene = eukaryote_schema.GeneLocus(id='gene1', name='gene1', symbol='gene_1',
-            strand=core.PolymerStrand.negative, start=1, end=2)
+            strand=kbOnt['negative'], start=1, end=2)
         self.assertEqual(gene.id, 'gene1')
         self.assertEqual(gene.name, 'gene1')
         self.assertEqual(gene.symbol, 'gene_1')
-        self.assertEqual(gene.strand, core.PolymerStrand.negative)
+        self.assertEqual(gene.strand, kbOnt['negative'])
         self.assertEqual(gene.start, 1)
         self.assertEqual(gene.end, 2)
         self.assertEqual(gene.comments, '')
@@ -344,28 +329,37 @@ class GeneLocusTestCase(unittest.TestCase):
         self.assertEqual(gene.identifiers, [])
 
 class RegulatoryElementLocusTestCase(unittest.TestCase):
+
     def test_constructor(self):
 
-        promoter = eukaryote_schema.RegulatoryElementLocus(id='p1', name='promoter1',
-            type=eukaryote_schema.RegulatoryElementType.promoter,
-            activity=eukaryote_schema.ActivityLevel.active,
-            strand=core.PolymerStrand.positive, start=2, end=10)
+        promoter = eukaryote_schema.RegulatoryElementLocus(
+            id='p1',
+            name='promoter1',
+            type=kbOnt['Promoter'],
+            activity=kbOnt['active'],
+            strand=kbOnt['positive'],
+            start=2,
+            end=10)
 
         self.assertEqual(promoter.id, 'p1')
         self.assertEqual(promoter.name, 'promoter1')
-        self.assertEqual(promoter.type, eukaryote_schema.RegulatoryElementType.promoter)
-        self.assertEqual(promoter.activity, eukaryote_schema.ActivityLevel.active)
-        self.assertEqual(promoter.strand, core.PolymerStrand.positive)
+        self.assertEqual(promoter.type, kbOnt['Promoter'])
+        self.assertEqual(promoter.activity, kbOnt['active'])
+        self.assertEqual(promoter.strand, kbOnt['positive'])
         self.assertEqual(promoter.start, 2)
         self.assertEqual(promoter.end, 10)
 
         tf1 = eukaryote_schema.ProteinSpeciesType(id='TF1')
 
         TF_binding_site = eukaryote_schema.RegulatoryElementLocus(
-            type=eukaryote_schema.RegulatoryElementType.TF_binding_site,
-            start=2, end=10, bound_start=3, bound_end=8, motif_features=[tf1])
+            type= kbOnt['TFBindingSite'],
+            start=2,
+            end=10,
+            bound_start=3,
+            bound_end=8,
+            motif_features=[tf1])
 
-        self.assertEqual(TF_binding_site.type.value, 5)
+        self.assertEqual(TF_binding_site.type, kbOnt['TFBindingSite'])
         self.assertEqual(TF_binding_site.start, 2)
         self.assertEqual(TF_binding_site.end, 10)
         self.assertEqual(TF_binding_site.bound_start, 3)
@@ -385,27 +379,36 @@ class RegulatoryModuleTestCase(unittest.TestCase):
 
         tf = [eukaryote_schema.ProteinSpeciesType(id='tf')]
 
-        reg_module1 = eukaryote_schema.RegulatoryModule(gene=gene1,
-            regulatory_element=promoter, binding_factor=tf,
-            type=eukaryote_schema.RegulationType.proximal,
-            direction=eukaryote_schema.RegulatoryDirection.positive)
-        reg_module2 = eukaryote_schema.RegulatoryModule(gene=gene1,
-            regulatory_element=enhancer, binding_factor=tf,
-            type=eukaryote_schema.RegulationType.distal,
-            direction=eukaryote_schema.RegulatoryDirection.negative)
-        reg_module3 = eukaryote_schema.RegulatoryModule(id='rm3', name='reg_module3',
-            gene=gene2, regulatory_element=enhancer)
+        reg_module1 = eukaryote_schema.RegulatoryModule(
+            gene=gene1,
+            regulatory_element=promoter,
+            binding_factor=tf,
+            type=kbOnt['Proximal'], #eukaryote_schema.RegulationType.proximal,
+            direction=kbOnt['forward']) #eukaryote_schema.RegulatoryDirection.positive)
+
+        reg_module2 = eukaryote_schema.RegulatoryModule(
+            gene=gene1,
+            regulatory_element=enhancer,
+            binding_factor=tf,
+            type=kbOnt['Distal'],
+            direction= kbOnt['reverse'])
+
+        reg_module3 = eukaryote_schema.RegulatoryModule(
+            id='rm3',
+            name='reg_module3',
+            gene=gene2,
+            regulatory_element=enhancer)
 
         self.assertEqual(reg_module1.gene, gene1)
         self.assertEqual(reg_module1.regulatory_element, promoter)
         self.assertEqual(reg_module1.binding_factor, tf)
-        self.assertEqual(reg_module1.type.value, 1)
-        self.assertEqual(reg_module1.direction.value, 1)
+        self.assertEqual(reg_module1.type, kbOnt['Proximal'])
+        self.assertEqual(reg_module1.direction, kbOnt['forward'])
         self.assertEqual(reg_module2.gene, gene1)
         self.assertEqual(reg_module2.regulatory_element, enhancer)
         self.assertEqual(reg_module2.binding_factor, tf)
-        self.assertEqual(reg_module2.type.value, 2)
-        self.assertEqual(reg_module2.direction.value, -1)
+        self.assertEqual(reg_module2.type, kbOnt['Distal'])
+        self.assertEqual(reg_module2.direction, kbOnt['reverse'])
         self.assertEqual(reg_module3.id, 'rm3')
         self.assertEqual(reg_module3.name, 'reg_module3')
         self.assertEqual(set([i.gene for i in enhancer.regulatory_modules]), set([gene1, gene2]))

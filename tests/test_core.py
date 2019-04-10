@@ -13,6 +13,7 @@
 from wc_kb import core
 from wc_utils.util import chem
 from wc_utils.util.units import unit_registry
+from wc_utils.util.ontology import are_terms_equivalent
 import Bio.Alphabet
 import Bio.Seq
 import Bio.SeqIO
@@ -23,6 +24,10 @@ import os
 import shutil
 import tempfile
 import unittest
+import pronto
+
+moduleRootDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
+kbOnt = pronto.Ontology(os.path.join(moduleRootDir, 'wc_kb','wc_kb.obo'))
 
 class TestCore(unittest.TestCase):
 
@@ -30,23 +35,6 @@ class TestCore(unittest.TestCase):
     def setUpClass(cls):
         records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
         cls.chr_seq = next(records).seq
-
-    def test_PolymerStrand(self):
-        self.assertEqual(core.PolymerStrand.negative.value, -1)
-        self.assertEqual(core.PolymerStrand.positive.value, 1)
-
-    def test_RnaType(self):
-        self.assertEqual(core.RnaType.mRna.value, 0)
-        self.assertEqual(core.RnaType.rRna.value, 1)
-        self.assertEqual(core.RnaType.sRna.value, 2)
-        self.assertEqual(core.RnaType.tRna.value, 3)
-        self.assertEqual(core.RnaType.mixed.value, 4)
-
-    def test_GeneType(self):
-        self.assertEqual(core.GeneType.mRna.value, 0)
-        self.assertEqual(core.GeneType.rRna.value, 1)
-        self.assertEqual(core.GeneType.sRna.value, 2)
-        self.assertEqual(core.GeneType.tRna.value, 3)
 
 
 # JUNK TESTS
@@ -324,13 +312,13 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
         self.pst1.circular = True
         self.pst1.double_stranded = True
         self.assertEqual(self.pst1.get_subseq(
-            3,  6, strand=core.PolymerStrand.positive), 'ATGC')
+            3,  6, strand=kbOnt['positive']), 'ATGC')
         self.assertEqual(self.pst1.get_subseq(
-            3,  6, strand=core.PolymerStrand.negative), 'GCAT')
+            3,  6, strand=kbOnt['negative']), 'GCAT')
         self.assertEqual(self.pst1.get_subseq(
-            6, 26, strand=core.PolymerStrand.positive), 'CCCAAATGCCCAAATGCCCAA')
+            6, 26, strand=kbOnt['positive']), 'CCCAAATGCCCAAATGCCCAA')
         self.assertEqual(self.pst1.get_subseq(
-            6, 26, strand=core.PolymerStrand.negative), 'TTGGGCATTTGGGCATTTGGG')
+            6, 26, strand=kbOnt['negative']), 'TTGGGCATTTGGGCATTTGGG')
 
 
 #Disorganized
@@ -469,10 +457,10 @@ class PolymerLocusTestCase(unittest.TestCase):
                                    circular=False, double_stranded=False)
 
         self.locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=self.dna1,
-                                   strand=core.PolymerStrand.positive, start=1, end=15)
+                                   strand=kbOnt['positive'], start=1, end=15)
 
         self.locus2 = core.PolymerLocus(id='locus2', cell=cell1, name='locus2', polymer=self.dna1,
-                                   strand=core.PolymerStrand.positive, start=14, end=2)
+                                   strand=kbOnt['positive'], start=14, end=2)
 
     def tearDown(self):
         shutil.rmtree(self.tmp_dirname)
@@ -482,26 +470,25 @@ class PolymerLocusTestCase(unittest.TestCase):
         self.assertEqual(self.locus1.get_seq(), 'ACGTACGTACGTACG')
 
         rev_comp_seq = self.locus1.get_seq().reverse_complement()
-        self.locus1.strand = core.PolymerStrand.negative
+        self.locus1.strand = kbOnt['negative']
         self.assertEqual(self.locus1.get_seq(), rev_comp_seq)
 
     def test_len(self):
 
         self.assertEqual(self.locus1.get_len(), 15)
-
         rev_comp_seq = self.locus1.get_seq().reverse_complement()
-        self.locus1.strand = core.PolymerStrand.negative
+        self.locus1.strand = kbOnt['negative']
         self.assertEqual(self.locus1.get_len(), 15)
 
     def test_get_direction(self):
 
-        self.assertEqual(self.locus1.get_direction(), core.DirectionType.forward)
-        self.assertEqual(self.locus2.get_direction(), core.DirectionType.reverse)
+        self.assertTrue(are_terms_equivalent(self.locus1.get_direction(), kbOnt['forward']))
+        self.assertTrue(are_terms_equivalent(self.locus2.get_direction(), kbOnt['reverse']))
 
-        self.locus1.strand = core.PolymerStrand.negative
-        self.locus2.strand = core.PolymerStrand.negative
-        self.assertEqual(self.locus1.get_direction(), core.DirectionType.reverse)
-        self.assertEqual(self.locus2.get_direction(), core.DirectionType.forward)
+        self.locus1.strand = kbOnt['negative']
+        self.locus2.strand = kbOnt['negative']
+        self.assertTrue(are_terms_equivalent(self.locus1.get_direction(), kbOnt['reverse']))
+        self.assertTrue(are_terms_equivalent(self.locus2.get_direction(), kbOnt['forward']))
 
         self.locus1.start = 15
         self.locus1.end   = 15
@@ -514,7 +501,7 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
 
         speciesTypeProperties = core.SpeciesTypeProperty(
             property = 'structure',
-            value_type = core.ValueTypeType.string,
+            value_type = kbOnt['string'],
             value = (
                 'InChI=1S'
                 '/C10H14N5O7P'
@@ -710,11 +697,11 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         speciesProps1 = core.SpeciesTypeProperty(
             property = 'structure',
             value = 'InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2',
-            value_type = core.ValueTypeType.string)
+            value_type = kbOnt['string'])
         speciesProps2 = core.SpeciesTypeProperty(
             property = 'structure',
             value = 'InChI=1S/Zn/q+2',
-            value_type = core.ValueTypeType.string)
+            value_type = kbOnt['string'])
 
 
         self.cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
@@ -1186,12 +1173,12 @@ class SpeciesTypePropertyTestCase(unittest.TestCase):
         c = core.Compartment(id='c', cell=cell1)
         met = core.MetaboliteSpeciesType(id='met1', cell=cell1)
 
-        stp1 = core.SpeciesTypeProperty(id='stp1', species_type=met, property='whatever1', value='True', value_type = core.ValueTypeType.boolean)
-        stp2 = core.SpeciesTypeProperty(id='stp2', species_type=met, property='whatever2', value='check_str', value_type = core.ValueTypeType.string)
-        stp3 = core.SpeciesTypeProperty(id='stp3', species_type=met, property='whatever3', value='3', value_type = core.ValueTypeType.integer)
-        stp4 = core.SpeciesTypeProperty(id='stp4', species_type=met, property='whatever4', value='4.6', value_type = core.ValueTypeType.float)
-        stp5 = core.SpeciesTypeProperty(id='stp5', species_type=met, property='whatever5', value='c', value_type = core.ValueTypeType.Compartment)
-        stp6 = core.SpeciesTypeProperty(id='stp6', species_type=met, property='whatever6', value='secretory', value_type = core.ValueTypeType.SignalSequenceType)
+        stp1 = core.SpeciesTypeProperty(id='stp1', species_type=met, property='whatever1', value='True', value_type = kbOnt['boolean'])
+        stp2 = core.SpeciesTypeProperty(id='stp2', species_type=met, property='whatever2', value='check_str', value_type = kbOnt['string'])
+        stp3 = core.SpeciesTypeProperty(id='stp3', species_type=met, property='whatever3', value='3', value_type = kbOnt['integer'])
+        stp4 = core.SpeciesTypeProperty(id='stp4', species_type=met, property='whatever4', value='4.6', value_type = kbOnt['float'])
+        stp5 = core.SpeciesTypeProperty(id='stp5', species_type=met, property='whatever5', value='c', value_type = kbOnt['Compartment'])
+        stp6 = core.SpeciesTypeProperty(id='stp6', species_type=met, property='whatever6', value='Secretory', value_type = core.kbOnt['SignalSequenceType'])
         stp7 = core.SpeciesTypeProperty(id='stp7', species_type=met, property='whatever7', value='raise_test', value_type='raise_test')
 
         self.assertEqual(met.properties.get_one(id='stp1').get_value(), True)
@@ -1199,7 +1186,7 @@ class SpeciesTypePropertyTestCase(unittest.TestCase):
         self.assertEqual(met.properties.get_one(id='stp3').get_value(), int(3))
         self.assertEqual(met.properties.get_one(id='stp4').get_value(), 4.6)
         self.assertEqual(met.properties.get_one(id='stp5').get_value(), c)
-        self.assertEqual(met.properties.get_one(id='stp6').get_value(), core.SignalSequenceType.secretory)
+        self.assertEqual(met.properties.get_one(id='stp6').get_value(), kbOnt['Secretory'])
 
         with self.assertRaises(ValueError):
             met.properties.get_one(id='stp7').get_value()

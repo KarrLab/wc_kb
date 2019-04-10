@@ -1,0 +1,1064 @@
+format-version: 1.4
+data-version: 0.0.1
+date: 14:01:2019 13:00
+saved-by: Balazs Szigeti <balazs.Szigeti@mssm.edu>
+default-namespace: wc_kb
+remark: distributed under the MIT License (https://github.com/KarrLab/wc_lang/blob/master/LICENSE)
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! Model element types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: KbObject
+name: Whole-cell knowledgebase object
+def: "Representation of a knowledge base object"
+
+[Term]
+id: SpeciesTypeType
+name: SpeciesType type
+def: "type of a species type"
+is_a: KbObject
+
+[Term]
+id: LociType
+name: Loci type
+def: "Type of polymer location"
+is_a: KbObject
+
+[Term]
+id: ReactionType
+name: Reaction type
+def: "type of reaction"
+is_a: KbObject
+
+[Term]
+id: ReferenceType
+name: Reference type
+def: "type of reference"
+is_a: KbObject
+
+[Term]
+id: ValueTypeType
+name: Valuetype type
+def: "python class of ValueType"
+is_a: KbObject
+
+!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! Direction types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: DirectionType
+name: "Direction on a polymer"
+def: "Direction on a polymer"
+is_a: KbObject
+
+[Term]
+id: forward
+name: "5′-to-3′ direction"
+def: "5′-to-3′ direction"
+is_a: DirectionType
+
+[Term]
+id: reverse
+name: "3′-to-5′ direction"
+def: "3′-to-5′ direction"
+is_a: DirectionType
+
+!!!!!!!!!!!!!!!!!!!!!!
+!!! Strand types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: StrandType
+name: "Type of polymer strand"
+def: "Type of polymer strand"
+is_a: KbObject
+
+[Term]
+id: positive
+name: "5′-to-3′ direction"
+def: "5′-to-3′ direction"
+is_a: StrandType
+
+[Term]
+id: negative
+name: "3′-to-5′ direction"
+def: "3′-to-5′ direction"
+is_a: StrandType
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! MetaboliteSpecies Types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: MetaboliteType
+def: "SpeciesType type: metabolite"
+is_a: SpeciesTypeType
+
+[Term]
+id: Vitamin
+name: "Vitamin"
+def: "Vitamin"
+is_a: MetaboliteType
+
+[Term]
+id: AminoAcid
+name: "Amino Acid"
+def: "Amino Acid"
+is_a: MetaboliteType
+
+[Term]
+id: Dipeptide
+name: "Dipeptide"
+def: "Dipeptide"
+is_a: MetaboliteType
+
+[Term]
+id: Nucleobase
+name: "Nucleobase"
+def: "Nucleobase"
+is_a: MetaboliteType
+
+[Term]
+id: ModifiedNucleobase
+name: "Modified Nucleobase"
+def: "Modified Nucleobase"
+is_a: MetaboliteType
+
+[Term]
+id: CarbohydrateSugar
+name: "Carbohydrate Sugar"
+def: "Carbohydrate Sugar"
+is_a: MetaboliteType
+
+[Term]
+id: CarbohydrateSugarPhosphate
+name: "Carbohydrate Sugar Phosphate"
+def: "Carbohydrate Sugar Phosphate"
+is_a: MetaboliteType
+
+[Term]
+id: RibonucleotideMonophosphate
+name: "Ribonucleotide Monophosphate"
+def: "Ribonucleotide Monophosphate"
+is_a: MetaboliteType
+
+[Term]
+id: RibonucleotideBiphosphate
+name: "Ribonucleotide Biphosphate"
+def: "Ribonucleotide Biphosphate"
+is_a: MetaboliteType
+
+[Term]
+id: RibonucleotideTriphosphate
+name: "Ribonucleotide Triphosphate"
+def: "Ribonucleotide Triphosphate"
+is_a: MetaboliteType
+
+[Term]
+id: CarboxyAcid
+name: "Carboxy Acid"
+def: "Carboxy Acid"
+is_a: MetaboliteType
+
+[Term]
+id: ReactiveOxygenSpecies
+name: "Reactive Oxygen Species"
+def: "Reactive Oxygen Species"
+is_a: MetaboliteType
+
+[Term]
+id: Ion
+name: "Ion"
+def: "Ion"
+is_a: MetaboliteType
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! ProteinSpecies Types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: ProteinType
+def: "SpeciesType type: protein"
+is_a: SpeciesTypeType
+
+[Term]
+id: TrnaSynthClassI
+name: "TrnaSynthClassI"
+def: "TrnaSynthClassI"
+is_a: ProteinType
+
+[Term]
+id: TrnaSynthClassIB
+name: "TrnaSynthClassIB"
+def: "TrnaSynthClassIB"
+is_a: ProteinType
+
+[Term]
+id: TrnaSynthClassII
+name: "TrnaSynthClassII"
+def: "TrnaSynthClassII"
+is_a: ProteinType
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! Complex Types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: ComplexType
+def: "SpeciesType type: complexes"
+is_a: SpeciesTypeType
+
+[Term]
+id: tRnaSynthClassII
+name: "tRnaSynthClassII"
+def: "tRnaSynthClassII"
+is_a: ComplexType
+
+[Term]
+id: FattyAcylAcp
+name: "FattyAcylAcp"
+def: "FattyAcylAcp"
+is_a: ComplexType
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!  ComplexFormation Type !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: ComplexFormationType
+name: "Complex Formation Type"
+def: "Complex Formation Type"
+is_a: kbObject
+
+[Term]
+id: ChromosomeCondensation
+name: "Chromosome Condensation"
+def: "Chromosome Condensation"
+is_a: ComplexFormationType
+
+[Term]
+id: FtsZPolymerization
+name: "FtsZ Polymerization"
+def: "FtsZ Polymerization"
+is_a: ComplexFormationType
+
+[Term]
+id: MacromolecularComplexation
+name: "Macromolecular Complexation"
+def: "Macromolecular Complexation"
+is_a: ComplexFormationType
+
+[Term]
+id: Metabolism
+name: "Metabolism"
+def: "Metabolism"
+is_a: ComplexFormationType
+
+[Term]
+id: ProteinMo dification
+name: "Protein Modification"
+def: "ProteinModification"
+is_a: ComplexFormationType
+
+[Term]
+id: Replication
+name: "Replication"
+def: "Replication"
+is_a: ComplexFormationType
+
+[Term]
+id: ReplicationInitiation
+name: "Replication Initiation"
+def: "Replication Initiation"
+is_a: ComplexFormationType
+
+[Term]
+id: RibosomeAssembly
+name: "Ribosome Assembly"
+def: "Ribosome Assembly"
+is_a: ComplexFormationType
+
+[Term]
+id: Transcription
+name: "Transcription"
+def: "Transcription"
+is_a: ComplexFormationType
+
+[Term]
+id: Translation
+name: "Translation"
+def: "Translation"
+is_a: ComplexFormationType
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! SignalSequence Types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: SignalSequenceType
+name: "Signal Sequence Type"
+def: "Signal Sequence Type"
+is_a: kbObject
+
+[Term]
+id: Secretory
+name: "Secretory Signal Sequence Type"
+def: "Secretory Signal Sequence Type"
+is_a: SignalSequenceType
+
+[Term]
+id: LipoProtein
+name: "Lipo Protein Signal Sequence Type"
+def: "Lipo Protein Signal Sequence Type"
+is_a: SignalSequenceType
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! DnaBinding Type !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: DnaBindingType
+name: "DnaBinding Type"
+def: "DnaBinding Type"
+is_a: kbObject
+
+[Term]
+id: ssDNA
+name: "Single Strand Dna Binding Type"
+def: "Single Strand Dna Binding Type"
+is_a: DnaBindingType
+
+[Term]
+id: dsDNA
+name: "Double Strand Dna Binding Type"
+def: "Double Strand Dna Binding Type"
+is_a: DnaBindingType
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! ChromosomeFeature Type !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: ChromosomeFeatureType
+name: "ChromosomeFeature Type"
+def: "ChromosomeFeature Type"
+is_a: kbObject
+
+[Term]
+id: LongStructuralRegion
+name: "Long Structural Region"
+def: "Long Structural Region"
+is_a: ChromosomeFeatureType
+
+[Term]
+id: DnaMethylation
+name: "Dna Methylation"
+def: "Dna Methylation"
+is_a: ChromosomeFeatureType
+
+[Term]
+id: GeneWizPrediction
+name: "GeneWiz Prediction"
+def: "GeneWiz Prediction"
+is_a: ChromosomeFeatureType
+
+[Term]
+id: DnaBindingSite
+name: "Dna Binding Site"
+def: "Dna Binding Site"
+is_a: ChromosomeFeatureType
+
+[Term]
+id: DnaBindingSiteLon
+name: "Dna BindingSite Lon"
+def: "Dna BindingSite Lon"
+is_a: ChromosomeFeatureType
+
+[Term]
+id: FunctionalDnaABox
+name: "FunctionalDnaABox"
+def: "FunctionalDnaABox"
+is_a: ChromosomeFeatureType
+
+[Term]
+id: DnaABox
+name: "DnaABox"
+def: "DnaABox"
+is_a: ChromosomeFeatureType
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! Clusters of Orthologous Groups Type !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: COGType
+name: "Clusters of Orthologous Groups Type"
+def: "Clusters of Orthologous Groups Type"
+is_a: kbObject
+
+[Term]
+id: RnaProcessing
+name: "Rna Processing"
+def: "Rna Processing"
+is_a: COGType
+
+[Term]
+id: ChromatinStructureDynamics
+name: "Chromatin Structure Dynamics"
+def: "Chromatin Structure Dynamics"
+is_a: COGType
+
+[Term]
+id: EnergyProductionConversion
+name: "Energy Production and Conversion"
+def: "Energy Production and Conversion"
+is_a: COGType
+
+[Term]
+id: CellCycleControlMitosis
+name: "Cell Cycle Control and Mitosis"
+def: "Cell Cycle Control and Mitosis"
+is_a: COGType
+
+[Term]
+id: AminoAcidMetabolismTransport
+name: "Amino Acid Metabolism and Transport"
+def: "Amino Acid Metabolism and Transport"
+is_a: COGType
+
+[Term]
+id: NucleotideMetabolismTransport
+name: "Nucleotide Metabolism and Transport"
+def: "Nucleotide Metabolism and Transport"
+is_a: COGType
+
+[Term]
+id: CarbohydrateMetabolismTransport
+name: "Carbohydrate Metabolism and Transport"
+def: "Carbohydrate Metabolism and Transport"
+is_a: COGType
+
+[Term]
+id: CoenzymeMetabolites
+name: "Coenzyme Metabolites"
+def: "Coenzyme Metabolites"
+is_a: COGType
+
+[Term]
+id: LipidMetabolism
+name: "Lipid Metabolism"
+def: "Lipid Metabolism"
+is_a: COGType
+
+[Term]
+id: Tranlsation
+name: "Tranlsation"
+def: "Tranlsation"
+is_a: COGType
+
+[Term]
+id: Transcription
+name: "Transcription"
+def: "Transcription"
+is_a: COGType
+
+[Term]
+id: ReplicationRepair
+name: "Replication Repair"
+def: "Replication Repair"
+is_a: COGType
+
+[Term]
+id: CellWallMembraneEnvelopBiogenesis
+name: "Cell Wall Membrane Envelope Biogenesis"
+def: "Cell Wall Membrane Envelope Biogenesis"
+is_a: COGType
+
+[Term]
+id: CellMotility
+name: "Cell Motility"
+def: "Cell Motility"
+is_a: COGType
+
+[Term]
+id: SecondaryStructure
+name: "Secondary Structure "
+def: "Secondary Structure "
+is_a: COGType
+
+[Term]
+id: PostTranslationalModification
+name: "Post Translational Modification"
+def: "Post Translational Modification"
+is_a: COGType
+
+[Term]
+id: InorganicIonTransport
+name: "Inorganic Ion Transport"
+def: "Inorganic Ion Transport"
+is_a: COGType
+
+[Term]
+id: SignalTransduction
+name: "Signal Transduction"
+def: "Signal Transduction"
+is_a: COGType
+
+[Term]
+id: IntracellularTrafficingSecretion
+name: "Intracellular Trafficing Secretion"
+def: "Intracellular Trafficing Secretion"
+is_a: COGType
+
+[Term]
+id: NuclearStructure
+name: "Nuclear Structure"
+def: "Nuclear Structure"
+is_a: COGType
+
+[Term]
+id: Cytoskeleton
+name: "Cytoskeleton"
+def: "Cytoskeleton"
+is_a: COGType
+
+
+!!!!!!!!!!!!!!!!!!!
+!!! Rna types !!!!!
+!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: RnaType
+def: "SpeciesType type: RNA"
+is_a: SpeciesTypeType
+
+[Term]
+id: mRna
+name: "messenger Rna"
+def: "messenger Rna"
+is_a: RnaType
+
+[Term]
+id: rRna
+name: "ribosomal Rna"
+def: "ribosomal Rna"
+is_a: Gene
+is_a: RnaType
+
+[Term]
+id: sRna
+name: "small Rna"
+def: "small Rna"
+is_a: RnaType
+
+[Term]
+id: tRna
+name: "transport Rna"
+def: "transport Rna"
+is_a: RnaType
+
+[Term]
+id: asRrna
+name: "anti-sense Rna"
+def: "anti-sense Rna"
+is_a: RnaType
+
+[Term]
+id: mixed
+name: "mixed Rna"
+def: "mixed Rna"
+is_a: RnaType
+
+[Term]
+id: intergenic
+name: "intergenic Rna"
+def: "intergenic Rna"
+is_a: RnaType
+
+[Term]
+id: pseudogene
+name: "pseudogene"
+def: "pseudogene"
+is_a: RnaType
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! Reference types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: article
+name: "article"
+def: "article"
+is_a: ReferenceType
+
+[Term]
+id: preprint
+name: "preprint"
+def: "preprint"
+is_a: ReferenceType
+
+[Term]
+id: supplementary material
+name: "supplementary_material"
+def: "supplementary_material"
+is_a: ReferenceType
+
+[Term]
+id: book
+name: "book"
+def: "book"
+is_a: ReferenceType
+
+[Term]
+id: thesis
+name: "thesis"
+def: "thesis"
+is_a: ReferenceType
+
+[Term]
+id: misc
+name: "misc"
+def: "misc"
+is_a: ReferenceType
+
+!!!!!!!!!!!!!!!!!!!!!!!!
+!!! Reaction types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: Transport
+name: "Transport reaction"
+def: "Transport reaction"
+is_a: ReactionType
+
+[Term]
+id: ModifiedBaseTransport
+name: "Modified base transport reaction"
+def: "Modified base transport reaction"
+is_a: ReactionType
+
+[Term]
+id: IonTransport
+name: "Ion transport reaction"
+def: "Ion transport reaction"
+is_a: ReactionType
+
+[Term]
+id: TrnaTransfer
+name: "Trna Transfer Reaction"
+def: "Trna Transfer Reaction"
+is_a: ReactionType
+
+[Term]
+id: TrnaAminoacylation
+name: "TrnaAminoacylation Reaction"
+def: "TrnaAminoacylation Reaction"
+is_a: ReactionType
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! Protein modification reactions !!!!!
+
+[Term]
+id: ProteinModificationReaction
+name: "ProteinModificationReaction"
+def: "ProteinModificationReaction"
+is_a: ReactionType
+
+[Term]
+id: OxidationInactivating
+name: "Oxidation Inactivating Protein Modification"
+def: "Oxidation Inactivating Protein Modification"
+is_a: ProteinTypeModificationReaction
+
+[Term]
+id: Adduction
+name: "Protein Modification Adduction"
+def: "Protein Modification Adduction"
+is_a: ProteinTypeModificationReaction
+
+[Term]
+id: Ligation
+name: "Protein Modification Ligation"
+def: "Protein Modification Ligation"
+is_a: ProteinTypeModificationReaction
+
+[Term]
+id: PhosphorylationInactivating
+name: "Phosphorylation Inactivating Protein Modification"
+def: "Phosphorylation Inactivating Protein Modification"
+is_a: ProteinTypeModificationReaction
+
+[Term]
+id: DephosphorylationActivating
+name: "Dephosphorylation Activating Protein Modification"
+def: "Dephosphorylation Activating Protein Modification"
+is_a: ProteinTypeModificationReaction
+
+[Term]
+id: GlycationInactivating
+name: "Glycation Inactivating Protein Modification"
+def: "Glycation Inactivating Protein Modification"
+is_a: ProteinTypeModificationReaction
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! DNA repair type reaction !!!!!
+
+[Term]
+id: DnaRepairReaction
+name: "DNA repair reaction"
+def: "DNA repair reaction"
+is_a: ReactionType
+
+[Term]
+id: BaseExcisionRepair
+name: "Base Excision Repair"
+def: "Base Excision Repair"
+is_a: DnaRepairReaction
+
+[Term]
+id: DnaLigation
+name: "Dna Ligation"
+def: "Dna Ligation"
+is_a: DnaRepairReaction
+
+[Term]
+id: DnaPolymerization
+name: "Dna Polymerization"
+def: "Dna Polymerization"
+is_a: DnaRepairReaction
+
+[Term]
+id: DnaCleavage
+name: "Dna Cleavage"
+def: "Dna Cleavage"
+is_a: DnaRepairReaction
+
+[Term]
+id: DnaRestrictionModification
+name: "Dna Restriction Modification"
+def: "Dna Restriction Modification"
+is_a: DnaRepairReaction
+
+[Term]
+id: HomologousRecombination
+name: "Homologous Recombination"
+def: "Homologous Recombination"
+is_a: DnaRepairReaction
+
+[Term]
+id: NucleotideExcisionRepair
+name: "Nucleotide Excision Repair"
+def: "Nucleotide Excision Repair"
+is_a: DnaRepairReaction
+
+[Term]
+id: BaseExcisionRepairBaseExcision
+name: "Base Excision Repair Base Excision"
+def: "Base Excision Repair Base Excision"
+is_a: DnaRepairReaction
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! DNA damage reactions !!!!!
+
+[Term]
+id: DnaDamageReaction
+name: "DNA damage reaction"
+def: "DNA damage reaction"
+is_a: ReactionType
+
+[Term]
+id: BaseAlkylation
+name: "Dna Damage Base Alkylation"
+def: "Dna Damage Base Alkylation"
+is_a: DnaDamageReaction
+
+[Term]
+id: BaseAlkylation
+name: "Dna Damage Base Alkylation"
+def: "Dna Damage Base Alkylation"
+is_a: DnaDamageReaction
+
+[Term]
+id: BaseEthylation
+name: "Dna Damage Base Ethylation"
+def: "Dna Damage Base Ethylation"
+is_a: DnaDamageReaction
+
+[Term]
+id: RadiationInducedBaseOxidation
+name: "Dna Damage Radiation Induced Base Oxidation "
+def: "Dna Damage Radiation Induced Base Oxidation "
+is_a: DnaDamageReaction
+
+[Term]
+id: BaseMethylation
+name: "Dna Damage Base Methylation"
+def: "Dna Damage Base Methylation"
+is_a: DnaDamageReaction
+
+[Term]
+id: BaseAmination
+name: "Dna Damage Base Amination"
+def: "Dna Damage Base Amination"
+is_a: DnaDamageReaction
+
+[Term]
+id: UvBPhotodimerization
+name: "Dna Damage UvB Photodimerization"
+def: "Dna Damage UvB Photodimerization"
+is_a: DnaDamageReaction
+
+[Term]
+id: Photooxidation
+name: "Dna Damage Photooxidation"
+def: "Dna Damage Photooxidation"
+is_a: DnaDamageReaction
+
+[Term]
+id: StrandBreak
+name: "Dna Damage Strand Break"
+def: "Dna Damage Strand Break"
+is_a: DnaDamageReaction
+
+[Term]
+id: BaseGlucosylTransfer
+name: "Dna Damage Base Glucosyl Transfer"
+def: "Dna Damage Base Glucosyl Transfer"
+is_a: DnaDamageReaction
+
+[Term]
+id: SpontaneousBaseDeamination
+name: "Dna Damage Spontaneous Base Deamination"
+def: "Dna Damage Spontaneous Base Deamination"
+is_a: DnaDamageReaction
+
+[Term]
+id: SpontaneousBaseLoss
+name: "Dna Damage Spontaneous Base Loss"
+def: "Dna Damage Spontaneous Base Loss"
+is_a: DnaDamageReaction
+
+[Term]
+id: BaseReduction
+name: "Dna Damage Base Reduction"
+def: "Dna Damage Base Reduction"
+is_a: DnaDamageReaction
+
+!!!!!!!!!!!!!!!!!!!!!!!!!
+!!! ValueType types !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: boolean
+name: "boolean"
+def: "boolean"
+is_a: ValueTypeType
+
+[Term]
+id: string
+name: "string"
+def: "string"
+is_a: ValueTypeType
+
+[Term]
+id: integer
+name: "integer"
+def: "integer"
+is_a: ValueTypeType
+
+[Term]
+id: float
+name: "float"
+def: "float"
+is_a: ValueTypeType
+
+[Term]
+id: SignalSequenceType
+name: "Signal Sequence Type"
+def: "Signal Sequence Type"
+is_a: ValueTypeType
+
+[Term]
+id: Compartment
+name: "WC KB Compartment"
+def: "WC KB Compartment"
+is_a: ValueTypeType
+
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! EUKARYOTE ONTOLOGY !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! RegulatoryElementType !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: RegulatoryElementType
+name: "Regulatory Element Type"
+def: "Regulatory Element Type"
+is_a: kbObject
+
+[Term]
+id: Promoter
+name: "Promoter"
+def: "Promoter"
+is_a: RegulatoryElementType
+
+[Term]
+id: PromoterFlankingRegion
+name: "Promoter Flanking Region"
+def: "Promoter Flanking Region"
+is_a: RegulatoryElementType
+
+[Term]
+id: Enhancer
+name: "Enhancer"
+def: "Enhancer"
+is_a: RegulatoryElementType
+
+[Term]
+id: CTCFBindingSite
+name: "CTCF Binding Site"
+def: "CTCF Binding Site"
+is_a: RegulatoryElementType
+
+[Term]
+id: TFBindingSite
+name: "TF Binding Site"
+def: "TF Binding Site"
+is_a: RegulatoryElementType
+
+[Term]
+id: OpenChromatinRegion
+name: "Open Chromatin Region"
+def: "Open Chromatin Region"
+is_a: RegulatoryElementType
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! Activity Level Type !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: ActivityLevelType
+name: "Activity Level Type"
+def: "Activity Level Type"
+is_a: kbObject
+
+[Term]
+id: active
+name: "Active"
+def: "Active"
+is_a: ActivityLevelType
+
+[Term]
+id: poised
+name: "Poised"
+def: "Poised"
+is_a: ActivityLevelType
+
+[Term]
+id: repressed
+name: "Repressed"
+def: "Repressed"
+is_a: ActivityLevelType
+
+[Term]
+id: inactive
+name: "Inactive"
+def: "Inactive"
+is_a: ActivityLevelType
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!! Regulation Type !!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: RegulationType
+name: "RegulationType"
+def: "RegulationType"
+is_a: kbObject
+
+[Term]
+id: Proximal
+name: "Proximal"
+def: "Proximal"
+is_a: RegulationType
+
+[Term]
+id: Distal
+name: "Distal"
+def: "Distal"
+is_a: RegulationType
+
+
+!!!!!!!!!!!!!!!!!!!!
+!!! Gene types !!!!!
+!!!!!!!!!!!!!!!!!!!!
+
+[Term]
+id: GeneType
+def: "Loci type: gene"
+is_a: LociType
+
+[Term]
+id: asRrna
+name: "anti-sense Rna"
+def: "anti-sense Rna"
+is_a: GeneType
+
+[Term]
+id: mRna
+name: "messenger Rna"
+def: "messenger Rna"
+is_a: GeneType
+
+[Term]
+id: rRna
+name: "ribosomal Rna"
+def: "ribosomal Rna"
+is_a: Gene
+is_a: GeneType
+
+[Term]
+id: sRna
+name: "small Rna"
+def: "small Rna"
+is_a: GeneType
+
+[Term]
+id: tRna
+name: "transport Rna"
+def: "transport Rna"
+is_a: GeneType
+
+[Term]
+id: pseudogene
+name: "pseudogene"
+def: "pseudogene"
+is_a: GeneType
+
+[Term]
+id: mixed
+name: "mixed Rna"
+def: "mixed Rna"
+is_a: GeneType
+
+[Term]
+id: intergenic
+name: "intergenic Rna"
+def: "intergenic Rna"
+is_a: GeneType

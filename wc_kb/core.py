@@ -40,209 +40,15 @@ from obj_model.expression import (ExpressionOneToOneAttribute, ExpressionManyToO
                                   ParsedExpression, ParsedExpressionError)
 from wc_utils.util.enumerate import CaseInsensitiveEnum
 from wc_utils.util.types import get_subclasses
+from obj_model.ontology import OntologyAttribute
+from wc_utils.util.ontology import are_terms_equivalent
+import pronto
+import os
+kbOnt = pronto.Ontology(os.path.join(os.path.dirname(os.path.realpath(__file__)),'wc_kb.obo'))
 
 with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
     wc_kb_version = file.read().strip()
 
-#####################
-#####################
-# Enumeration classes
-
-PolymerStrand = enum.Enum(value='PolymerStrand', names=[
-    ('positive', 1),
-    ('+', 1),
-    ('negative', -1),
-    ('-', -1), ])
-
-
-class RnaType(enum.Enum):
-    """ Type of RNA """
-    mRna = 0
-    rRna = 1
-    sRna = 2
-    tRna = 3
-    mixed = 4
-    intergenic = 4
-
-
-class GeneType(enum.Enum):
-    """ Type of gene """
-    mRna = 0
-    rRna = 1
-    sRna = 2
-    tRna = 3
-    asRna = 4
-    pseudogene = 5
-
-
-class DirectionType(enum.Enum):
-    """ Type of direction """
-    forward = 1
-    reverse = -1
-
-
-class CogCategoryType(enum.Enum):
-    """ Type of Clusters of Orthologous Groups (COGs)
-        List of categories obtained from: http://ecoliwiki.net/colipedia/index.php/Clusters_of_Orthologous_Groups_(COGs)
-    """
-
-    RNA_processing = 0
-    chromatin_structure_dynamics = 1
-    energy_production_conversion = 2
-    cell_cycle_control_mitosis = 3
-    amino_acid_metabolism_transport = 4
-    nucleotide_metabolism_transport = 5
-    carbohydrate_metabolism_transport = 6
-    coenzyme_metabolis = 7
-    lipid_metabolism = 8
-    tranlsation = 9
-    transcription = 10
-    replication_repair = 11
-    cell_wall_membrane_envelop_biogenesis = 12
-    cell_motility = 13
-    post_translational_modification_protein_turnover_chaperone_functions = 14
-    inorganic_ion_transport_metabolism = 15
-    secondary_structure = 16
-    signal_transduction = 17
-    intracellular_trafficing_secretion = 18
-    nuclear_structure = 19
-    cytoskeleton = 20
-    general_functional_prediction = 21
-    unknown = 22
-
-
-class ComplexType(enum.Enum):
-    """ Type of complex """
-    tRnaSynthClassII = 0
-    FattyAcylAcp = 1
-    unknown = 2
-
-
-class ComplexFormationType(enum.Enum):
-    """ Type of complex formation"""
-    process_ChromosomeCondensation = 0
-    process_FtsZPolymerization = 1
-    process_MacromolecularComplexation = 2
-    process_Metabolism = 3
-    process_ProteinModification = 4
-    process_Replication = 5
-    process_ReplicationInitiation = 6
-    process_RibosomeAssembly = 7
-    process_Transcription = 8
-    process_Translation = 9
-
-
-class ChromosomeFeatureType(enum.Enum):
-    """ Type of complex formation"""
-    LongStructuralRegion = 0
-    DnaMethylation = 1
-    GeneWizPrediction = 2
-    DnaBindingSite = 3
-    DnaBindingSite_Lon = 4
-    FunctionalDnaABox = 5
-    DnaABox = 6
-    Uncategorized = 7
-
-
-class MetaboliteSpeciesTypeType(enum.Enum):
-    """ Types of metabolites """
-
-    vitamin = 0
-    amino_acid = 1
-    dipeptide = 2
-    nucleobase = 3
-    modified_nucleobase = 4
-    carbohydrate_sugar = 5
-    carbohydrate_sugar_phosphate = 6
-    ribonucleotide_monophosphate = 7
-    ribonucleotide_biphosphate = 8
-    ribonucleotide_triphosphate = 9
-    carboxy_acid=10
-    unknown = 11
-    misc=12
-    ion=13
-    reactive_oxygen_species = 14
-
-
-class SignalSequenceType(enum.Enum):
-    """ Types of signal sequences """
-    secretory = 0
-    lipoprotein = 1
-
-
-class ProteinType(enum.Enum):
-    """ Types of signal sequences """
-    TrnaSynthClassI = 0
-    TrnaSynthClassIB = 1
-    TrnaSynthClassII = 2
-    uncategorized = 3
-
-
-class DnaBindingType(enum.Enum):
-    """ Types of DNA binding """
-    ssDNA = 0
-    dsDNA = 1
-
-
-class ReactionType(enum.Enum):
-    """ Types of DNA binding """
-
-    uncategorized = 0
-    DnaDamageBaseAlkylationReaction = 1
-    DnaDamageBaseEthylationReaction =2
-    DnaDamageRadiationInducedBaseOxidation =3
-    DnaDamageBaseMethylationReaction =4
-    DnaDamageBaseAminationReaction =5
-    DnaDamageUvBPhotodimerization =6
-    DnaDamagePhotooxidationReaction =7
-    DnaDamageStrandBreakReaction=8
-    DnaDamageBaseGlucosylTransferReaction=9
-    DnaDamageSpontaneousBaseDeaminationReaction=10
-    DnaDamageSpontaneousBaseLossReaction=11
-    DnaDamageBaseReductionReaction=12
-    DnaRepairBaseExcisionRepairReaction=13
-    DnaRepairDnaLigationReaction=14
-    DnaRepairDnaPolymerizationReaction=15
-    DnaRepairDnaRestrictionModificationReaction=16
-    DnaRepairDnaCleavageReaction=17
-    DnaRepairHomologousRecombinationReaction=18
-    DnaRepairBaseExcisionRepairBaseExcisionReaction=19
-    DnaRepairNucleotideExcisionRepairReaction=20
-    ChemicalReaction=21
-    TransportReaction=22
-    ModifiedBaseTransportReaction=23
-    IonTransportReaction=24
-    OxidationInactivatingProteinModificationReaction=25
-    ProteinModificationAdductionReaction=26
-    ProteinModificationLigationReaction=27
-    TrnaTransferReaction=28
-    TrnaAminoacylationReaction=29
-    GlycationInactivatingProteinModificationReaction=30
-    PhosphorylationInactivatingProteinModificationReaction=31
-    DephosphorylationActivatingProteinModificationReaction=32
-    misc = 33
-
-
-class ReferenceType(enum.Enum):
-    """ Types of references """
-
-    article = 0
-    preprint = 1
-    supplementary_material = 2
-    book = 3
-    thesis = 4
-    misc = 5
-
-
-class ValueTypeType(enum.Enum):
-    """ Type of ValueTypes """
-
-    boolean = 0
-    string = 1
-    integer = 2
-    float = 3
-    SignalSequenceType = 4
-    Compartment = 5
 
 #####################
 #####################
@@ -384,7 +190,6 @@ class IdentifierAttribute(ManyToManyAttribute):
             return ([], None)
 
         pattern = r'([a-z][a-z0-9_\-]*)\:([a-z0-9_\-]*)'
-        #pattern = r'DBREF\([a-zA-Z0-9]*:[a-zA-Z0-9]*\)'
 
         if not re.match(pattern, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of identifiers: {}'.format(value)]))
@@ -784,7 +589,6 @@ class Reference(obj_model.Model):
 
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
-    type = obj_model.EnumAttribute(ReferenceType)
     authors = obj_model.LongStringAttribute()
     title = obj_model.LongStringAttribute()
     volume = obj_model.StringAttribute()
@@ -795,6 +599,10 @@ class Reference(obj_model.Model):
     cell = obj_model.ManyToOneAttribute(Cell, related_name='references')
     identifiers = IdentifierAttribute(related_name='references')
     comments = obj_model.LongStringAttribute()
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['ReferenceType'].rchildren(),
+                                  default = kbOnt['article'],
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'title', 'authors', 'journal', 'volume', 'issue', 'pages', 'year', 'identifiers', 'comments')
@@ -1300,7 +1108,7 @@ class PolymerSpeciesType(SpeciesType):
         """
         return len(self.get_seq())
 
-    def get_subseq(self, start, end, strand=PolymerStrand.positive):
+    def get_subseq(self, start, end, strand=kbOnt['positive']):
         """ Get a subsequence
 
         Args:
@@ -1336,7 +1144,7 @@ class PolymerSpeciesType(SpeciesType):
                 str(seq) * (int(math.floor(end / seq_len)) - 1) + \
                 seq[0:end % seq_len]
 
-        if strand == PolymerStrand.positive:
+        if strand == kbOnt['positive']:
             return pos_seq
         else:
             return pos_seq.reverse_complement()
@@ -1355,19 +1163,18 @@ class PolymerLocus(KnowledgeBaseObject):
     """
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='loci')
-    polymer = obj_model.ManyToOneAttribute(
-        PolymerSpeciesType, related_name='loci')
-    strand = obj_model.EnumAttribute(
-        PolymerStrand, default=PolymerStrand.positive)
+    polymer = obj_model.ManyToOneAttribute(PolymerSpeciesType, related_name='loci')
     start = obj_model.IntegerAttribute()
     end = obj_model.IntegerAttribute()
     references = obj_model.ManyToManyAttribute(Reference, related_name='loci')
     identifiers = IdentifierAttribute(related_name='loci')
-
+    strand = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['StrandType'].rchildren(),
+                                  default = kbOnt['positive'],
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'polymer', 'strand',
-                           'start', 'end', 'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -1396,17 +1203,17 @@ class PolymerLocus(KnowledgeBaseObject):
         """
 
         if self.start < self.end:
-            if self.strand==PolymerStrand.positive:
-                return DirectionType.forward
-            elif self.strand==PolymerStrand.negative:
-                return DirectionType.reverse
+            if self.strand==kbOnt['positive']:
+                return kbOnt['forward']
+            elif self.strand==kbOnt['negative']:
+                return kbOnt['reverse']
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
         elif self.start > self.end:
-            if self.strand==PolymerStrand.positive:
-                return DirectionType.reverse
-            elif self.strand==PolymerStrand.negative:
-                return DirectionType.forward
+            if self.strand==kbOnt['positive']:
+                return kbOnt['reverse']
+            elif self.strand==kbOnt['negative']:
+                return kbOnt['forward']
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
         elif self.start == self.end:
@@ -1557,10 +1364,12 @@ class MetaboliteSpeciesType(SpeciesType):
     Attributes:
         structure (:obj:`str`): InChI-encoded structure
     """
-    type = EnumAttribute(MetaboliteSpeciesTypeType)
     synonyms = obj_model.LongStringAttribute()
     concentration = obj_model.OneToManyAttribute('Concentration', related_name='metabolites')
     species_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='metabolites')
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['MetaboliteType'].rchildren(),
+                                  none = True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Metabolite'
@@ -1782,13 +1591,15 @@ class ComplexSpeciesType(SpeciesType):
 
     """
 
-    formation_process = obj_model.EnumAttribute(ComplexFormationType)
     species_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='complexes')
     concentration = obj_model.OneToManyAttribute('Concentration', related_name='complexes')
     subunits = SubunitAttribute(related_name='complexes')
-    #binding = obj_model.StringAttribute()
-    #region = obj_model.StringAttribute()
-    type = obj_model.StringAttribute() #obj_model.EnumAttribute(ComplexType)
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['ComplexType'].rchildren(),
+                                  none=True)
+    formation_process  = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['ComplexFormationType'].rchildren(),
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Complex'
@@ -1900,13 +1711,17 @@ class RateLaw(KnowledgeBaseObject):
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
     reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
-    direction = EnumAttribute(RateLawDirection, default=RateLawDirection.forward)
     expression = ExpressionManyToOneAttribute(RateLawExpression, min_related=1, min_related_rev=1, related_name='rate_laws')
     units = obj_model.units.UnitAttribute(unit_registry,
                           choices=(unit_registry.parse_units('s^-1'),),
                           default=unit_registry.parse_units('s^-1'))
     references = obj_model.ManyToManyAttribute(Reference, related_name='rate_laws')
     identifiers = IdentifierAttribute(related_name='rate_laws')
+    direction = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['DirectionType'].rchildren(),
+                                  default = kbOnt['forward'],
+                                  none=True)
+
 
     class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
         attribute_order = ('id', 'reaction', 'direction', 'expression', 'units', 'identifiers', 'references', 'comments')
@@ -1957,11 +1772,13 @@ class Reaction(KnowledgeBaseObject):
     references = obj_model.ManyToManyAttribute(Reference, related_name='reactions')
     identifiers = IdentifierAttribute(related_name='reactions')
     evidence = obj_model.OneToManyAttribute('Evidence', related_name='reactions')
-    type = obj_model.EnumAttribute(ReactionType)
     enzyme = obj_model.ManyToManyAttribute(SpeciesType, related_name='reactions')
     coenzymes = obj_model.ManyToManyAttribute(SpeciesType, related_name='reactions')
     spontenaeous =obj_model.BooleanAttribute()
     parameters = obj_model.OneToManyAttribute('Parameter', related_name='reactions')
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['ReactionType'].rchildren(),
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'synonyms', 'type', 'participants', 'enzyme', 'coenzymes', 'reversible', 'spontenaeous',
@@ -1990,13 +1807,15 @@ class ChromosomeFeature(PolymerLocus):
     coordinate = obj_model.IntegerAttribute(min=0)
     start = obj_model.IntegerAttribute(min=0)
     end = obj_model.IntegerAttribute(min=0)
-    type = obj_model.EnumAttribute(ChromosomeFeatureType)
     intensity = obj_model.FloatAttribute(min=0)
     unit = obj_model.units.UnitAttribute(unit_registry, none=True)
     polymer = obj_model.ManyToOneAttribute('DnaSpeciesType', related_name='chromosome_features')
     evidence   = obj_model.OneToManyAttribute('Evidence', related_name='chromosome_features')
     identifiers = IdentifierAttribute(related_name='chromosome_features')
     references = obj_model.ManyToManyAttribute('Reference', related_name='chromosome_features')
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['ChromosomeFeatureType'].rchildren(),
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'type', 'polymer', 'start', 'end',
@@ -2011,9 +1830,9 @@ class ChromosomeFeature(PolymerLocus):
         """
 
         if self.start < self.end:
-            return DirectionType.forward
+            return kbOnt['forward']
         elif self.start > self.end:
-            return DirectionType.reverse
+            return kbOnt['reverse']
         elif self.start == self.end:
             raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
@@ -2079,10 +1898,13 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     property = obj_model.StringAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True)
     value = obj_model.StringAttribute()
-    value_type = obj_model.EnumAttribute(ValueTypeType)
     identifiers = IdentifierAttribute(related_name='species_type_properties')
     references = ManyToManyAttribute(Reference, related_name='species_type_properties')
     evidence = obj_model.OneToManyAttribute(Evidence, related_name='species_type_properties')
+    value_type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['ValueTypeType'].rchildren(),
+                                  default = kbOnt['float'],
+                                  none=False)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'SpeciesType properties'
@@ -2100,18 +1922,20 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     def get_value(self):
         """ SpecesType property values are stored as strings, this function returns the value as the correct type. """
 
-        if self.value_type == ValueTypeType.boolean:
+        if self.value_type == kbOnt['boolean']:
             return bool(self.value)
-        elif self.value_type == ValueTypeType.string:
+        elif self.value_type == kbOnt['string']:
             return self.value
-        elif self.value_type == ValueTypeType.integer:
+        elif self.value_type == kbOnt['integer']:
             return int(self.value)
-        elif self.value_type == ValueTypeType.float:
+        elif self.value_type == kbOnt['float']:
             return float(self.value)
-        elif self.value_type == ValueTypeType.Compartment:
+        elif self.value_type == kbOnt['Compartment']:
             compartment = self.species_type.cell.compartments.get_one(id = self.value)
             return compartment
-        elif self.value_type == ValueTypeType.SignalSequenceType:
-            return SignalSequenceType.__members__[self.value]
+        elif self.value_type == kbOnt['SignalSequenceType']:
+            #import pdb; pdb.set_trace()
+            #return SignalSequenceType.__members__[self.value]
+            return kbOnt[self.value]
         else:
             raise ValueError('SpeciesTypeProperty "{}" has unexpected value type "{}".'.format(self.id, self.value_type))

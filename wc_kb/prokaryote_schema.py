@@ -11,8 +11,11 @@
 """
 
 from wc_utils.util import chem
-import obj_model
 from wc_kb import core
+import obj_model
+import pronto
+import os
+kbOnt = pronto.Ontology(os.path.join(os.path.dirname(os.path.realpath(__file__)),'wc_kb.obo'))
 
 #####################
 # Species types
@@ -30,18 +33,20 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     """
 
     transcription_units = obj_model.ManyToManyAttribute('TranscriptionUnitLocus', related_name='rnas')
-    type = obj_model.EnumAttribute(core.RnaType)
-    direction = obj_model.EnumAttribute(core.DirectionType)
+    start = obj_model.IntegerAttribute()
+    end = obj_model.IntegerAttribute()
     genes = obj_model.OneToManyAttribute('GeneLocus', related_name = 'rnas')
     coordinate = obj_model.IntegerAttribute()
     length = obj_model.IntegerAttribute()
     concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='rnas')
     species_properties = obj_model.OneToOneAttribute(core.SpeciesTypeProperty, related_name='rnas')
-    #evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='rnas')
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['GeneType'].rchildren(),
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'RNA'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'coordinate', 'length', 'direction',
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'start', 'end',
                            'species_properties', 'concentration', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
@@ -118,17 +123,17 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         """
 
         if self.start < self.end:
-            if self.strand==core.PolymerStrand.positive:
-                return core.DirectionType.forward
-            elif self.strand==core.PolymerStrand.negative:
-                return core.DirectionType.reverse
+            if self.strand==kbOnt['positive']:
+                return core.kbOnt['forward']
+            elif self.strand==kbOnt['negative']:
+                return core.kbOnt['reverse']
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
         elif self.start > self.end:
-            if self.strand==core.PolymerStrand.positive:
-                return core.DirectionType.reverse
-            elif self.strand==core.PolymerStrand.negative:
-                return core.DirectionType.forward
+            if self.strand==kbOnt['positive']:
+                return core.kbOnt['reverse']
+            elif self.strand==kbOnt['negative']:
+                return core.kbOnt['forward']
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
         elif self.start == self.end:
@@ -144,13 +149,15 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     """
 
     gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
-    type = obj_model.EnumAttribute(core.ProteinType)
     concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='proteins')
     species_properties = obj_model.OneToManyAttribute(core.SpeciesTypeProperty, related_name='proteins')
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')
     translation_rate = obj_model.FloatAttribute()
     unit = obj_model.StringAttribute()
     is_methionine_cleaved = obj_model.BooleanAttribute()
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['ProteinType'].rchildren(),
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
@@ -264,9 +271,10 @@ class TranscriptionUnitLocus(core.PolymerLocus):
 
     pribnow_start = obj_model.IntegerAttribute()
     pribnow_end = obj_model.IntegerAttribute()
-    type = obj_model.EnumAttribute(core.RnaType)
-    genes = obj_model.OneToManyAttribute(
-        'GeneLocus', related_name='transcription_units')
+    genes = obj_model.OneToManyAttribute('GeneLocus', related_name='transcription_units')
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['GeneType'].rchildren(),
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Transcription units'
@@ -279,7 +287,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         Returns:
             :obj:`int`: 3' coordinate
         """
-        if self.get_direction() == core.DirectionType.forward:
+        if self.get_direction() == core.kbOnt['forward']:
             return self.end
         else:
             return self.start
@@ -290,7 +298,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         Returns:
             :obj:`int`: 5' coordinate
         """
-        if self.get_direction() == core.DirectionType.forward:
+        if self.get_direction() == core.kbOnt['forward']:
             return self.start
         else:
             return self.end
@@ -307,14 +315,16 @@ class GeneLocus(core.PolymerLocus):
     """
 
     symbol = obj_model.StringAttribute()
-    type = obj_model.EnumAttribute(core.GeneType)
-    #strand = obj_model.EnumAttribute(core.PolymerStrand)
+    start = obj_model.IntegerAttribute()
+    end = obj_model.IntegerAttribute()
     is_essential = obj_model.BooleanAttribute()
     homologs = obj_model.LongStringAttribute()
-    cog = obj_model.StringAttribute()
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='genes')
+    cog = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['COGType'].rchildren(),
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Gene'
-        attribute_order = ('id', 'name', 'synonyms', 'symbol', 'type', 'cog', 'homologs', 'polymer',
+        attribute_order = ('id', 'name', 'synonyms', 'symbol', 'cog', 'homologs', 'polymer',
                            'start', 'end', 'is_essential', 'evidence', 'identifiers', 'references', 'comments')

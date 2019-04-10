@@ -13,42 +13,9 @@ import Bio.Seq
 import enum
 import obj_model
 import re
-
-
-#####################
-#####################
-# Enumeration classes
-
-class RegulatoryElementType(enum.Enum):
-    """ Type of regulatory element """
-    promoter = 1
-    promoter_flanking_region = 2
-    enhancer = 3
-    CTCF_binding_site = 4
-    TF_binding_site = 5
-    open_chromatin_region = 6
-
-
-class ActivityLevel(enum.Enum):
-    """ Activity level of regulatory element"""
-    active = 1
-    poised = 2
-    repressed = 3
-    inactive = 4
-    na = 5
-
-
-class RegulationType(enum.Enum):
-    """ Type of regulation between a regulatory element and a gene """
-    proximal = 1
-    distal = 2
-
-
-class RegulatoryDirection(enum.Enum):
-    """ The direction of regulation """
-    positive = 1
-    negative = -1
-
+import pronto
+import os
+kbOnt = pronto.Ontology(os.path.join(os.path.dirname(os.path.realpath(__file__)),'wc_kb.obo'))
 
 #####################
 #####################
@@ -132,12 +99,11 @@ class GeneLocus(core.PolymerLocus):
         regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory_modules
     """
     symbol = obj_model.StringAttribute()
-    type = obj_model.EnumAttribute(core.GeneType)
     homologs = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Gene'
-        attribute_order = ('id', 'name', 'synonyms', 'symbol', 'type', 'homologs', 'polymer', 'strand', 'start',
+        attribute_order = ('id', 'name', 'synonyms', 'symbol', 'homologs', 'polymer', 'strand', 'start',
                            'end', 'identifiers', 'references', 'comments')
 
 
@@ -154,11 +120,15 @@ class RegulatoryElementLocus(core.PolymerLocus):
     Related attributes:
         regulatory_modules (:obj:`list` of :obj:`RegulatoryModule`): regulatory_modules
     """
-    type = obj_model.EnumAttribute(RegulatoryElementType)
-    activity = obj_model.EnumAttribute(ActivityLevel)
     bound_start = obj_model.PositiveIntegerAttribute()
     bound_end = obj_model.PositiveIntegerAttribute()
     motif_features = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_elements')
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['RegulatoryElementType'].rchildren(),
+                                  none=True)
+    activity = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['ActivityLevelType'].rchildren(),
+                                  none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Regulatory element'
@@ -184,14 +154,19 @@ class RegulatoryModule(obj_model.Model):
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
     gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='regulatory_modules')
-    regulatory_element = obj_model.ManyToOneAttribute(
-        RegulatoryElementLocus, related_name='regulatory_modules')
+
     binding_factor = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_modules')
-    type = obj_model.EnumAttribute(RegulationType)
-    direction = obj_model.EnumAttribute(RegulatoryDirection)
     comments = obj_model.LongStringAttribute()
     references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
     identifiers = core.IdentifierAttribute(related_name='regulatory_modules')
+    regulatory_element = obj_model.ManyToOneAttribute(RegulatoryElementLocus, related_name='regulatory_modules')            
+    type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['RegulationType'].rchildren(),
+                                  none=True)
+    direction = obj_model.ontology.OntologyAttribute(kbOnt,
+                                  terms = kbOnt['DirectionType'].rchildren(),
+                                  default = kbOnt['forward'],
+                                  none=False)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'gene', 'regulatory_element', 'binding_factor', 'type',
@@ -296,7 +271,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
             dna_seq += self.gene.polymer.get_subseq(
                     start=exon.start, end=exon.end)
 
-        if self.gene.strand==core.PolymerStrand.negative:
+        if self.gene.strand==kbOnt['negative']:
             dna_seq = dna_seq.reverse_complement()
 
         return dna_seq.transcribe()
@@ -393,7 +368,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
             dna_seq += self.transcript.gene.polymer.get_subseq(
                     start=cds.start, end=cds.end)
 
-        if self.transcript.gene.strand == core.PolymerStrand.negative:
+        if self.transcript.gene.strand == kbOnt['negative']:
             dna_seq = dna_seq.reverse_complement()
 
         return dna_seq.transcribe().translate(table=table, cds=cds)
