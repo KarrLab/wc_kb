@@ -1922,20 +1922,18 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     def get_value(self):
         """ SpecesType property values are stored as strings, this function returns the value as the correct type. """
 
-        if self.value_type == kbOnt['boolean']:
+        if are_terms_equivalent(self.value_type, kbOnt['boolean']):
             return bool(self.value)
-        elif self.value_type == kbOnt['string']:
+        elif are_terms_equivalent(self.value_type, kbOnt['string']):
             return self.value
-        elif self.value_type == kbOnt['integer']:
+        elif are_terms_equivalent(self.value_type, kbOnt['integer']):
             return int(self.value)
-        elif self.value_type == kbOnt['float']:
+        elif are_terms_equivalent(self.value_type, kbOnt['float']):
             return float(self.value)
-        elif self.value_type == kbOnt['Compartment']:
+        elif are_terms_equivalent(self.value_type, kbOnt['Compartment']):
             compartment = self.species_type.cell.compartments.get_one(id = self.value)
             return compartment
-        elif self.value_type == kbOnt['SignalSequenceType']:
-            #import pdb; pdb.set_trace()
-            #return SignalSequenceType.__members__[self.value]
+        elif are_terms_equivalent(self.value_type, kbOnt['SignalSequenceType']):
             return kbOnt[self.value]
         else:
             raise ValueError('SpeciesTypeProperty "{}" has unexpected value type "{}".'.format(self.id, self.value_type))
