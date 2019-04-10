@@ -1144,7 +1144,7 @@ class PolymerSpeciesType(SpeciesType):
                 str(seq) * (int(math.floor(end / seq_len)) - 1) + \
                 seq[0:end % seq_len]
 
-        if strand == kbOnt['positive']:
+        if are_terms_equivalent(strand, kbOnt['positive']):
             return pos_seq
         else:
             return pos_seq.reverse_complement()

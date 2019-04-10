@@ -8,6 +8,7 @@
 
 from wc_kb import core
 from wc_utils.util import chem
+from wc_utils.util.ontology import are_terms_equivalent
 import Bio.Alphabet
 import Bio.Seq
 import enum
@@ -277,7 +278,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
         for exon in adjusted_exons:
             spliced_dna_seq += dna_seq[exon[0]:exon[1]]
 
-        if self.gene.strand==kbOnt['negative']:
+        if are_terms_equivalent(self.gene.strand, kbOnt['negative']):
             spliced_dna_seq = spliced_dna_seq.reverse_complement()
 
         return spliced_dna_seq.transcribe()
@@ -380,7 +381,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         for cds in adjusted_cds:
             spliced_dna_seq += dna_seq[cds[0]:cds[1]]
 
-        if self.transcript.gene.strand == kbOnt['negative']:
+        if are_terms_equivalent(self.transcript.gene.strand, kbOnt['negative']):
             spliced_dna_seq = spliced_dna_seq.reverse_complement()
 
         return spliced_dna_seq.transcribe().translate(table=table, cds=cds)

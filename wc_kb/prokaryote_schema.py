@@ -123,16 +123,16 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         """
 
         if self.start < self.end:
-            if self.strand==kbOnt['positive']:
+            if are_terms_equivalent(self.strand, kbOnt['positive']):
                 return core.kbOnt['forward']
-            elif self.strand==kbOnt['negative']:
+            elif are_terms_equivalent(self.strand, kbOnt['negative']):
                 return core.kbOnt['reverse']
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
         elif self.start > self.end:
-            if self.strand==kbOnt['positive']:
+            if are_terms_equivalent(self.strand, kbOnt['positive']):
                 return core.kbOnt['reverse']
-            elif self.strand==kbOnt['negative']:
+            elif are_terms_equivalent(self.strand, kbOnt['negative']):
                 return core.kbOnt['forward']
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
