@@ -1186,7 +1186,7 @@ class SpeciesTypePropertyTestCase(unittest.TestCase):
         self.assertEqual(met.properties.get_one(id='stp3').get_value(), int(3))
         self.assertEqual(met.properties.get_one(id='stp4').get_value(), 4.6)
         self.assertEqual(met.properties.get_one(id='stp5').get_value(), c)
-        self.assertEqual(met.properties.get_one(id='stp6').get_value(), kbOnt['Secretory'])
+        self.assertTrueEqual(are_terms_equivalent(met.properties.get_one(id='stp6').get_value(), kbOnt['Secretory']))
 
         with self.assertRaises(ValueError):
             met.properties.get_one(id='stp7').get_value()
