@@ -1774,14 +1774,14 @@ class Reaction(KnowledgeBaseObject):
     evidence = obj_model.OneToManyAttribute('Evidence', related_name='reactions')
     enzyme = obj_model.ManyToManyAttribute(SpeciesType, related_name='reactions')
     coenzymes = obj_model.ManyToManyAttribute(SpeciesType, related_name='reactions')
-    spontenaeous =obj_model.BooleanAttribute()
+    sponteneous =obj_model.BooleanAttribute()
     parameters = obj_model.OneToManyAttribute('Parameter', related_name='reactions')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ReactionType'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'participants', 'enzyme', 'coenzymes', 'reversible', 'spontenaeous',
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'participants', 'enzyme', 'coenzymes', 'reversible', 'sponteneous',
                            'parameters', 'evidence', 'identifiers', 'references', 'comments')
 
 #####################
