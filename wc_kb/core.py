@@ -1203,19 +1203,21 @@ class PolymerLocus(KnowledgeBaseObject):
         """
 
         if self.start < self.end:
-            if self.strand==kbOnt['positive']:
+            if are_terms_equivalent(self.strand, kbOnt['positive']):
                 return kbOnt['forward']
-            elif self.strand==kbOnt['negative']:
+            elif are_terms_equivalent(self.strand, kbOnt['negative']):
                 return kbOnt['reverse']
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+
         elif self.start > self.end:
-            if self.strand==kbOnt['positive']:
+            if are_terms_equivalent(self.strand, kbOnt['positive']):
                 return kbOnt['reverse']
-            elif self.strand==kbOnt['negative']:
+            elif are_terms_equivalent(self.strand, kbOnt['negative']):
                 return kbOnt['forward']
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
+
         elif self.start == self.end:
             raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
