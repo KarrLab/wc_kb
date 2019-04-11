@@ -5,3 +5,4 @@ openbabel
 pyfaidx
 setuptools
 wc_utils
+wc_onto
