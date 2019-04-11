@@ -408,7 +408,7 @@ class Identifier(obj_model.Model):
         species_types (:obj:`list` of :obj:`SpeciesType`): species_types
         concentrations (:obj:`list` of :obj:`Concentration`): concentrations
         loci (:obj:`list` of :obj:`PolymerLocus`): loci
-        properties (:obj:`list` of :obj:`Property`): properties
+        species_type_properties (:obj:`list` of :obj:`SpeciesTypeProperty`): species type properties
         reactions (:obj:`list` of :obj:`Reaction`): reactions
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
         observables (:obj:`list` of :obj:`Observable`): observables
@@ -471,8 +471,8 @@ class KnowledgeBaseObject(obj_model.Model):
         metadataObjs = self._append_metadata_entries(key=self.id, metadataObjs=metadataObjs)
         metadataObjs = self._parse_EviNExperiment(metadataObjs)
 
-        if hasattr(self,'species_properties') and self.species_properties is not None:
-            for property in self.species_properties:
+        if hasattr(self,'species_type_properties') and self.species_type_properties is not None:
+            for property in self.species_type_properties:
                 metadataObjs = property._append_metadata_entries(key=SpeciesTypeProperty, metadataObjs=metadataObjs)
                 metadataObjs = property._parse_EviNExperiment(metadataObjs)
 
@@ -495,7 +495,7 @@ class KnowledgeBaseObject(obj_model.Model):
                 obj(:obj:`obj_model.Model`): model object
 
             Return:
-                metadataObjs (:obj:`list` of :obj:`Reference` / :obj:`Database reference` / :obj:`Comments`): list of metadata objects
+                metadataObjs (:obj:`list` of :obj:`Reference` / :obj:`Evidence` / :obj:`Comments`): list of metadata objects
         """
 
         if self.references!=[]:
@@ -572,16 +572,26 @@ class Reference(obj_model.Model):
     """ Reference to the literature
 
     Attributes:
-        id (:obj:`str`): identifier
-        standard_id (:obj:`str`): standard identifier such as DOI or PubMed ID
-        cell (:obj:`Cell`): cell
+        id (:obj:`str`): identifier        
+        name (:obj:`str`): name
+        authors (:obj:`str`): authors
+        title (:obj:`str`): title
+        volume (:obj:`str`): volume
+        issue (:obj:`str`): issue
+        journal (:obj:`str`): journal
+        pages (:obj:``str): pages
+        year (:obj:`int`): year
+        cell (:obj:`Cell`) : cell
+        identifiers (:obj:`list` of :obj:`Identifier`): identifiers
+        comments (:obj:`str`): comments
+        type (:obj:`Ontology`): type of reference
 
     Related attributes:
         compartments (:obj:`list` of :obj:`Compartment`): compartments
         species_types (:obj:`list` of :obj:`SpeciesType`): species_types
         concentrations (:obj:`list` of :obj:`Concentration`): concentrations
         loci (:obj:`list` of :obj:`PolymerLocus`): loci
-        properties (:obj:`list` of :obj:`Property`): properties
+        species_type_properties (:obj:`list` of :obj:`SpeciesTypeProperty`): species type properties
         reactions (:obj:`list` of :obj:`Reaction`): reactions
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
         observables (:obj:`list` of :obj:`Observable`): observables
@@ -634,8 +644,6 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
 
     Attributes:
         cell (:obj:`Cell`): cell
-        half_life  (:obj:`float`): half life (s)
-
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
 
@@ -644,12 +652,11 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
     """
 
     cell = obj_model.ManyToOneAttribute(Cell, related_name='species_types')
-    half_life = obj_model.FloatAttribute(min=0)
     references = obj_model.ManyToManyAttribute(Reference, related_name='species_types')
     identifiers = IdentifierAttribute(related_name='species_types')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'half_life', 'comments', 'references', 'identifiers')
+        attribute_order = ('id', 'name', 'comments', 'references', 'identifiers')
 
     @abc.abstractmethod
     def get_empirical_formula(self):
@@ -805,8 +812,10 @@ class Concentration(KnowledgeBaseObject):
     Attributes:
         cell (:obj:`Cell`): cell
         species (:obj:`Species`): species
+        medium (:obj:`str`): medium
         value (:obj:`float`): value
         units (:obj:`unit_registry.Unit`): units; default units is 'M'
+        evidence (:obj:`list` of :obj:`Evidence`): evidence
         comments (:obj:`str`): comments
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
@@ -826,7 +835,6 @@ class Concentration(KnowledgeBaseObject):
                               unit_registry.parse_units('fM'),
                               unit_registry.parse_units('aM')),
                           default=unit_registry.parse_units('M'))
-
     evidence = obj_model.OneToManyAttribute('Evidence', related_name='concentrations')
     references = ManyToManyAttribute(Reference, related_name='concentrations')
     identifiers = IdentifierAttribute(related_name='concentrations')
@@ -1089,7 +1097,7 @@ class PolymerSpeciesType(SpeciesType):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'circular', 'double_stranded',
-                           'half_life', 'comments', 'references', 'identifiers')
+                           'comments', 'references', 'identifiers')
 
     @abc.abstractmethod
     def get_seq(self):
@@ -1321,6 +1329,7 @@ class Parameter(KnowledgeBaseObject):
         value (:obj:`float`): value
         error (:obj:`float`): measurement error
         units (:obj:`unit_registry.Unit`): units of value
+        evidence (:obj:`list` of :obj:`Evidence`): evidence
         references (:obj:`list` of :obj:`Reference`): references
         identifierss (:obj:`list` of :obj:`DatabaseReference`): reference in external namespaces
 
@@ -1333,7 +1342,7 @@ class Parameter(KnowledgeBaseObject):
     error = FloatAttribute(min=0)
     units = obj_model.units.UnitAttribute(unit_registry, none=True)
     references = obj_model.ManyToManyAttribute(Reference, related_name='parameters')
-    evidence = obj_model. OneToManyAttribute('Evidence', related_name='parameters')
+    evidence = obj_model.OneToManyAttribute('Evidence', related_name='parameters')
     identifiers = IdentifierAttribute(related_name='parameters')
 
     class Meta(obj_model.Model.Meta):
@@ -1364,18 +1373,20 @@ class MetaboliteSpeciesType(SpeciesType):
     """ Knowledge of a metabolite
 
     Attributes:
-        structure (:obj:`str`): InChI-encoded structure
+        synonyms (:obj:`str`): synonyms
+        species_type_properties (:obj:`list` of :obj:`SpeciesTypeProperty`): species type properties
+        type (:obj:`Ontology`): type
+
     """
     synonyms = obj_model.LongStringAttribute()
-    concentration = obj_model.OneToManyAttribute('Concentration', related_name='metabolites')
-    species_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='metabolites')
+    species_type_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='metabolites')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['MetaboliteType'].rchildren(),
                                   none = True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Metabolite'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'concentration', 'species_properties', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'species_type_properties', 'identifiers', 'references', 'comments')
 
     def get_structure(self, ph=7.95):
         """ Get the structure
@@ -1387,7 +1398,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
+        conversion.ReadString(mol, self.species_type_properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protonated_inchi = conversion.WriteString(mol)
@@ -1402,7 +1413,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = openbabel.OBMol()
         obConversion = openbabel.OBConversion()
         obConversion.SetInFormat('inchi')
-        obConversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
+        obConversion.ReadString(mol, self.species_type_properties.get_one(property='structure').get_value())
 
         return mol
 
@@ -1419,7 +1430,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol,  self.properties.get_one(property='structure').get_value())
+        conversion.ReadString(mol,  self.species_type_properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protontated_inchi = conversion.WriteString(mol)
@@ -1437,7 +1448,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
+        conversion.ReadString(mol, self.species_type_properties.get_one(property='structure').get_value())
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
 
@@ -1584,17 +1595,14 @@ class ComplexSpeciesType(SpeciesType):
     """ Knowledge of a protein complex
 
     Attributes:
+        species_type_properties (:obj:`list` of :obj:`SpeciesTypeProperty`): species type properties
         formation_process (:obj:`ComplexFormationType`): type of formation process
         subunits (:obj:`list` of :obj:`SpeciesTypeCoefficient`): subunits
-        composition_in_uniprot (:obj:`str`): protein subunit composition in uniprot IDs
-        complex_type (:obj:`ComplexType`): type of complex
-        binding (:obj:`str`): strand of DNA bound if involved
-        region (:obj:`str`): region where DNA is bound if involved
+        type (:obj:`Ontology`): type of complex formation
 
     """
 
-    species_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='complexes')
-    concentration = obj_model.OneToManyAttribute('Concentration', related_name='complexes')
+    species_type_properties = obj_model.OneToOneAttribute('SpeciesTypeProperty', related_name='complexes')
     subunits = SubunitAttribute(related_name='complexes')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ComplexType'].rchildren(),
@@ -1606,7 +1614,7 @@ class ComplexSpeciesType(SpeciesType):
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Complex'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'formation_process', 'subunits',
-                           'species_properties', 'concentration', 'identifiers', 'references', 'comments')
+                           'species_type_properties', 'identifiers', 'references', 'comments')
 
     def get_empirical_formula(self):
         """ Get the empirical formula

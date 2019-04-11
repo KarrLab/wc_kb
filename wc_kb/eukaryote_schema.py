@@ -258,7 +258,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
     exons = LocusAttribute(related_name='transcripts')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'exons', 'half_life', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'gene', 'exons', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the 5' to 3' sequence
@@ -355,7 +355,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
-        attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 'half_life',
+        attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 
                            'identifiers', 'references', 'comments')
 
     def get_seq(self, table=1, cds=True):
