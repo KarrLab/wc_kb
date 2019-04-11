@@ -7,6 +7,7 @@
 """
 
 from wc_kb import core
+from wc_onto import kb_onto as kbOnt
 from wc_utils.util import chem
 from wc_utils.util.ontology import are_terms_equivalent
 import Bio.Alphabet
@@ -14,9 +15,7 @@ import Bio.Seq
 import enum
 import obj_model
 import re
-import pronto
-import os
-kbOnt = pronto.Ontology(os.path.join(os.path.dirname(os.path.realpath(__file__)),'wc_kb.obo'))
+
 
 #####################
 #####################

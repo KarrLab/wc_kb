@@ -7,6 +7,7 @@
 """
 
 from wc_kb import core, eukaryote_schema
+from wc_onto import kb_onto as kbOnt
 from wc_utils.util import chem
 import Bio.Alphabet
 import Bio.Seq
@@ -17,10 +18,7 @@ import os
 import shutil
 import tempfile
 import unittest
-import pronto
 
-moduleRootDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-kbOnt = pronto.Ontology(os.path.join(moduleRootDir, 'wc_kb','wc_kb.obo'))
 
 class CellTestCase(unittest.TestCase):
     def test_constructor(self):
@@ -88,12 +86,11 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=15)
 
         transcript1 = eukaryote_schema.TranscriptSpeciesType(
-        	id='t1', name='transcript1', gene=gene1, half_life=2)
+        	id='t1', name='transcript1', gene=gene1)
 
         self.assertEqual(transcript1.id, 't1')
         self.assertEqual(transcript1.name, 'transcript1')
         self.assertEqual(transcript1.gene, gene1)
-        self.assertEqual(transcript1.half_life, 2)
         self.assertEqual(transcript1.exons, [])
         self.assertEqual(transcript1.comments, '')
         self.assertEqual(transcript1.references, [])
@@ -217,7 +214,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         transcript1 = eukaryote_schema.TranscriptSpeciesType(gene=gene1, exons=[exon1])
         cds1 = eukaryote_schema.GenericLocus(start=4, end=36)
         self.prot1 = eukaryote_schema.ProteinSpeciesType(id='prot1', name='protein1',
-            uniprot='Q12X34', transcript=transcript1, coding_regions=[cds1], half_life=0.35)
+            uniprot='Q12X34', transcript=transcript1, coding_regions=[cds1])
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1,
             start=30, end=75, strand=kbOnt['positive'])
@@ -244,7 +241,6 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(self.prot1.name, 'protein1')
         self.assertEqual(self.prot1.uniprot, 'Q12X34')
         self.assertEqual(self.prot1.coding_regions[0].serialize(), '4:36')
-        self.assertEqual(self.prot1.half_life, 0.35)
         self.assertEqual(self.prot1.comments, '')
         self.assertEqual(self.prot1.references, [])
         self.assertEqual(self.prot1.identifiers, [])

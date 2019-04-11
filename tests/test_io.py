@@ -10,6 +10,7 @@
 from test.support import EnvironmentVarGuard
 from wc_kb import core, prokaryote_schema
 from wc_kb import io
+from wc_onto import kb_onto as kbOnt
 import Bio.Seq
 import Bio.SeqRecord
 import filecmp
@@ -20,10 +21,6 @@ import shutil
 import tempfile
 import unittest
 import wc_utils.workbook.io
-import pronto
-
-moduleRootDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-kbOnt = pronto.Ontology(os.path.join(moduleRootDir, 'wc_kb','wc_kb.obo'))
 
 
 class TestIO(unittest.TestCase):

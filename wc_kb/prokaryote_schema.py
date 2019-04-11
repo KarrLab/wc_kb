@@ -10,12 +10,11 @@
 :License: MIT
 """
 
-from wc_utils.util import chem
 from wc_kb import core
+from wc_onto import kb_onto as kbOnt
+from wc_utils.util import chem
 import obj_model
-import pronto
-import os
-kbOnt = pronto.Ontology(os.path.join(os.path.dirname(os.path.realpath(__file__)),'wc_kb.obo'))
+
 
 #####################
 # Species types
@@ -38,8 +37,6 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     genes = obj_model.OneToManyAttribute('GeneLocus', related_name = 'rnas')
     coordinate = obj_model.IntegerAttribute()
     length = obj_model.IntegerAttribute()
-    concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='rnas')
-    species_properties = obj_model.OneToOneAttribute(core.SpeciesTypeProperty, related_name='rnas')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['GeneType'].rchildren(),
                                   none=True)
@@ -47,7 +44,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     class Meta(obj_model.Model.Meta):
         verbose_name = 'RNA'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'start', 'end',
-                           'species_properties', 'concentration', 'identifiers', 'references', 'comments')
+                           'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -149,8 +146,6 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     """
 
     gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
-    concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='proteins')
-    species_properties = obj_model.OneToManyAttribute(core.SpeciesTypeProperty, related_name='proteins')
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')
     translation_rate = obj_model.FloatAttribute()
     unit = obj_model.StringAttribute()
@@ -161,7 +156,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene', 'species_properties', 'concentration',
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene', 
                            'evidence', 'identifiers', 'references', 'comments')
 
     def get_seq(self, cds=True):

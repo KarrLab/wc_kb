@@ -11,6 +11,7 @@
 """
 
 from wc_kb import core, prokaryote_schema
+from wc_onto import kb_onto as kbOnt
 from wc_utils.util import chem
 import Bio.Alphabet
 import Bio.Seq
@@ -21,10 +22,6 @@ import shutil
 import tempfile
 import unittest
 import pdb
-import pronto
-
-moduleRootDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-kbOnt = pronto.Ontology(os.path.join(moduleRootDir, 'wc_kb','wc_kb.obo'))
 
 
 class RnaSpeciesTypeTestCase(unittest.TestCase):
@@ -49,7 +46,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu1', polymer=dna1, start=1, end=15)
         rna1 = prokaryote_schema.RnaSpeciesType(id='rna1', name='rna1', transcription_units=[
-                                   tu1], type=1, half_life=2)
+                                   tu1], type=1)
 
         # make sure that only TU can be created that have valid length
         # These should throw errors:
@@ -60,8 +57,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.name, 'rna1')
         self.assertEqual(rna1.transcription_units, [tu1])
         self.assertEqual(rna1.type, 1)
-        self.assertEqual(rna1.half_life, 2)
-
+        
     def test_get_seq(self):
 
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)

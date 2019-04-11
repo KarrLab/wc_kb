@@ -11,6 +11,7 @@
 """
 
 from wc_kb import core
+from wc_onto import kb_onto as kbOnt
 from wc_utils.util import chem
 from wc_utils.util.units import unit_registry
 from wc_utils.util.ontology import are_terms_equivalent
@@ -24,10 +25,7 @@ import os
 import shutil
 import tempfile
 import unittest
-import pronto
 
-moduleRootDir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
-kbOnt = pronto.Ontology(os.path.join(moduleRootDir, 'wc_kb','wc_kb.obo'))
 
 class TestCore(unittest.TestCase):
 
@@ -73,7 +71,7 @@ class KnowledgeBaseTestCase(unittest.TestCase):
         exp1 = core.Experiment(id='exp1', references = [ref3], comments = 'exp comment')
         evi1 = core.Evidence(id='evi1', experiment=exp1, comments = 'evidence comment')
         stp = core.SpeciesTypeProperty(id='stp1', evidence=[evi1], identifiers=[dbref1], references = [ref1])
-        met3 = core.MetaboliteSpeciesType(id='met3', cell=cell1, species_properties = [stp], comments='met comment')
+        met3 = core.MetaboliteSpeciesType(id='met3', cell=cell1, properties = [stp], comments='met comment')
 
         self.assertEqual(met3.get_nested_metadata(),
             {'met3': ['met comment'],
@@ -120,11 +118,10 @@ class SpeciesTypeTestCase(unittest.TestCase):
             def get_mol_wt(self): pass
 
         species_type = ConcreteSpeciesType(
-            id='species1', name='species1', half_life=3.)
+            id='species1', name='species1')
         self.assertEqual(species_type.id, 'species1')
         self.assertEqual(species_type.name, 'species1')
-        self.assertEqual(species_type.half_life, 3.)
-
+        
 
 # JUNK TESTS
 class ConcentrationTestCase(unittest.TestCase):
@@ -256,7 +253,7 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
             def get_seq(self): return Bio.Seq.Seq(
                 'AAATGCCC', alphabet=Bio.Alphabet.DNAAlphabet())
 
-        self.pst1 = ConcretePolymerSpeciesType(id='pst1', name='pst1', half_life=2)
+        self.pst1 = ConcretePolymerSpeciesType(id='pst1', name='pst1')
 
     def tearDown(self):
         pass
