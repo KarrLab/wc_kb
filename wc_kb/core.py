@@ -1724,10 +1724,7 @@ class RateLaw(KnowledgeBaseObject):
                           default=unit_registry.parse_units('s^-1'))
     references = obj_model.ManyToManyAttribute(Reference, related_name='rate_laws')
     identifiers = IdentifierAttribute(related_name='rate_laws')
-    direction = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['DirectionType'].rchildren(),
-                                  default = kbOnt['forward'],
-                                  none=True)
+    direction = EnumAttribute(RateLawDirection, default=RateLawDirection.forward)
 
 
     class Meta(obj_model.Model.Meta, ExpressionExpressionTermMeta):
