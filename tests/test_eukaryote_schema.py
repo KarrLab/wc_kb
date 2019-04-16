@@ -378,6 +378,7 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         reg_module1 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
             regulatory_element=promoter,
+            activity=kbOnt['active'],
             binding_factor=tf,
             type=kbOnt['Proximal'], #eukaryote_schema.RegulationType.proximal,
             direction=kbOnt['forward']) #eukaryote_schema.RegulatoryDirection.positive)
@@ -385,6 +386,7 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         reg_module2 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
             regulatory_element=enhancer,
+            activity=kbOnt['active'],
             binding_factor=tf,
             type=kbOnt['Distal'],
             direction= kbOnt['reverse'])
@@ -392,20 +394,24 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         reg_module3 = eukaryote_schema.RegulatoryModule(
             id='rm3',
             name='reg_module3',
+            activity=kbOnt['inactive'],
             gene=gene2,
             regulatory_element=enhancer)
 
         self.assertEqual(reg_module1.gene, gene1)
         self.assertEqual(reg_module1.regulatory_element, promoter)
+        self.assertEqual(reg_module1.activity, kbOnt['active'])
         self.assertEqual(reg_module1.binding_factor, tf)
         self.assertEqual(reg_module1.type, kbOnt['Proximal'])
         self.assertEqual(reg_module1.direction, kbOnt['forward'])
         self.assertEqual(reg_module2.gene, gene1)
         self.assertEqual(reg_module2.regulatory_element, enhancer)
+        self.assertEqual(reg_module2.activity, kbOnt['active'])
         self.assertEqual(reg_module2.binding_factor, tf)
         self.assertEqual(reg_module2.type, kbOnt['Distal'])
         self.assertEqual(reg_module2.direction, kbOnt['reverse'])
         self.assertEqual(reg_module3.id, 'rm3')
+        self.assertEqual(reg_module3.activity, kbOnt['inactive'])
         self.assertEqual(reg_module3.name, 'reg_module3')
         self.assertEqual(set([i.gene for i in enhancer.regulatory_modules]), set([gene1, gene2]))
 
