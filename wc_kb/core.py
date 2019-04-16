@@ -1711,7 +1711,7 @@ class RateLaw(KnowledgeBaseObject):
 
     Attributes:
         reaction (:obj:`Reaction`): reaction
-        direction (:obj:`pronto`): direction
+        direction (:obj:`RateLawDirection`): direction
         expression (:obj:`RateLawExpression`): expression
         units (:obj:`unit_registry.Unit`): units
         references (:obj:`list` of :obj:`Reference`): references
@@ -1957,7 +1957,7 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
                                   none=False)
 
     class Meta(obj_model.Model.Meta):
-        verbose_name = 'SpeciesType properties'
+        verbose_name = 'Species type properties'
         unique_together = (('species_type', 'property', ), )
         attribute_order = ('id', 'species_type', 'property', 'value', 'value_type', 'units', 'evidence',
                            'identifiers', 'references', 'comments')

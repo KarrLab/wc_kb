@@ -257,6 +257,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
     exons = LocusAttribute(related_name='transcripts')
 
     class Meta(obj_model.Model.Meta):
+        verbose_name = 'Transcript'
         attribute_order = ('id', 'name', 'gene', 'exons', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
