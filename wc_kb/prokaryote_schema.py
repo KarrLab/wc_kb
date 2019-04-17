@@ -42,7 +42,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
-        verbose_name = 'RNA'
+        verbose_name_plural = 'RNAs'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'start', 'end',
                            'identifiers', 'references', 'comments')
 

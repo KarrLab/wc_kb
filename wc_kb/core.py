@@ -1476,7 +1476,7 @@ class DnaSpeciesType(PolymerSpeciesType):
     ploidy = obj_model.IntegerAttribute(min=0)
 
     class Meta(obj_model.Model.Meta):
-        verbose_name = 'DNA'
+        verbose_name = 'Chromosome'
         attribute_order = ('id', 'name', 'sequence_path', 'circular', 'double_stranded',
                            'ploidy', 'identifiers', 'references', 'comments')
 
@@ -1957,7 +1957,7 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
                                   none=False)
 
     class Meta(obj_model.Model.Meta):
-        verbose_name = 'Species type properties'
+        verbose_name_plural = 'Species type properties'
         unique_together = (('species_type', 'property', ), )
         attribute_order = ('id', 'species_type', 'property', 'value', 'value_type', 'units', 'evidence',
                            'identifiers', 'references', 'comments')
