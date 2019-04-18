@@ -160,7 +160,7 @@ class RegulatoryModule(obj_model.Model):
     comments = obj_model.LongStringAttribute()
     references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
     identifiers = core.IdentifierAttribute(related_name='regulatory_modules')
-    regulatory_element = obj_model.ManyToOneAttribute(RegulatoryElementLocus, related_name='regulatory_modules')
+    regulatory_element = obj_model.StringAttribute()
     activity = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ActivityLevelType'].rchildren(),
                                   none=True)

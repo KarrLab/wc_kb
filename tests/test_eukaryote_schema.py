@@ -370,8 +370,8 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=9, end=15)
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=17, end=18)
 
-        promoter = eukaryote_schema.RegulatoryElementLocus(polymer=dna1, start=6, end=8)
-        enhancer = eukaryote_schema.RegulatoryElementLocus(polymer=dna1, start=2, end=4)
+        promoter = 'ENSR00000172399'
+        enhancer = 'ENSR00000309980'
 
         tf = [eukaryote_schema.ProteinSpeciesType(id='tf')]
 
@@ -413,7 +413,6 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         self.assertEqual(reg_module3.id, 'rm3')
         self.assertEqual(reg_module3.activity, kbOnt['inactive'])
         self.assertEqual(reg_module3.name, 'reg_module3')
-        self.assertEqual(set([i.gene for i in enhancer.regulatory_modules]), set([gene1, gene2]))
 
 
 class PtmSiteTestCase(unittest.TestCase):
