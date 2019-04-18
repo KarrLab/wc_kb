@@ -864,7 +864,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
         complex (:obj:`ComplexSpeciesType`): complex
     """
 
-    name = obj_model.StringAttribute() #DEBUG
+    name = obj_model.StringAttribute()
     species_type = ManyToOneAttribute(SpeciesType, related_name='species_type_coefficients')
     coefficient = FloatAttribute(min=0., nan=False)
 
