@@ -895,6 +895,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
         """
         coefficient = float(coefficient)
 
+
         if coefficient == 1:
             coefficient_str = ''
         elif coefficient % 1 == 0 and abs(coefficient) < 1000:
@@ -1603,7 +1604,8 @@ class ComplexSpeciesType(SpeciesType):
 
     species_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='complexes')
     concentration = obj_model.OneToManyAttribute('Concentration', related_name='complexes')
-    subunits = ReactionParticipantAttribute(related_name='complexes_formation')
+    subunits = SubunitAttribute(related_name='complexes')
+    #subunits = ReactionParticipantAttribute(related_name='complexes')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ComplexType'].rchildren(),
                                   none=True)
