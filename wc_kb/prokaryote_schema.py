@@ -37,6 +37,8 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     genes = obj_model.OneToManyAttribute('GeneLocus', related_name = 'rnas')
     coordinate = obj_model.IntegerAttribute()
     length = obj_model.IntegerAttribute()
+    concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='rnas')
+    species_properties = obj_model.OneToManyAttribute(core.SpeciesTypeProperty, related_name='rnas')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['GeneType'].rchildren(),
                                   none=True)
@@ -44,7 +46,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     class Meta(obj_model.Model.Meta):
         verbose_name_plural = 'RNAs'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'start', 'end',
-                           'identifiers', 'references', 'comments')
+                            'species_properties', 'concentration', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -149,14 +151,15 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')
     translation_rate = obj_model.FloatAttribute()
     unit = obj_model.StringAttribute()
-    is_methionine_cleaved = obj_model.BooleanAttribute()
+    concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='proteins')
+    species_properties = obj_model.OneToManyAttribute(core.SpeciesTypeProperty, related_name='proteins')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ProteinType'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene', 
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene',  'species_properties', 'concentration',
                            'evidence', 'identifiers', 'references', 'comments')
 
     def get_seq(self, cds=True):
