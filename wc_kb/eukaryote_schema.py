@@ -16,6 +16,28 @@ import enum
 import obj_model
 import re
 
+#####################
+#####################
+# Enumeration classes
+
+
+class ActivityLevel(enum.Enum):
+    """ Activity level of regulatory element"""
+    active = 1
+    poised = 2
+    repressed = 3
+    inactive = 4
+    na = 5
+
+class RegulationType(enum.Enum):
+    """ Type of regulation between a regulatory element and a gene """
+    proximal = 1
+    distal = 2
+
+class RegulatoryDirection(enum.Enum):
+    """ The direction of regulation """
+    positive = 1
+    negative = -1
 
 #####################
 #####################
@@ -132,16 +154,10 @@ class RegulatoryModule(obj_model.Model):
     references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
     identifiers = core.IdentifierAttribute(related_name='regulatory_modules')
     promoter = obj_model.StringAttribute()
-    activity = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ActivityLevelType'].rchildren(),
-                                  none=True)
-    type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['RegulationType'].rchildren(),
-                                  none=True)
-    direction = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['DirectionType'].rchildren(),
-                                  default = kbOnt['forward'],
-                                  none=False)
+    activity = obj_model.EnumAttribute(ActivityLevel)
+    type = obj_model.EnumAttribute(RegulationType)
+    direction = obj_model.EnumAttribute(RegulatoryDirection)    
+
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'gene', 'promoter', 'activity', 'binding_factor', 'type',

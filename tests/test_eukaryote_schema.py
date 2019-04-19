@@ -339,40 +339,40 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         reg_module1 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
             promoter=promoter1,
-            activity=kbOnt['active'],
+            activity=eukaryote_schema.ActivityLevel.active,
             binding_factor=tf,
-            type=kbOnt['Proximal'], #eukaryote_schema.RegulationType.proximal,
-            direction=kbOnt['forward']) #eukaryote_schema.RegulatoryDirection.positive)
+            type=eukaryote_schema.RegulationType.proximal, #eukaryote_schema.RegulationType.proximal,
+            direction=eukaryote_schema.RegulatoryDirection.positive) #eukaryote_schema.RegulatoryDirection.positive)
 
         reg_module2 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
             promoter=promoter1,
-            activity=kbOnt['active'],
+            activity=eukaryote_schema.ActivityLevel.active,
             binding_factor=tf,
-            type=kbOnt['Distal'],
-            direction= kbOnt['reverse'])
+            type=eukaryote_schema.RegulationType.distal,
+            direction= eukaryote_schema.RegulatoryDirection.negative)
 
         reg_module3 = eukaryote_schema.RegulatoryModule(
             id='rm3',
             name='reg_module3',
-            activity=kbOnt['inactive'],
+            activity=eukaryote_schema.ActivityLevel.inactive,
             gene=gene2,
             promoter=promoter2)
 
         self.assertEqual(reg_module1.gene, gene1)
         self.assertEqual(reg_module1.promoter, promoter1)
-        self.assertEqual(reg_module1.activity, kbOnt['active'])
+        self.assertEqual(reg_module1.activity.name, 'active')
         self.assertEqual(reg_module1.binding_factor, tf)
-        self.assertEqual(reg_module1.type, kbOnt['Proximal'])
-        self.assertEqual(reg_module1.direction, kbOnt['forward'])
+        self.assertEqual(reg_module1.type.value, 1)
+        self.assertEqual(reg_module1.direction.value, 1)
         self.assertEqual(reg_module2.gene, gene1)
         self.assertEqual(reg_module2.promoter, promoter1)
-        self.assertEqual(reg_module2.activity, kbOnt['active'])
+        self.assertEqual(reg_module2.activity.name, 'active')
         self.assertEqual(reg_module2.binding_factor, tf)
-        self.assertEqual(reg_module2.type, kbOnt['Distal'])
-        self.assertEqual(reg_module2.direction, kbOnt['reverse'])
+        self.assertEqual(reg_module2.type.value, 2)
+        self.assertEqual(reg_module2.direction.value, -1)
         self.assertEqual(reg_module3.id, 'rm3')
-        self.assertEqual(reg_module3.activity, kbOnt['inactive'])
+        self.assertEqual(reg_module3.activity.name, 'inactive')
         self.assertEqual(reg_module3.name, 'reg_module3')
         self.assertEqual(reg_module3.promoter, promoter2)
 
