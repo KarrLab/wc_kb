@@ -331,14 +331,14 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=9, end=15)
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1, start=17, end=18)
 
-        promoter = 'ENSR00000172399'
-        enhancer = 'ENSR00000309980'
+        promoter1 = 'ENSR00000172399'
+        promoter2 = 'ENSR00000309980'
 
         tf = [eukaryote_schema.ProteinSpeciesType(id='tf')]
 
         reg_module1 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
-            regulatory_element=promoter,
+            promoter=promoter1,
             activity=kbOnt['active'],
             binding_factor=tf,
             type=kbOnt['Proximal'], #eukaryote_schema.RegulationType.proximal,
@@ -346,7 +346,7 @@ class RegulatoryModuleTestCase(unittest.TestCase):
 
         reg_module2 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
-            regulatory_element=enhancer,
+            promoter=promoter1,
             activity=kbOnt['active'],
             binding_factor=tf,
             type=kbOnt['Distal'],
@@ -357,16 +357,16 @@ class RegulatoryModuleTestCase(unittest.TestCase):
             name='reg_module3',
             activity=kbOnt['inactive'],
             gene=gene2,
-            regulatory_element=enhancer)
+            promoter=promoter2)
 
         self.assertEqual(reg_module1.gene, gene1)
-        self.assertEqual(reg_module1.regulatory_element, promoter)
+        self.assertEqual(reg_module1.promoter, promoter1)
         self.assertEqual(reg_module1.activity, kbOnt['active'])
         self.assertEqual(reg_module1.binding_factor, tf)
         self.assertEqual(reg_module1.type, kbOnt['Proximal'])
         self.assertEqual(reg_module1.direction, kbOnt['forward'])
         self.assertEqual(reg_module2.gene, gene1)
-        self.assertEqual(reg_module2.regulatory_element, enhancer)
+        self.assertEqual(reg_module2.promoter, promoter1)
         self.assertEqual(reg_module2.activity, kbOnt['active'])
         self.assertEqual(reg_module2.binding_factor, tf)
         self.assertEqual(reg_module2.type, kbOnt['Distal'])
@@ -374,6 +374,7 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         self.assertEqual(reg_module3.id, 'rm3')
         self.assertEqual(reg_module3.activity, kbOnt['inactive'])
         self.assertEqual(reg_module3.name, 'reg_module3')
+        self.assertEqual(reg_module3.promoter, promoter2)
 
 
 class PtmSiteTestCase(unittest.TestCase):

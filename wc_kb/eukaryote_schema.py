@@ -114,7 +114,7 @@ class RegulatoryModule(obj_model.Model):
         id (:obj:`str`): identifier
         name (:obj:`str`): name
         gene (:obj:`GeneLocus`): gene
-        regulatory_element (:obj:`RegulatoryElementLocus`): regulatory element
+        promoter (:obj:`str`): promoter ensembl ID
         activity (:obj:`ActivityLevel`): cell-type specific activity level
         binding_factor (:obj:`ProteinSpeciesType`): binding factor
         type (:obj:`RegulationType`): type of regulation (proximal or distal)
@@ -131,7 +131,7 @@ class RegulatoryModule(obj_model.Model):
     comments = obj_model.LongStringAttribute()
     references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
     identifiers = core.IdentifierAttribute(related_name='regulatory_modules')
-    regulatory_element = obj_model.StringAttribute()
+    promoter = obj_model.StringAttribute()
     activity = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ActivityLevelType'].rchildren(),
                                   none=True)
@@ -144,7 +144,7 @@ class RegulatoryModule(obj_model.Model):
                                   none=False)
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'regulatory_element', 'activity', 'binding_factor', 'type',
+        attribute_order = ('id', 'name', 'gene', 'promoter', 'activity', 'binding_factor', 'type',
                             'direction', 'identifiers', 'references', 'comments')
 
 
