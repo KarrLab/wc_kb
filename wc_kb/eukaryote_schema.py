@@ -107,35 +107,6 @@ class GeneLocus(core.PolymerLocus):
                            'end', 'identifiers', 'references', 'comments')
 
 
-class RegulatoryElementLocus(core.PolymerLocus):
-    """ Knowledge of a regulatory element of a gene
-
-    Attributes:
-        type (:obj:`RegulatoryElementType`): type of regulatory element
-        activity (:obj:`ActivityLevel`): cell-type specific activity level
-        bound_start (:obj:`int`): start coordinate of binding
-        bound_end (:obj:`int`): end coordinate of binding
-        motif_features (:obj:`list` of :obj:`ProteinSpeciesType`): proteins that bind to the site
-
-    Related attributes:
-        regulatory_modules (:obj:`list` of :obj:`RegulatoryModule`): regulatory_modules
-    """
-    bound_start = obj_model.PositiveIntegerAttribute()
-    bound_end = obj_model.PositiveIntegerAttribute()
-    motif_features = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_elements')
-    type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['RegulatoryElementType'].rchildren(),
-                                  none=True)
-    activity = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ActivityLevelType'].rchildren(),
-                                  none=True)
-
-    class Meta(obj_model.Model.Meta):
-        verbose_name = 'Regulatory element'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'activity', 'polymer', 'strand', 'start', 'end',
-                           'bound_start', 'bound_end', 'motif_features', 'identifiers', 'references', 'comments')
-
-
 class RegulatoryModule(obj_model.Model):
     """ Knowledge about regulatory modules
 

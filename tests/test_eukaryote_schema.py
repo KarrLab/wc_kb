@@ -31,7 +31,6 @@ class CellTestCase(unittest.TestCase):
         self.assertEqual(cell.compartments, [])
         self.assertEqual(cell.reactions, [])
         self.assertEqual(cell.loci, [])
-        self.assertEqual(cell.loci.get(__type=eukaryote_schema.RegulatoryElementLocus), [])
 
 
 class GenericLocusTestCase(unittest.TestCase):
@@ -323,44 +322,6 @@ class GeneLocusTestCase(unittest.TestCase):
         self.assertEqual(gene.comments, '')
         self.assertEqual(gene.references, [])
         self.assertEqual(gene.identifiers, [])
-
-class RegulatoryElementLocusTestCase(unittest.TestCase):
-
-    def test_constructor(self):
-
-        promoter = eukaryote_schema.RegulatoryElementLocus(
-            id='p1',
-            name='promoter1',
-            type=kbOnt['Promoter'],
-            activity=kbOnt['active'],
-            strand=kbOnt['positive'],
-            start=2,
-            end=10)
-
-        self.assertEqual(promoter.id, 'p1')
-        self.assertEqual(promoter.name, 'promoter1')
-        self.assertEqual(promoter.type, kbOnt['Promoter'])
-        self.assertEqual(promoter.activity, kbOnt['active'])
-        self.assertEqual(promoter.strand, kbOnt['positive'])
-        self.assertEqual(promoter.start, 2)
-        self.assertEqual(promoter.end, 10)
-
-        tf1 = eukaryote_schema.ProteinSpeciesType(id='TF1')
-
-        TF_binding_site = eukaryote_schema.RegulatoryElementLocus(
-            type= kbOnt['TFBindingSite'],
-            start=2,
-            end=10,
-            bound_start=3,
-            bound_end=8,
-            motif_features=[tf1])
-
-        self.assertEqual(TF_binding_site.type, kbOnt['TFBindingSite'])
-        self.assertEqual(TF_binding_site.start, 2)
-        self.assertEqual(TF_binding_site.end, 10)
-        self.assertEqual(TF_binding_site.bound_start, 3)
-        self.assertEqual(TF_binding_site.bound_end, 8)
-        self.assertEqual(TF_binding_site.motif_features[0].id, 'TF1')
 
 
 class RegulatoryModuleTestCase(unittest.TestCase):

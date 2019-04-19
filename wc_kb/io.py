@@ -54,7 +54,6 @@ EUKARYOTE_MODELS = (
     core.Cell,
     core.Compartment,
     core.DnaSpeciesType,
-    eukaryote_schema.RegulatoryElementLocus,
     eukaryote_schema.RegulatoryModule,
     eukaryote_schema.PtmSite,
     eukaryote_schema.GeneLocus,
