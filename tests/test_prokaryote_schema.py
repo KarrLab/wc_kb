@@ -213,7 +213,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
         # MPN011
         gene2 = prokaryote_schema.GeneLocus(id='gene2', cell=cell1, polymer=dna1,
-                               start=12838, end=13533, strand=kbOnt['negative'])
+                               start=12838, end=13533, strand=core.PolymerStrand.negative)
         tu2 = prokaryote_schema.TranscriptionUnitLocus(
             id='tu2', genes=[gene2], polymer=dna1)
         self.prot2 = prokaryote_schema.ProteinSpeciesType(
@@ -266,14 +266,14 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
     def test_get_3_prime(self):
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
-            id='tu1', polymer=dna1, start=1, end=15, strand=kbOnt['positive'])
+            id='tu1', polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
         rna1 = prokaryote_schema.RnaSpeciesType(
             id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(tu1.get_3_prime(), 15)
 
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
-            id='tu1', polymer=dna1, start=1, end=15, strand=kbOnt['negative'])
+            id='tu1', polymer=dna1, start=1, end=15, strand=core.PolymerStrand.negative)
         rna1 = prokaryote_schema.RnaSpeciesType(
             id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(tu1.get_3_prime(), 1)
@@ -281,14 +281,14 @@ class TranscriptionUnitLocusTestCase(unittest.TestCase):
     def test_get_5_prime(self):
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
-            id='tu1', polymer=dna1, start=1, end=15, strand=kbOnt['positive'])
+            id='tu1', polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
         rna1 = prokaryote_schema.RnaSpeciesType(
             id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(tu1.get_5_prime(), 1)
 
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
         tu1 = prokaryote_schema.TranscriptionUnitLocus(
-            id='tu1', polymer=dna1, start=1, end=15, strand=kbOnt['negative'])
+            id='tu1', polymer=dna1, start=1, end=15, strand=core.PolymerStrand.negative)
         rna1 = prokaryote_schema.RnaSpeciesType(
             id='rna1', name='rna1', transcription_units=[tu1])
         self.assertEqual(tu1.get_5_prime(), 15)
@@ -299,9 +299,9 @@ class GeneLocusTestCase(unittest.TestCase):
     def test_get_direction(self):
 
         gene1 = prokaryote_schema.GeneLocus(id='gene1', name='gene1', symbol='gene_1',
-                              strand=kbOnt['positive'], start=1, end=2)
+                              strand=core.PolymerStrand.positive, start=1, end=2)
         gene2 = prokaryote_schema.GeneLocus(id='gene2', name='gene2',
-                              strand=kbOnt['positive'], start=10, end=5)
+                              strand=core.PolymerStrand.positive, start=10, end=5)
 
         self.assertEqual(gene1.id, 'gene1')
         self.assertEqual(gene1.name, 'gene1')
@@ -309,13 +309,13 @@ class GeneLocusTestCase(unittest.TestCase):
         self.assertEqual(gene1.start, 1)
         self.assertEqual(gene1.end, 2)
 
-        self.assertEqual(gene1.get_direction(), core.kbOnt['forward'])
-        self.assertEqual(gene2.get_direction(), core.kbOnt['reverse'])
+        self.assertEqual(gene1.get_direction(), core.PolymerDirection.forward)
+        self.assertEqual(gene2.get_direction(), core.PolymerDirection.reverse)
 
-        gene1.strand = kbOnt['negative']
-        gene2.strand = kbOnt['negative']
-        self.assertEqual(gene1.get_direction(), core.kbOnt['reverse'])
-        self.assertEqual(gene2.get_direction(), core.kbOnt['forward'])
+        gene1.strand = core.PolymerStrand.negative
+        gene2.strand = core.PolymerStrand.negative
+        self.assertEqual(gene1.get_direction(), core.PolymerDirection.reverse)
+        self.assertEqual(gene2.get_direction(), core.PolymerDirection.forward)
 
         gene1.start = 15
         gene1.end   = 15

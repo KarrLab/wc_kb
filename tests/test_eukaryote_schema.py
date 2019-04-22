@@ -7,7 +7,6 @@
 """
 
 from wc_kb import core, eukaryote_schema
-from wc_onto import kb_onto as kbOnt
 from wc_utils.util import chem
 import Bio.Alphabet
 import Bio.Seq
@@ -108,14 +107,14 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         dna1 = core.DnaSpeciesType(id='dna2', sequence_path=self.sequence_path)
 
         gene1 = eukaryote_schema.GeneLocus(
-            polymer=dna1, start=1, end=15, strand=kbOnt['positive'])
+            polymer=dna1, start=1, end=15, strand=core.PolymerStrand.positive)
         exon1_1 = eukaryote_schema.GenericLocus(start=1, end=4)
         exon1_2 = eukaryote_schema.GenericLocus(start=7, end=8)
         transcript1 = eukaryote_schema.TranscriptSpeciesType(
             gene=gene1, exons=[exon1_1, exon1_2])
 
         gene2 = eukaryote_schema.GeneLocus(
-            polymer=dna1, start=4, end=18, strand=kbOnt['negative'])
+            polymer=dna1, start=4, end=18, strand=core.PolymerStrand.negative)
         exon2_1 = eukaryote_schema.GenericLocus(start=4, end=10)
         exon2_2 = eukaryote_schema.GenericLocus(start=14, end=16)
         transcript2 = eukaryote_schema.TranscriptSpeciesType(
@@ -216,7 +215,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
             uniprot='Q12X34', transcript=transcript1, coding_regions=[cds1])
 
         gene2 = eukaryote_schema.GeneLocus(polymer=dna1,
-            start=30, end=75, strand=kbOnt['positive'])
+            start=30, end=75, strand=core.PolymerStrand.positive)
         exon2_1 = eukaryote_schema.GenericLocus(start=32, end=35)
         exon2_2 = eukaryote_schema.GenericLocus(start=38, end=45)
         exon2_3 = eukaryote_schema.GenericLocus(start=49, end=54)
@@ -312,11 +311,11 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
 class GeneLocusTestCase(unittest.TestCase):
     def test_constructor(self):
         gene = eukaryote_schema.GeneLocus(id='gene1', name='gene1', symbol='gene_1',
-            strand=kbOnt['negative'], start=1, end=2)
+            strand=core.PolymerStrand.negative, start=1, end=2)
         self.assertEqual(gene.id, 'gene1')
         self.assertEqual(gene.name, 'gene1')
         self.assertEqual(gene.symbol, 'gene_1')
-        self.assertEqual(gene.strand, kbOnt['negative'])
+        self.assertEqual(gene.strand, core.PolymerStrand.negative)
         self.assertEqual(gene.start, 1)
         self.assertEqual(gene.end, 2)
         self.assertEqual(gene.comments, '')

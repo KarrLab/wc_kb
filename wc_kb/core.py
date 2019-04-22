@@ -52,6 +52,21 @@ with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
 
 #####################
 #####################
+# Enumeration classes
+
+PolymerStrand = enum.Enum(value='PolymerStrand', names=[
+    ('positive', 1),
+    ('+', 1),
+    ('negative', -1),
+    ('-', -1), ])
+
+PolymerDirection = enum.Enum(value='PolymerDirection', names=[
+    ('forward', 1),
+    ('reverse', -1), ])
+
+
+#####################
+#####################
 # Attributes
 
 class SubunitAttribute(ManyToManyAttribute):
@@ -1117,7 +1132,7 @@ class PolymerSpeciesType(SpeciesType):
         """
         return len(self.get_seq())
 
-    def get_subseq(self, start, end, strand=kbOnt['positive']):
+    def get_subseq(self, start, end, strand=PolymerStrand.positive):
         """ Get a subsequence
 
         Args:
@@ -1153,7 +1168,7 @@ class PolymerSpeciesType(SpeciesType):
                 str(seq) * (int(math.floor(end / seq_len)) - 1) + \
                 seq[0:end % seq_len]
 
-        if are_terms_equivalent(strand, kbOnt['positive']):
+        if strand == PolymerStrand.positive:
             return pos_seq
         else:
             return pos_seq.reverse_complement()
@@ -1166,7 +1181,7 @@ class PolymerLocus(KnowledgeBaseObject):
         polymer (:obj:`PolymerSpeciesType`): polymer
         start (:obj:`int`): start position
         end (:obj:`int`): end position
-        strand (:obj:`pronto`): strand
+        strand (:obj:`PolymerStrand`): strand
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
@@ -1177,10 +1192,8 @@ class PolymerLocus(KnowledgeBaseObject):
     end = obj_model.IntegerAttribute()
     references = obj_model.ManyToManyAttribute(Reference, related_name='loci')
     identifiers = IdentifierAttribute(related_name='loci')
-    strand = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['StrandType'].rchildren(),
-                                  default = kbOnt['positive'],
-                                  none=True)
+    strand = obj_model.EnumAttribute(
+        PolymerStrand, default=PolymerStrand.positive)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'polymer', 'strand', 'start', 'end', 'identifiers', 'references', 'comments')
@@ -1203,8 +1216,9 @@ class PolymerLocus(KnowledgeBaseObject):
 
     def get_direction(self):
         """ Returns the direction of the polymer feature defind by its strand and start/end coordinate
+            
             Returns:
-                :obj:`str`: direction (in ['forward', 'reverse'])
+                :obj:`PolymerDirection`: direction (in ['forward', 'reverse'])
 
             Raises:
                 :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
@@ -1212,18 +1226,18 @@ class PolymerLocus(KnowledgeBaseObject):
         """
 
         if self.start < self.end:
-            if are_terms_equivalent(self.strand, kbOnt['positive']):
-                return kbOnt['forward']
-            elif are_terms_equivalent(self.strand, kbOnt['negative']):
-                return kbOnt['reverse']
+            if self.strand == PolymerStrand.positive:
+                return PolymerDirection.forward
+            elif self.strand == PolymerStrand.negative:
+                return PolymerDirection.reverse
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
 
         elif self.start > self.end:
-            if are_terms_equivalent(self.strand, kbOnt['positive']):
-                return kbOnt['reverse']
-            elif are_terms_equivalent(self.strand, kbOnt['negative']):
-                return kbOnt['forward']
+            if self.strand == PolymerStrand.positive:
+                return PolymerDirection.reverse
+            elif self.strand == PolymerStrand.negative:
+                return PolymerDirection.forward
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
 
@@ -1379,15 +1393,13 @@ class MetaboliteSpeciesType(SpeciesType):
 
     """
     synonyms = obj_model.LongStringAttribute()
-    concentration = obj_model.OneToManyAttribute('Concentration', related_name='metabolites')
-    species_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='metabolites')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['MetaboliteType'].rchildren(),
                                   none = True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Metabolite'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'concentration', 'species_properties', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'identifiers', 'references', 'comments')
 
     def get_structure(self, ph=7.95):
         """ Get the structure
@@ -1602,8 +1614,6 @@ class ComplexSpeciesType(SpeciesType):
 
     """
 
-    species_properties = obj_model.OneToManyAttribute('SpeciesTypeProperty', related_name='complexes')
-    concentration = obj_model.OneToManyAttribute('Concentration', related_name='complexes')
     subunits = SubunitAttribute(related_name='complexes')
     #subunits = ReactionParticipantAttribute(related_name='complexes')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
@@ -1616,7 +1626,7 @@ class ComplexSpeciesType(SpeciesType):
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Complex'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'formation_process', 'subunits',
-                           'species_properties', 'concentration', 'identifiers', 'references', 'comments')
+                           'identifiers', 'references', 'comments')
 
     def get_empirical_formula(self):
         """ Get the empirical formula
@@ -1840,13 +1850,13 @@ class ChromosomeFeature(PolymerLocus):
         """ Returns the direction of chromosome feature
 
             Returns:
-                :obj:`str`: direction (in ['forward', 'reverse'])
+                :obj:`PolymerDirection`: direction (in ['forward', 'reverse'])
         """
 
         if self.start < self.end:
-            return kbOnt['forward']
+            return PolymerDirection.forward
         elif self.start > self.end:
-            return kbOnt['reverse']
+            return PolymerDirection.reverse
         elif self.start == self.end:
             raise ValueError('Start and end position of chromosome feature can not be the same (Chrom feature id: {}).'.format(self.id))
 
@@ -1942,10 +1952,6 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
             references (:obj:`list` of :obj:`Reference`): references
             evidence (:obj:`list` of :obj:`Evidence`): evidence
             value_type (:obj:`pronto`): value type
-
-        Related attributes:
-            metabolites (:obj:`list` of :obj:`MetaboliteSpeciesType`): metabolites
-            complexes (:obj:`list` of :obj:`ComplexSpeciesType`): complexes
     """
 
     id = obj_model.StringAttribute(primary=True, unique=True)

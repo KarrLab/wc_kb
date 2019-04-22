@@ -309,13 +309,13 @@ class PolymerSpeciesTypeTestCase(unittest.TestCase):
         self.pst1.circular = True
         self.pst1.double_stranded = True
         self.assertEqual(self.pst1.get_subseq(
-            3,  6, strand=kbOnt['positive']), 'ATGC')
+            3,  6, strand=core.PolymerStrand.positive), 'ATGC')
         self.assertEqual(self.pst1.get_subseq(
-            3,  6, strand=kbOnt['negative']), 'GCAT')
+            3,  6, strand=core.PolymerStrand.negative), 'GCAT')
         self.assertEqual(self.pst1.get_subseq(
-            6, 26, strand=kbOnt['positive']), 'CCCAAATGCCCAAATGCCCAA')
+            6, 26, strand=core.PolymerStrand.positive), 'CCCAAATGCCCAAATGCCCAA')
         self.assertEqual(self.pst1.get_subseq(
-            6, 26, strand=kbOnt['negative']), 'TTGGGCATTTGGGCATTTGGG')
+            6, 26, strand=core.PolymerStrand.negative), 'TTGGGCATTTGGGCATTTGGG')
 
 
 #Disorganized
@@ -454,10 +454,10 @@ class PolymerLocusTestCase(unittest.TestCase):
                                    circular=False, double_stranded=False)
 
         self.locus1 = core.PolymerLocus(id='locus1', cell=cell1, name='locus1', polymer=self.dna1,
-                                   strand=kbOnt['positive'], start=1, end=15)
+                                   strand=core.PolymerStrand.positive, start=1, end=15)
 
         self.locus2 = core.PolymerLocus(id='locus2', cell=cell1, name='locus2', polymer=self.dna1,
-                                   strand=kbOnt['positive'], start=14, end=2)
+                                   strand=core.PolymerStrand.positive, start=14, end=2)
 
     def tearDown(self):
         shutil.rmtree(self.tmp_dirname)
@@ -467,25 +467,25 @@ class PolymerLocusTestCase(unittest.TestCase):
         self.assertEqual(self.locus1.get_seq(), 'ACGTACGTACGTACG')
 
         rev_comp_seq = self.locus1.get_seq().reverse_complement()
-        self.locus1.strand = kbOnt['negative']
+        self.locus1.strand = core.PolymerStrand.negative
         self.assertEqual(self.locus1.get_seq(), rev_comp_seq)
 
     def test_len(self):
 
         self.assertEqual(self.locus1.get_len(), 15)
         rev_comp_seq = self.locus1.get_seq().reverse_complement()
-        self.locus1.strand = kbOnt['negative']
+        self.locus1.strand = core.PolymerStrand.negative
         self.assertEqual(self.locus1.get_len(), 15)
 
     def test_get_direction(self):
 
-        self.assertTrue(are_terms_equivalent(self.locus1.get_direction(), kbOnt['forward']))
-        self.assertTrue(are_terms_equivalent(self.locus2.get_direction(), kbOnt['reverse']))
+        self.assertTrue(are_terms_equivalent(self.locus1.get_direction(), core.PolymerDirection.forward))
+        self.assertTrue(are_terms_equivalent(self.locus2.get_direction(), core.PolymerDirection.reverse))
 
-        self.locus1.strand = kbOnt['negative']
-        self.locus2.strand = kbOnt['negative']
-        self.assertTrue(are_terms_equivalent(self.locus1.get_direction(), kbOnt['reverse']))
-        self.assertTrue(are_terms_equivalent(self.locus2.get_direction(), kbOnt['forward']))
+        self.locus1.strand = core.PolymerStrand.negative
+        self.locus2.strand = core.PolymerStrand.negative
+        self.assertTrue(are_terms_equivalent(self.locus1.get_direction(), core.PolymerDirection.reverse))
+        self.assertTrue(are_terms_equivalent(self.locus2.get_direction(), core.PolymerDirection.forward))
 
         self.locus1.start = 15
         self.locus1.end   = 15

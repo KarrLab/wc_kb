@@ -10,7 +10,6 @@
 from test.support import EnvironmentVarGuard
 from wc_kb import core, prokaryote_schema
 from wc_kb import io
-from wc_onto import kb_onto as kbOnt
 import Bio.Seq
 import Bio.SeqRecord
 import filecmp
@@ -54,7 +53,7 @@ class TestIO(unittest.TestCase):
                 dna.loci.append(trn)
                 trn.start = random.randint(100, 200)
                 trn.end = ((trn.start + random.randint(1, 200) - 1) % seq_len) + 1
-                trn.strand = kbOnt['positive']
+                trn.strand = core.PolymerStrand.positive
 
         with open(self.seq_path, 'w') as file:
             writer = Bio.SeqIO.FastaIO.FastaWriter(

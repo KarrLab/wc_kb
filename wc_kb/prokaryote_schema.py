@@ -37,8 +37,6 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     genes = obj_model.OneToManyAttribute('GeneLocus', related_name = 'rnas')
     coordinate = obj_model.IntegerAttribute()
     length = obj_model.IntegerAttribute()
-    concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='rnas')
-    species_properties = obj_model.OneToManyAttribute(core.SpeciesTypeProperty, related_name='rnas')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['GeneType'].rchildren(),
                                   none=True)
@@ -46,7 +44,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     class Meta(obj_model.Model.Meta):
         verbose_name_plural = 'RNAs'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'start', 'end',
-                            'species_properties', 'concentration', 'identifiers', 'references', 'comments')
+                            'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -122,17 +120,17 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         """
 
         if self.start < self.end:
-            if are_terms_equivalent(self.strand, kbOnt['positive']):
-                return core.kbOnt['forward']
-            elif are_terms_equivalent(self.strand, kbOnt['negative']):
-                return core.kbOnt['reverse']
+            if self.strand == core.PolymerStrand.positive:
+                return core.PolymerDirection.forward
+            elif self.strand == core.PolymerStrand.negative:
+                return core.PolymerDirection.reverse
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
         elif self.start > self.end:
-            if are_terms_equivalent(self.strand, kbOnt['positive']):
-                return core.kbOnt['reverse']
-            elif are_terms_equivalent(self.strand, kbOnt['negative']):
-                return core.kbOnt['forward']
+            if self.strand == core.PolymerStrand.positive:
+                return core.PolymerDirection.reverse
+            elif self.strand == core.PolymerStrand.negative:
+                return core.PolymerStrand.forward
             else:
                 raise Exception('Unrecognized polymer strand ({}) found for {}.'.format(self.strand, self.id))
         elif self.start == self.end:
@@ -151,15 +149,13 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')
     translation_rate = obj_model.FloatAttribute()
     unit = obj_model.StringAttribute()
-    concentration = obj_model.OneToManyAttribute(core.Concentration, related_name='proteins')
-    species_properties = obj_model.OneToManyAttribute(core.SpeciesTypeProperty, related_name='proteins')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ProteinType'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene',  'species_properties', 'concentration',
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene',
                            'evidence', 'identifiers', 'references', 'comments')
 
     def get_seq(self, cds=True):
@@ -285,7 +281,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         Returns:
             :obj:`int`: 3' coordinate
         """
-        if self.get_direction() == core.kbOnt['forward']:
+        if self.get_direction() == core.PolymerDirection.forward:
             return self.end
         else:
             return self.start
@@ -296,7 +292,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         Returns:
             :obj:`int`: 5' coordinate
         """
-        if self.get_direction() == core.kbOnt['forward']:
+        if self.get_direction() == core.PolymerDirection.forward:
             return self.start
         else:
             return self.end
