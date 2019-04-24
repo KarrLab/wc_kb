@@ -1174,16 +1174,14 @@ class SpeciesTypePropertyTestCase(unittest.TestCase):
         stp2 = core.SpeciesTypeProperty(id='stp2', species_type=met, property='whatever2', value='check_str', value_type = kbOnt['string'])
         stp3 = core.SpeciesTypeProperty(id='stp3', species_type=met, property='whatever3', value='3', value_type = kbOnt['integer'])
         stp4 = core.SpeciesTypeProperty(id='stp4', species_type=met, property='whatever4', value='4.6', value_type = kbOnt['float'])
-        stp5 = core.SpeciesTypeProperty(id='stp5', species_type=met, property='whatever5', value='c', value_type = kbOnt['Compartment'])
-        stp6 = core.SpeciesTypeProperty(id='stp6', species_type=met, property='whatever6', value='Secretory', value_type = core.kbOnt['SignalSequenceType'])
-        stp7 = core.SpeciesTypeProperty(id='stp7', species_type=met, property='whatever7', value='raise_test', value_type='raise_test')
+        stp5 = core.SpeciesTypeProperty(id='stp5', species_type=met, property='whatever6', value='Secretory', value_type = core.kbOnt['SignalSequenceType'])
+        stp6 = core.SpeciesTypeProperty(id='stp6', species_type=met, property='whatever7', value='raise_test', value_type='raise_test')
 
         self.assertEqual(met.properties.get_one(id='stp1').get_value(), True)
         self.assertEqual(met.properties.get_one(id='stp2').get_value(), 'check_str')
         self.assertEqual(met.properties.get_one(id='stp3').get_value(), int(3))
         self.assertEqual(met.properties.get_one(id='stp4').get_value(), 4.6)
-        self.assertEqual(met.properties.get_one(id='stp5').get_value(), c)
-        self.assertTrue(are_terms_equivalent(met.properties.get_one(id='stp6').get_value(), kbOnt['Secretory']))
+        self.assertTrue(are_terms_equivalent(met.properties.get_one(id='stp5').get_value(), kbOnt['Secretory']))
 
         with self.assertRaises(ValueError):
-            met.properties.get_one(id='stp7').get_value()
+            met.properties.get_one(id='stp6').get_value()

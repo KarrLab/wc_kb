@@ -1940,10 +1940,9 @@ class Experiment(KnowledgeBaseObject):
 
 
 class SpeciesTypeProperty(KnowledgeBaseObject):
-    """ Knowledge of interactions
+    """ Knowledge of the properties of species types
 
         Attributes:
-            id (:obj:`str`): identifier
             species_type (:obj:`SpeciesType`): species type
             property (:obj:`str`): name of property
             units (:obj:`unit_registry`): units
@@ -1953,8 +1952,6 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
             evidence (:obj:`list` of :obj:`Evidence`): evidence
             value_type (:obj:`pronto`): value type
     """
-
-    id = obj_model.StringAttribute(primary=True, unique=True)
     species_type = ManyToOneAttribute(SpeciesType, related_name='properties') #Do we want min_related=1?
     property = obj_model.StringAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True)
@@ -1978,7 +1975,7 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
         Returns:
             :obj:`str`: identifier
         """
-        return 'PROP({}:{})'.format(self.species_type .id, self.property)
+        return 'PROP({}:{})'.format(self.species_type.id, self.property)
 
     def get_value(self):
         """ SpeciesType property values are stored as strings, this function returns the value as the correct type. """
@@ -1991,9 +1988,6 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
             return int(self.value)
         elif are_terms_equivalent(self.value_type, kbOnt['float']):
             return float(self.value)
-        elif are_terms_equivalent(self.value_type, kbOnt['Compartment']):
-            compartment = self.species_type.cell.compartments.get_one(id = self.value)
-            return compartment
         elif are_terms_equivalent(self.value_type, kbOnt['SignalSequenceType']):
             return kbOnt[self.value]
         else:
