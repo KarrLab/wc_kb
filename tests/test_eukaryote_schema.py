@@ -341,7 +341,7 @@ class RegulatoryModuleTestCase(unittest.TestCase):
             activity=eukaryote_schema.ActivityLevel.active,
             binding_factor=tf,
             type=eukaryote_schema.RegulationType.proximal, #eukaryote_schema.RegulationType.proximal,
-            direction=eukaryote_schema.RegulatoryDirection.positive) #eukaryote_schema.RegulatoryDirection.positive)
+            direction=eukaryote_schema.RegulatoryDirection.activation) #eukaryote_schema.RegulatoryDirection.positive)
 
         reg_module2 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
@@ -349,7 +349,7 @@ class RegulatoryModuleTestCase(unittest.TestCase):
             activity=eukaryote_schema.ActivityLevel.active,
             binding_factor=tf,
             type=eukaryote_schema.RegulationType.distal,
-            direction= eukaryote_schema.RegulatoryDirection.negative)
+            direction= eukaryote_schema.RegulatoryDirection.repression)
 
         reg_module3 = eukaryote_schema.RegulatoryModule(
             id='rm3',

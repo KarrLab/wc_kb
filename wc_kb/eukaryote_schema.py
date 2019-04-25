@@ -34,8 +34,8 @@ class RegulationType(enum.Enum):
 
 class RegulatoryDirection(enum.Enum):
     """ The direction of regulation """
-    positive = 1
-    negative = -1
+    activation = 1
+    repression = -1
 
 #####################
 #####################
