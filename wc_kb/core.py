@@ -65,6 +65,14 @@ PolymerDirection = enum.Enum(value='PolymerDirection', names=[
     ('reverse', -1), ])
 
 
+class ValueTypeType(enum.Enum):
+    """ Type of gene """
+    boolean = 0
+    integer = 1
+    float = 2
+    string = 3
+
+
 #####################
 #####################
 # Attributes
@@ -1216,7 +1224,7 @@ class PolymerLocus(KnowledgeBaseObject):
 
     def get_direction(self):
         """ Returns the direction of the polymer feature defind by its strand and start/end coordinate
-            
+
             Returns:
                 :obj:`PolymerDirection`: direction (in ['forward', 'reverse'])
 
@@ -1615,7 +1623,6 @@ class ComplexSpeciesType(SpeciesType):
     """
 
     subunits = SubunitAttribute(related_name='complexes')
-    #subunits = ReactionParticipantAttribute(related_name='complexes')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ComplexType'].rchildren(),
                                   none=True)
