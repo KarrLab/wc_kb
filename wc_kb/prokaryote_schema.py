@@ -31,10 +31,9 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         proteins (:obj:`list` of :obj:`ProteinSpeciesType`): protein(s)
     """
 
-    transcription_units = obj_model.ManyToManyAttribute('TranscriptionUnitLocus', related_name='rnas')
     start = obj_model.IntegerAttribute()
     end = obj_model.IntegerAttribute()
-    genes = obj_model.OneToManyAttribute('GeneLocus', related_name = 'rnas')
+    proteins = obj_model.OneToManyAttribute('ProteinSpeciesType', related_name='rnas')
     coordinate = obj_model.IntegerAttribute()
     length = obj_model.IntegerAttribute()
     type = obj_model.ontology.OntologyAttribute(kbOnt,
@@ -43,8 +42,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         verbose_name_plural = 'RNAs'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'transcription_units', 'genes', 'start', 'end',
-                            'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'start', 'end', 'proteins', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the sequence
@@ -145,9 +143,9 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         rna (:obj:`RnaSpeciesType`): rna
     """
 
-    gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
+    #gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')
-    translation_rate = obj_model.FloatAttribute()
+    #translation_rate = obj_model.FloatAttribute()
     unit = obj_model.StringAttribute()
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ProteinType'].rchildren(),
@@ -155,8 +153,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'gene',
-                           'evidence', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'evidence', 'identifiers', 'references', 'comments')
 
     def get_seq(self, cds=True):
         """ Get the sequence
@@ -266,6 +263,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
     pribnow_start = obj_model.IntegerAttribute()
     pribnow_end = obj_model.IntegerAttribute()
     genes = obj_model.OneToManyAttribute('GeneLocus', related_name='transcription_units')
+    rnas = obj_model.ManyToManyAttribute('RnaSpeciesType', related_name='transcription_units')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['GeneType'].rchildren(),
                                   none=True)
@@ -273,7 +271,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Transcription units'
         attribute_order = ('id', 'name', 'type', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
-                           'genes', 'identifiers', 'references', 'comments')
+                           'rnas', 'genes', 'identifiers', 'references', 'comments')
 
     def get_3_prime(self):
         """ Get the 3' coordinate
@@ -312,6 +310,7 @@ class GeneLocus(core.PolymerLocus):
     start = obj_model.IntegerAttribute()
     end = obj_model.IntegerAttribute()
     is_essential = obj_model.BooleanAttribute()
+    proteins = obj_model.OneToOneAttribute(ProteinSpeciesType, related_name='geness')
     homologs = obj_model.LongStringAttribute()
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='genes')
     cog = obj_model.ontology.OntologyAttribute(kbOnt,
@@ -320,5 +319,5 @@ class GeneLocus(core.PolymerLocus):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Gene'
-        attribute_order = ('id', 'name', 'synonyms', 'symbol', 'cog', 'homologs', 'polymer',
-                           'start', 'end', 'is_essential', 'evidence', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'synonyms', 'symbol', 'polymer',  'start', 'end', 'cog', 'homologs',
+                           'is_essential', 'proteins', 'evidence', 'identifiers', 'references', 'comments')
