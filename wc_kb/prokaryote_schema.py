@@ -143,9 +143,6 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         rna (:obj:`RnaSpeciesType`): rna
     """
 
-    #gene = obj_model.ManyToOneAttribute('GeneLocus', related_name='proteins')
-    evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='proteins')
-    #translation_rate = obj_model.FloatAttribute()
     unit = obj_model.StringAttribute()
     type = obj_model.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['ProteinType'].rchildren(),
@@ -153,7 +150,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Protein'
-        attribute_order = ('id', 'name', 'synonyms', 'type', 'evidence', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'synonyms', 'type', 'identifiers', 'references', 'comments')
 
     def get_seq(self, cds=True):
         """ Get the sequence
@@ -310,7 +307,7 @@ class GeneLocus(core.PolymerLocus):
     start = obj_model.IntegerAttribute()
     end = obj_model.IntegerAttribute()
     is_essential = obj_model.BooleanAttribute()
-    proteins = obj_model.OneToOneAttribute(ProteinSpeciesType, related_name='geness')
+    proteins = obj_model.OneToOneAttribute(ProteinSpeciesType, related_name='gene')
     homologs = obj_model.LongStringAttribute()
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='genes')
     cog = obj_model.ontology.OntologyAttribute(kbOnt,

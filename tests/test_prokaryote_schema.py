@@ -57,7 +57,7 @@ class RnaSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(rna1.name, 'rna1')
         self.assertEqual(rna1.transcription_units, [tu1])
         self.assertEqual(rna1.type, 1)
-        
+
     def test_get_seq(self):
 
         dna1 = core.DnaSpeciesType(id='dna1', sequence_path=self.sequence_path)
@@ -204,20 +204,14 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
             translation_table=4)  # Table 4 is for mycoplasma
 
         # MPN001
-        gene1 = prokaryote_schema.GeneLocus(id='gene1', cell=cell1,
-                               polymer=dna1, start=692, end=1834)
-        tu1 = prokaryote_schema.TranscriptionUnitLocus(
-            id='tu1', genes=[gene1], polymer=dna1)
-        self.prot1 = prokaryote_schema.ProteinSpeciesType(
-            id='prot1', gene=gene1, cell=cell1)
+        self.prot1 = prokaryote_schema.ProteinSpeciesType(id='prot1', cell=cell1)
+        gene1 = prokaryote_schema.GeneLocus(id='gene1', cell=cell1, proteins=self.prot1, polymer=dna1, start=692, end=1834)
+        tu1 = prokaryote_schema.TranscriptionUnitLocus(id='tu1', genes=[gene1], polymer=dna1)
 
         # MPN011
-        gene2 = prokaryote_schema.GeneLocus(id='gene2', cell=cell1, polymer=dna1,
-                               start=12838, end=13533, strand=core.PolymerStrand.negative)
-        tu2 = prokaryote_schema.TranscriptionUnitLocus(
-            id='tu2', genes=[gene2], polymer=dna1)
-        self.prot2 = prokaryote_schema.ProteinSpeciesType(
-            id='prot2', gene=gene2, cell=cell1)
+        self.prot2 = prokaryote_schema.ProteinSpeciesType(id='prot2', cell=cell1)
+        gene2 = prokaryote_schema.GeneLocus(id='gene2', cell=cell1, proteins=self.prot2, polymer=dna1, start=12838, end=13533, strand=core.PolymerStrand.negative)
+        tu2 = prokaryote_schema.TranscriptionUnitLocus(id='tu2', genes=[gene2], polymer=dna1)
 
     def test_get_seq(self):
         # Use translation table 4 since example genes are from
