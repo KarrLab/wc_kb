@@ -37,6 +37,12 @@ class RegulatoryDirection(enum.Enum):
     activation = 1
     repression = -1
 
+class TranscriptType(enum.Enum):
+    """ Type of transcript """
+    mRna = 1
+    rRna = 2
+    tRna = 3    
+
 #####################
 #####################
 # Attributes
@@ -146,7 +152,6 @@ class RegulatoryModule(obj_model.Model):
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
     gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='regulatory_modules')
-
     binding_factor = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_modules')
     comments = obj_model.LongStringAttribute()
     references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
@@ -166,15 +171,10 @@ class PtmSite(core.PolymerLocus):
     """ Knowledge of protein modification sites
 
     Attributes:
-        id (:obj:`str`): identifier
-        name (:obj:`str`): name
         modified_protein (:obj:`ProteinSpeciesType`): modified protein
         type (:obj:`str`): type of modification (phosphorylation, methylation, etc...)
         modified_residue (:obj:`str`): residue name and position in protein sequence
         abundance_ratio (:obj:`int`): ratio of modified protein abundance
-        comments (:obj:`str`): comments
-        references (:obj:`list` of :obj:`Reference`): references
-        identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
     type = obj_model.StringAttribute()
     modified_protein = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='ptm_sites')
@@ -236,18 +236,20 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
     """ Knowledge of a transcript (spliced RNA) species
 
     Attributes:
-        gene (:obj:`GeneLocus`): gene
+        gene (:obj:`GeneLocus`): gene         
         exons (:obj:`list` of :obj:`LocusAttribute`): exon coordinates
+        type (:obj:`TranscriptType`): type
 
     Related attributes:
         protein (:obj:`ProteinSpeciesType`): protein
     """
-    gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='transcripts')
+    gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='transcripts')    
     exons = LocusAttribute(related_name='transcripts')
+    type = obj_model.EnumAttribute(TranscriptType)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Transcript'
-        attribute_order = ('id', 'name', 'gene', 'exons', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'gene', 'exons', 'type', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
         """ Get the 5' to 3' sequence

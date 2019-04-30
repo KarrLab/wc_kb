@@ -139,7 +139,7 @@ class OneToOneSpeciesAttribute(OneToOneAttribute):
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_naFclass Metabolieme (:obj:`str`, optional): verbose related name
+            verbose_related_name (:obj:`str`, optional): verbose related name
             help (:obj:`str`, optional): help message
         """
         super(OneToOneSpeciesAttribute, self).__init__('Species',
@@ -1414,7 +1414,12 @@ class MetaboliteSpeciesType(SpeciesType):
 
         Returns:
             :obj:`str`: structure
+
+        Raises:
+            :obj:`ValueError`: if structure has not been provided    
         """
+        if not self.properties.get_one(property='structure'):
+            raise ValueError('The structure of {} has not been provided'.format(self.id))
 
         mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
@@ -1423,6 +1428,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protonated_inchi = conversion.WriteString(mol)
+        
         return protonated_inchi
 
     def to_openbabel_mol(self):
@@ -1430,7 +1436,13 @@ class MetaboliteSpeciesType(SpeciesType):
 
         Returns:
             :obj:`openbabel.OBMol`: Open Babel molecule
+
+        Raises:
+            :obj:`ValueError`: if structure has not been provided    
         """
+        if not self.properties.get_one(property='structure'):
+            raise ValueError('The structure of {} has not been provided'.format(self.id))
+
         mol = openbabel.OBMol()
         obConversion = openbabel.OBConversion()
         obConversion.SetInFormat('inchi')
@@ -1444,9 +1456,8 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-
-        #mol = self.to_openbabel_mol()
-        # return chem.EmpiricalFormula(mol.GetFormula().rstrip('+-'))
+        if self.properties.get_one(property='empirical_formula'):
+            return chem.EmpiricalFormula(self.properties.get_one(property='empirical_formula').get_value())
 
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
@@ -1465,6 +1476,8 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`int`: charge
         """
+        if self.properties.get_one(property='charge'):
+            return self.properties.get_one(property='charge').get_value()
 
         mol = self.to_openbabel_mol()
         conversion = openbabel.OBConversion()
@@ -1480,8 +1493,18 @@ class MetaboliteSpeciesType(SpeciesType):
 
         Returns:
             :obj:`float`: molecular weight
+
+        Raises:
+            :obj:`ValueError`: if there is not enough information to calculate molecular weight    
         """
-        mol = self.to_openbabel_mol()
+        if self.properties.get_one(property='structure'):
+            mol = self.to_openbabel_mol() 
+        elif self.properties.get_one(property='empirical_formula'):
+            return chem.EmpiricalFormula(self.properties.get_one(
+                property='empirical_formula').get_value()).get_molecular_weight()
+        else:
+            raise ValueError('Molecular weight cannot be calculated because no structure or '
+                'empirical formula has been provided for {}'.format(self.id))
 
         return mol.GetMolWt()
 

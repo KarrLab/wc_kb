@@ -516,6 +516,25 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(met.get_charge(), -2)
         self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
 
+        prop1 = core.SpeciesTypeProperty(
+            property = 'empirical_formula',
+            value_type = kbOnt['string'],
+            value = 'C6H12O6')
+        prop2 = core.SpeciesTypeProperty(
+            property = 'charge',
+            value_type = kbOnt['integer'],
+            value = '-3')
+        met1 = core.MetaboliteSpeciesType(properties=[prop1, prop2])
+        met2 = core.MetaboliteSpeciesType()
+
+        self.assertEqual(met1.get_empirical_formula(), chem.EmpiricalFormula('C6H12O6'))
+        self.assertEqual(met1.get_charge(), -3)
+        self.assertAlmostEqual(met1.get_mol_wt(), 180.156)
+        
+        with self.assertRaises(ValueError):
+            met2.get_empirical_formula()
+            met2.get_charge()
+            met2.get_mol_wt()
 
 class ReactionAndRelatedClassesTestCase(unittest.TestCase):
 
