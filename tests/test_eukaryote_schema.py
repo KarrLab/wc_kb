@@ -84,11 +84,12 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         gene1 = eukaryote_schema.GeneLocus(polymer=dna1, start=1, end=15)
 
         transcript1 = eukaryote_schema.TranscriptSpeciesType(
-        	id='t1', name='transcript1', gene=gene1)
+        	id='t1', name='transcript1', gene=gene1, type=eukaryote_schema.TranscriptType.mRna)
 
         self.assertEqual(transcript1.id, 't1')
         self.assertEqual(transcript1.name, 'transcript1')
         self.assertEqual(transcript1.gene, gene1)
+        self.assertEqual(transcript1.type.name, 'mRna')
         self.assertEqual(transcript1.exons, [])
         self.assertEqual(transcript1.comments, '')
         self.assertEqual(transcript1.references, [])
