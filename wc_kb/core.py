@@ -1416,7 +1416,7 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`str`: structure
 
         Raises:
-            :obj:`ValueError`: if structure has not been provided    
+            :obj:`ValueError`: if structure has not been provided
         """
         if not self.properties.get_one(property='structure'):
             raise ValueError('The structure of {} has not been provided'.format(self.id))
@@ -1428,7 +1428,7 @@ class MetaboliteSpeciesType(SpeciesType):
         mol.CorrectForPH(ph)
         conversion.SetOutFormat('inchi')
         protonated_inchi = conversion.WriteString(mol)
-        
+
         return protonated_inchi
 
     def to_openbabel_mol(self):
@@ -1438,7 +1438,7 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`openbabel.OBMol`: Open Babel molecule
 
         Raises:
-            :obj:`ValueError`: if structure has not been provided    
+            :obj:`ValueError`: if structure has not been provided
         """
         if not self.properties.get_one(property='structure'):
             raise ValueError('The structure of {} has not been provided'.format(self.id))
@@ -1495,10 +1495,10 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`float`: molecular weight
 
         Raises:
-            :obj:`ValueError`: if there is not enough information to calculate molecular weight    
+            :obj:`ValueError`: if there is not enough information to calculate molecular weight
         """
         if self.properties.get_one(property='structure'):
-            mol = self.to_openbabel_mol() 
+            mol = self.to_openbabel_mol()
         elif self.properties.get_one(property='empirical_formula'):
             return chem.EmpiricalFormula(self.properties.get_one(
                 property='empirical_formula').get_value()).get_molecular_weight()
@@ -1989,10 +1989,8 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='properties')
     references = ManyToManyAttribute(Reference, related_name='properties')
     evidence = obj_model.OneToManyAttribute(Evidence, related_name='properties')
-    value_type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ValueTypeType'].rchildren(),
-                                  default = kbOnt['float'],
-                                  none=False)
+    value_type = StringAttribute()
+    #obj_model.EnumAttribute(ValueTypeType, default=ValueTypeType.float)
 
     class Meta(obj_model.Model.Meta):
         verbose_name_plural = 'Species type properties'
@@ -2018,7 +2016,5 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
             return int(self.value)
         elif are_terms_equivalent(self.value_type, kbOnt['float']):
             return float(self.value)
-        elif are_terms_equivalent(self.value_type, kbOnt['SignalSequenceType']):
-            return kbOnt[self.value]
         else:
             raise ValueError('SpeciesTypeProperty "{}" has unexpected value type "{}".'.format(self.id, self.value_type))
