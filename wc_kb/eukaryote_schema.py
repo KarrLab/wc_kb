@@ -41,7 +41,8 @@ class TranscriptType(enum.Enum):
     """ Type of transcript """
     mRna = 1
     rRna = 2
-    tRna = 3    
+    tRna = 3
+    itRna = 4    
 
 #####################
 #####################
