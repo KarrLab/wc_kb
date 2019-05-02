@@ -2008,13 +2008,16 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     def get_value(self):
         """ SpeciesType property values are stored as strings, this function returns the value as the correct type. """
 
-        if are_terms_equivalent(self.value_type, kbOnt['boolean']):
+        if self.value == '':
+            return None
+
+        if are_terms_equivalent(self.value_type, kbOnt['boolean']) or self.value_type=='boolean':
             return bool(self.value)
-        elif are_terms_equivalent(self.value_type, kbOnt['string']):
+        elif are_terms_equivalent(self.value_type, kbOnt['string']) or self.value_type=='string':
             return self.value
-        elif are_terms_equivalent(self.value_type, kbOnt['integer']):
+        elif are_terms_equivalent(self.value_type, kbOnt['integer']) or self.value_type=='integer':
             return int(self.value)
-        elif are_terms_equivalent(self.value_type, kbOnt['float']):
+        elif are_terms_equivalent(self.value_type, kbOnt['float']) or self.value_type=='float':
             return float(self.value)
         else:
             raise ValueError('SpeciesTypeProperty "{}" has unexpected value type "{}".'.format(self.id, self.value_type))

@@ -50,10 +50,14 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         Returns:
             :obj:`Bio.Seq.Seq`: sequence
         """
-        tu_start = self.transcription_units[0].start
-        tu_end = self.transcription_units[0].end
-        dna_seq = self.transcription_units[0].polymer.get_subseq(
-            start=tu_start, end=tu_end)
+        tu = self.transcription_units[0]
+        tu_start = tu.start
+        tu_end = tu.end
+        dna_seq = tu.polymer.get_subseq(start=tu_start, end=tu_end, strand=tu.strand)
+
+        #tu_start = self.start
+        #dna_seq = self.transcription_units[0].polymer.get_subseq(start=tu_start, end=tu_end)
+
         return dna_seq.transcribe()
 
     def get_empirical_formula(self):
@@ -159,6 +163,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
             :obj:`Bio.Seq.Seq`: sequence
         """
         table = self.cell.knowledge_base.translation_table
+        #import pdb; pdb.set_trace()
         seq = self.gene.get_seq().translate(table=table, cds=cds)
         return seq
 
