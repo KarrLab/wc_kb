@@ -65,14 +65,6 @@ PolymerDirection = enum.Enum(value='PolymerDirection', names=[
     ('reverse', -1), ])
 
 
-class ValueTypeType(enum.Enum):
-    """ Type of gene """
-    boolean = 0
-    integer = 1
-    float = 2
-    string = 3
-
-
 #####################
 #####################
 # Attributes
@@ -1989,9 +1981,11 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     identifiers = IdentifierAttribute(related_name='properties')
     references = ManyToManyAttribute(Reference, related_name='properties')
     evidence = obj_model.OneToManyAttribute(Evidence, related_name='properties')
-    value_type = StringAttribute()
-    #obj_model.EnumAttribute(ValueTypeType, default=ValueTypeType.float)
-
+    value_type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                terms = kbOnt['ValueTypeType'].rchildren(),
+                                default = kbOnt['float'],
+                                none=False)
+    
     class Meta(obj_model.Model.Meta):
         verbose_name_plural = 'Species type properties'
         unique_together = (('species_type', 'property', ), )
@@ -2011,13 +2005,13 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
         if self.value == '':
             return None
 
-        if are_terms_equivalent(self.value_type, kbOnt['boolean']) or self.value_type=='boolean':
+        if are_terms_equivalent(self.value_type, kbOnt['boolean']):
             return bool(self.value)
-        elif are_terms_equivalent(self.value_type, kbOnt['string']) or self.value_type=='string':
+        elif are_terms_equivalent(self.value_type, kbOnt['string']):
             return self.value
-        elif are_terms_equivalent(self.value_type, kbOnt['integer']) or self.value_type=='integer':
+        elif are_terms_equivalent(self.value_type, kbOnt['integer']):
             return int(self.value)
-        elif are_terms_equivalent(self.value_type, kbOnt['float']) or self.value_type=='float':
+        elif are_terms_equivalent(self.value_type, kbOnt['float']):
             return float(self.value)
         else:
             raise ValueError('SpeciesTypeProperty "{}" has unexpected value type "{}".'.format(self.id, self.value_type))
