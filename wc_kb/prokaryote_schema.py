@@ -163,7 +163,6 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
             :obj:`Bio.Seq.Seq`: sequence
         """
         table = self.cell.knowledge_base.translation_table
-        #import pdb; pdb.set_trace()
         seq = self.gene.get_seq().translate(table=table, cds=cds)
         return seq
 

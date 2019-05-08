@@ -18,7 +18,6 @@ from wc_utils.util.list import det_dedupe
 from wc_utils.util.units import unit_registry
 from wc_onto import kb_onto as kbOnt
 import abc
-import pdb
 import Bio.Alphabet
 import Bio.Seq
 import enum
@@ -1985,7 +1984,7 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
                                 terms = kbOnt['ValueTypeType'].rchildren(),
                                 default = kbOnt['float'],
                                 none=False)
-    
+
     class Meta(obj_model.Model.Meta):
         verbose_name_plural = 'Species type properties'
         unique_together = (('species_type', 'property', ), )

@@ -161,8 +161,8 @@ class TestIO(unittest.TestCase):
             'git@github.com:KarrLab/wc_kb.git',
         ])
 
-        os.remove(core_path)
         os.remove(seq_path)
+        os.remove(core_path)
 
     def test_write_without_cell_relationships(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
@@ -371,3 +371,12 @@ class TestIO(unittest.TestCase):
                 io.Writer.validate_implicit_relationships()
         finally:
             core.KnowledgeBase.Meta.related_attributes.pop('test')
+
+    def test_seq_path_consistency(self):
+        pass
+
+        #core_path = os.path.join(self.dir, 'core.xlsx')
+        #import pdb; pdb.set_trace()
+        #kb = io.Reader().run(core_path, seq_path=self.seq_path)[core.KnowledgeBase][0]
+        #core_path = os.path.join(self.dir, 'core2.xlsx')
+        #seq_path = os.path.join(self.dir, 'seq2.fna')

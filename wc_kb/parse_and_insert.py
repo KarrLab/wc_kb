@@ -9,7 +9,6 @@
 import wc_kb
 import json
 import openpyxl
-import pdb
 
 # Load workbooks and get sheets
 core = openpyxl.load_workbook('kbs/core.original.xlsx')

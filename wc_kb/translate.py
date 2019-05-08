@@ -1,6 +1,5 @@
 from wc_kb import kb_translater
 import wc_kb
-import pdb
 
 core_path = '/media/sf_vm_share/wc/wc_kb/kbs/original_core.xlsx'
 kb_path = '/media/sf_vm_share/wc/wc_kb/kbs/mycoplasmaPneumonia_KB_backup.xlsx'

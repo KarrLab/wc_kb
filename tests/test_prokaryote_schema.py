@@ -21,7 +21,6 @@ import os
 import shutil
 import tempfile
 import unittest
-import pdb
 
 
 class RnaSpeciesTypeTestCase(unittest.TestCase):
@@ -218,7 +217,6 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         # Mycoplasma genitallium
 
         # MPN001
-        #import pdb; pdb.set_trace()
         self.assertEqual(self.prot1.get_seq()[0:10], 'MKVLINKNEL')
         self.assertEqual(self.prot1.get_seq()[-10:], 'ELKEILVPSK')
 
