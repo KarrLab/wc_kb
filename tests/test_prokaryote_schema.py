@@ -11,7 +11,7 @@
 """
 
 from wc_kb import core, prokaryote_schema
-from wc_onto import kb_onto as kbOnt
+from wc_onto import onto as kbOnt
 from wc_utils.util import chem
 import Bio.Alphabet
 import Bio.Seq

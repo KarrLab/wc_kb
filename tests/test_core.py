@@ -11,7 +11,7 @@
 """
 
 from wc_kb import core
-from wc_onto import kb_onto as kbOnt
+from wc_onto import onto as kbOnt
 from wc_utils.util import chem
 from wc_utils.util.units import unit_registry
 from wc_utils.util.ontology import are_terms_equivalent
@@ -492,13 +492,12 @@ class PolymerLocusTestCase(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.locus1.get_direction()
 
-# Proteniation?
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
     def test_constructor(self):
 
         speciesTypeProperties = core.SpeciesTypeProperty(
             property = 'structure',
-            value_type = kbOnt['string'],
+            value_type = kbOnt['WC:string'],
             value = (
                 'InChI=1S'
                 '/C10H14N5O7P'
@@ -518,11 +517,11 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
 
         prop1 = core.SpeciesTypeProperty(
             property = 'empirical_formula',
-            value_type = kbOnt['string'],
+            value_type = kbOnt['WC:string'],
             value = 'C6H12O6')
         prop2 = core.SpeciesTypeProperty(
             property = 'charge',
-            value_type = kbOnt['integer'],
+            value_type = kbOnt['WC:integer'],
             value = '-3')
         met1 = core.MetaboliteSpeciesType(properties=[prop1, prop2])
         met2 = core.MetaboliteSpeciesType()
@@ -713,11 +712,11 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         speciesProps1 = core.SpeciesTypeProperty(
             property = 'structure',
             value = 'InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2',
-            value_type = kbOnt['string'])
+            value_type = kbOnt['WC:string'])
         speciesProps2 = core.SpeciesTypeProperty(
             property = 'structure',
             value = 'InChI=1S/Zn/q+2',
-            value_type = kbOnt['string'])
+            value_type = kbOnt['WC:string'])
 
 
         self.cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
@@ -1189,10 +1188,10 @@ class SpeciesTypePropertyTestCase(unittest.TestCase):
         c = core.Compartment(id='c', cell=cell1)
         met = core.MetaboliteSpeciesType(id='met1', cell=cell1)
 
-        stp1 = core.SpeciesTypeProperty(id='stp1', species_type=met, property='whatever1', value='True', value_type = kbOnt['boolean'])
-        stp2 = core.SpeciesTypeProperty(id='stp2', species_type=met, property='whatever2', value='check_str', value_type = kbOnt['string'])
-        stp3 = core.SpeciesTypeProperty(id='stp3', species_type=met, property='whatever3', value='3', value_type = kbOnt['integer'])
-        stp4 = core.SpeciesTypeProperty(id='stp4', species_type=met, property='whatever4', value='4.6', value_type = kbOnt['float'])
+        stp1 = core.SpeciesTypeProperty(id='stp1', species_type=met, property='whatever1', value='True', value_type = kbOnt['WC:boolean'])
+        stp2 = core.SpeciesTypeProperty(id='stp2', species_type=met, property='whatever2', value='check_str', value_type = kbOnt['WC:string'])
+        stp3 = core.SpeciesTypeProperty(id='stp3', species_type=met, property='whatever3', value='3', value_type = kbOnt['WC:integer'])
+        stp4 = core.SpeciesTypeProperty(id='stp4', species_type=met, property='whatever4', value='4.6', value_type = kbOnt['WC:float'])
         stp6 = core.SpeciesTypeProperty(id='stp6', species_type=met, property='whatever7', value='raise_test', value_type= 'raise_test')
 
         self.assertEqual(met.properties.get_one(id='stp1').get_value(), True)

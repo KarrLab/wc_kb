@@ -11,7 +11,7 @@
 """
 
 from wc_kb import core
-from wc_onto import kb_onto as kbOnt
+from wc_onto import onto as kbOnt
 from wc_utils.util import chem
 import obj_model
 
@@ -37,7 +37,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     coordinate = obj_model.IntegerAttribute()
     length = obj_model.IntegerAttribute()
     type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['GeneType'].rchildren(),
+                                  terms=kbOnt['WC:RNA'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
@@ -149,7 +149,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     unit = obj_model.StringAttribute()
     type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ProteinType'].rchildren(),
+                                  terms = kbOnt['WC:protein'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
@@ -257,7 +257,6 @@ class TranscriptionUnitLocus(core.PolymerLocus):
     """ Knowledge about an open reading frame
 
     Attributes:
-        promoter (:obj:`PromoterLocus`): promoter controlling the TU
         genes (:obj:`list` of :obj:`GeneLocus`): genes
     """
 
@@ -265,13 +264,13 @@ class TranscriptionUnitLocus(core.PolymerLocus):
     pribnow_end = obj_model.IntegerAttribute()
     genes = obj_model.OneToManyAttribute('GeneLocus', related_name='transcription_units')
     rnas = obj_model.ManyToManyAttribute('RnaSpeciesType', related_name='transcription_units')
-    type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['GeneType'].rchildren(),
-                                  none=True)
+    #type = obj_model.ontology.OntologyAttribute(kbOnt,
+    #                              terms = kbOnt['WC:gene'].rchildren(),
+    #                              none=True)
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'Transcription units'
-        attribute_order = ('id', 'name', 'type', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
+        attribute_order = ('id', 'name', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
                            'rnas', 'genes', 'identifiers', 'references', 'comments')
 
     def get_3_prime(self):
@@ -315,7 +314,7 @@ class GeneLocus(core.PolymerLocus):
     homologs = obj_model.LongStringAttribute()
     evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='genes')
     cog = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['COGType'].rchildren(),
+                                  terms = kbOnt['WC:COG'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):

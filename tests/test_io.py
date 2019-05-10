@@ -48,7 +48,7 @@ class TestIO(unittest.TestCase):
 
             for i_trn in range(5):
                 trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
-                trn.type = random.choice(['mRna', 'sRna', 'tRna', 'rRna', 'intergenic', 'mixed'])
+                trn.type = random.choice(['WC:mRNA', 'WC:sRNA', 'WC:tRNA', 'WC:rRNA', 'WC:intergenic', 'WC:mixed'])
                 trn.cell = cell
                 dna.loci.append(trn)
                 trn.start = random.randint(100, 200)
@@ -104,7 +104,7 @@ class TestIO(unittest.TestCase):
         seq_path = os.path.join(fixtures, 'eukaryote_seq.fna')
 
         reader = io.Reader()
-        kb = reader.run(core_path, seq_path=seq_path, taxon='eukaryote')[core.KnowledgeBase][0]
+        kb = reader.run(core_path, seq_path=seq_path, taxon='eukaryote', rewrite_seq_path=False)[core.KnowledgeBase][0]
 
         tmp_core_path = os.path.join(self.dir, 'tmp_eukaryote_core.xlsx')
         tmp_seq_path = os.path.join(self.dir, 'tmp_eukaryote_seq.fna')

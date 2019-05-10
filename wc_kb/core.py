@@ -16,7 +16,7 @@ from pyfaidx import Fasta
 from wc_utils.util import chem
 from wc_utils.util.list import det_dedupe
 from wc_utils.util.units import unit_registry
-from wc_onto import kb_onto as kbOnt
+from wc_onto import onto as kbOnt
 import abc
 import Bio.Alphabet
 import Bio.Seq
@@ -624,8 +624,8 @@ class Reference(obj_model.Model):
     identifiers = IdentifierAttribute(related_name='references')
     comments = obj_model.LongStringAttribute()
     type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ReferenceType'].rchildren(),
-                                  default = kbOnt['article'],
+                                  terms = kbOnt['WC:reference'].rchildren(),
+                                  default = kbOnt['WC:article'],
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
@@ -1393,7 +1393,7 @@ class MetaboliteSpeciesType(SpeciesType):
     """
     synonyms = obj_model.LongStringAttribute()
     type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['MetaboliteType'].rchildren(),
+                                  terms = kbOnt['WC:metabolite'].rchildren(),
                                   none = True)
 
     class Meta(obj_model.Model.Meta):
@@ -1638,10 +1638,10 @@ class ComplexSpeciesType(SpeciesType):
 
     subunits = SubunitAttribute(related_name='complexes')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ComplexType'].rchildren(),
+                                  terms = kbOnt['WC:complex'].rchildren(),
                                   none=True)
     formation_process  = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ComplexFormationType'].rchildren(),
+                                  terms = kbOnt['WC:complexFormation'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
@@ -1822,7 +1822,7 @@ class Reaction(KnowledgeBaseObject):
     spontaneous = obj_model.BooleanAttribute()
     parameters = obj_model.OneToManyAttribute('Parameter', related_name='reactions')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ReactionType'].rchildren(),
+                                  terms = kbOnt['WC:reaction'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
@@ -1859,7 +1859,7 @@ class ChromosomeFeature(PolymerLocus):
     identifiers = IdentifierAttribute(related_name='chromosome_features')
     references = obj_model.ManyToManyAttribute('Reference', related_name='chromosome_features')
     type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['ChromosomeFeatureType'].rchildren(),
+                                  terms = kbOnt['WC:chromosomeFeature'].rchildren(),
                                   none=True)
 
     class Meta(obj_model.Model.Meta):
@@ -1981,8 +1981,8 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     references = ManyToManyAttribute(Reference, related_name='properties')
     evidence = obj_model.OneToManyAttribute(Evidence, related_name='properties')
     value_type = obj_model.ontology.OntologyAttribute(kbOnt,
-                                terms = kbOnt['ValueTypeType'].rchildren(),
-                                default = kbOnt['float'],
+                                terms = kbOnt['WC:valueType'].rchildren(),
+                                default = kbOnt['WC:float'],
                                 none=False)
 
     class Meta(obj_model.Model.Meta):
@@ -2004,13 +2004,13 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
         if self.value == '':
             return None
 
-        if are_terms_equivalent(self.value_type, kbOnt['boolean']):
+        if are_terms_equivalent(self.value_type, kbOnt['WC:boolean']):
             return bool(self.value)
-        elif are_terms_equivalent(self.value_type, kbOnt['string']):
+        elif are_terms_equivalent(self.value_type, kbOnt['WC:string']):
             return self.value
-        elif are_terms_equivalent(self.value_type, kbOnt['integer']):
+        elif are_terms_equivalent(self.value_type, kbOnt['WC:integer']):
             return int(self.value)
-        elif are_terms_equivalent(self.value_type, kbOnt['float']):
+        elif are_terms_equivalent(self.value_type, kbOnt['WC:float']):
             return float(self.value)
         else:
             raise ValueError('SpeciesTypeProperty "{}" has unexpected value type "{}".'.format(self.id, self.value_type))
