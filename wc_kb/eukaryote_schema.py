@@ -175,16 +175,16 @@ class PtmSite(core.PolymerLocus):
         modified_protein (:obj:`ProteinSpeciesType`): modified protein
         type (:obj:`str`): type of modification (phosphorylation, methylation, etc...)
         modified_residue (:obj:`str`): residue name and position in protein sequence
-        abundance_ratio (:obj:`int`): ratio of modified protein abundance
+        fractional_abundance (:obj:`int`): ratio of modified protein abundance
     """
     type = obj_model.StringAttribute()
     modified_protein = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='ptm_sites')
     modified_residue = obj_model.StringAttribute()
-    abundance_ratio = obj_model.FloatAttribute()
+    fractional_abundance = obj_model.FloatAttribute()
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'name', 'modified_protein', 'type', 'modified_residue',
-                           'abundance_ratio', 'identifiers', 'references', 'comments')
+                           'fractional_abundance', 'identifiers', 'references', 'comments')
 
 
 class GenericLocus(obj_model.Model):

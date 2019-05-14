@@ -384,14 +384,14 @@ class PtmSiteTestCase(unittest.TestCase):
 
         # testing example of modification: one protein one modified site
         ptm1 = eukaryote_schema.PtmSite(id='protptm1', name='ptm1', modified_protein=mp,
-             type='phosphorylation', modified_residue='s145', abundance_ratio='0.5', comments='oneprot_onesite')
+             type='phosphorylation', modified_residue='s145', fractional_abundance='0.5', comments='oneprot_onesite')
 
         self.assertEqual(ptm1.id, 'protptm1')
         self.assertEqual(ptm1.name, 'ptm1')
         self.assertEqual(ptm1.modified_protein, mp)
         self.assertEqual(ptm1.type, 'phosphorylation')
         self.assertEqual(ptm1.modified_residue, 's145')
-        self.assertEqual(ptm1.abundance_ratio, '0.5')
+        self.assertEqual(ptm1.fractional_abundance, '0.5')
         self.assertEqual(ptm1.comments, 'oneprot_onesite')
         self.assertEqual(ptm1.references, [])
         self.assertEqual(ptm1.identifiers, [])
