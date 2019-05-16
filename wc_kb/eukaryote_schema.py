@@ -350,7 +350,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 
                            'identifiers', 'references', 'comments')
 
-    def get_seq(self, table=1, cds=True):
+    def get_seq(self, table=1, cds=False):
         """ Get the 5' to 3' sequence
 
         Args:
@@ -378,7 +378,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
         return spliced_dna_seq.transcribe().translate(table=table, cds=cds)
 
-    def get_empirical_formula(self, table=1, cds=True):
+    def get_empirical_formula(self, table=1, cds=False):
         """ Get the empirical formula
 
         Args:
@@ -441,7 +441,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         formula.S = n_c + n_m
         return formula
 
-    def get_charge(self, table=1, cds=True):
+    def get_charge(self, table=1, cds=False):
         """ Get the charge at physiological pH
 
         Args:
@@ -462,7 +462,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
         return (n_r + n_h + n_k) - (n_d + n_e)
 
-    def get_mol_wt(self, table=1, cds=True):
+    def get_mol_wt(self, table=1, cds=False):
         """ Get the molecular weight
 
         Args:
