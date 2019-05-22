@@ -880,7 +880,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
 
     name = obj_model.StringAttribute()
     species_type = ManyToOneAttribute(SpeciesType, related_name='species_type_coefficients')
-    coefficient = FloatAttribute(min=0., nan=False)
+    coefficient = FloatAttribute(min=0.)
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('species_type', 'coefficient')
