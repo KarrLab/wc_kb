@@ -36,6 +36,7 @@ class RegulatoryDirection(enum.Enum):
     """ The direction of regulation """
     activation = 1
     repression = -1
+    unknown = 0
 
 class TranscriptType(enum.Enum):
     """ Type of transcript """
