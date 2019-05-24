@@ -292,7 +292,6 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         cds2 = eukaryote_schema.GenericLocus(start=40, end=72)
         prot2 = eukaryote_schema.ProteinSpeciesType(transcript=transcript2, coding_regions=[cds2])
 
-        # Complex formation: (2) prot1 + (3) prot2 ==> complex1
         species_coeff1 = core.SpeciesTypeCoefficient(
             species_type=prot1, coefficient=2)
         species_coeff2 = core.SpeciesTypeCoefficient(
@@ -324,6 +323,77 @@ class GeneLocusTestCase(unittest.TestCase):
         self.assertEqual(gene.identifiers, [])
 
 
+class TranscriptionFactorRegulationTestCase(unittest.TestCase):
+    def test_constructor(self):
+
+        tf1 = eukaryote_schema.ProteinSpeciesType(id='tf1')
+        tf2 = eukaryote_schema.ProteinSpeciesType(id='tf2')
+        tf_reg1 = eukaryote_schema.TranscriptionFactorRegulation(
+                    transcription_factor=tf1,
+                    direction=eukaryote_schema.RegulatoryDirection.repression)
+        tf_reg2 = eukaryote_schema.TranscriptionFactorRegulation(
+                    transcription_factor=tf2,
+                    direction=eukaryote_schema.RegulatoryDirection.activation)
+        tf_reg3 = eukaryote_schema.TranscriptionFactorRegulation(
+                    transcription_factor=tf2,
+                    direction=eukaryote_schema.RegulatoryDirection.repression)
+
+        self.assertEqual(tf_reg1.transcription_factor, tf1)
+        self.assertEqual(tf_reg1.direction.name, 'repression')
+        self.assertEqual(tf_reg2.direction.name, 'activation')
+        self.assertEqual(tf_reg3.transcription_factor, tf2)
+
+    def test_serialize(self):
+
+        tf1 = eukaryote_schema.ProteinSpeciesType(id='tf1')
+        tf_reg1 = eukaryote_schema.TranscriptionFactorRegulation(
+                    transcription_factor=tf1,
+                    direction=eukaryote_schema.RegulatoryDirection.repression)
+        tf_reg2 = eukaryote_schema.TranscriptionFactorRegulation(
+                    transcription_factor=tf1,
+                    direction=eukaryote_schema.RegulatoryDirection.activation)
+
+        self.assertEqual(tf_reg1.serialize(), 'tf1:repression')
+        self.assertEqual(tf_reg2.serialize(), 'tf1:activation')
+
+    def test_deserialize(self):
+        
+        tf1 = eukaryote_schema.ProteinSpeciesType(id='tf1')
+        
+        objects = {
+            eukaryote_schema.ProteinSpeciesType: {
+                'tf1': tf1,
+            },
+        }    
+                
+        result = eukaryote_schema.TranscriptionFactorRegulation.deserialize('tf1:activation', objects)
+        self.assertEqual(result[0].transcription_factor, tf1)
+        self.assertEqual(result[0].direction, eukaryote_schema.RegulatoryDirection.activation)
+        self.assertEqual(result[1], None)
+
+        result = eukaryote_schema.TranscriptionFactorRegulation.deserialize('tf1:repression', objects)
+        self.assertEqual(result[0].transcription_factor, tf1)
+        self.assertEqual(result[0].direction, eukaryote_schema.RegulatoryDirection.repression)
+        self.assertEqual(result[1], None)
+
+        result = eukaryote_schema.TranscriptionFactorRegulation.deserialize('tf1:unknown', objects)
+        self.assertEqual(result[0].transcription_factor, tf1)
+        self.assertEqual(result[0].direction, eukaryote_schema.RegulatoryDirection.unknown)
+        self.assertEqual(result[1], None)
+
+        result = eukaryote_schema.TranscriptionFactorRegulation.deserialize('tf:activation', objects)
+        self.assertEqual(result[0], None)
+
+        result = eukaryote_schema.TranscriptionFactorRegulation.deserialize('tf1:1', objects)
+        self.assertEqual(result[0], None)
+
+        result = eukaryote_schema.TranscriptionFactorRegulation.deserialize('tf1:error', objects)
+        self.assertEqual(result[0], None)
+
+        result = eukaryote_schema.TranscriptionFactorRegulation.deserialize('tf1:3.6', objects)
+        self.assertEqual(result[0], None)
+
+
 class RegulatoryModuleTestCase(unittest.TestCase):
     def test_constructor(self):
         dna1 = core.DnaSpeciesType(circular=False, double_stranded=False)
@@ -334,23 +404,31 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         promoter1 = 'ENSR00000172399'
         promoter2 = 'ENSR00000309980'
 
-        tf = [eukaryote_schema.ProteinSpeciesType(id='tf')]
+        tf1 = eukaryote_schema.ProteinSpeciesType(id='tf1')
+        tf2 = eukaryote_schema.ProteinSpeciesType(id='tf2')
 
         reg_module1 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
             promoter=promoter1,
             activity=eukaryote_schema.ActivityLevel.active,
-            binding_factor=tf,
-            type=eukaryote_schema.RegulationType.proximal, #eukaryote_schema.RegulationType.proximal,
-            direction=eukaryote_schema.RegulatoryDirection.activation) #eukaryote_schema.RegulatoryDirection.positive)
+            type=eukaryote_schema.RegulationType.proximal,
+            transcription_factor_regulation=[
+                eukaryote_schema.TranscriptionFactorRegulation(
+                    transcription_factor=tf1,
+                    direction=eukaryote_schema.RegulatoryDirection.activation),
+                eukaryote_schema.TranscriptionFactorRegulation(
+                    transcription_factor=tf2,
+                    direction=eukaryote_schema.RegulatoryDirection.repression)
+            ]) 
 
         reg_module2 = eukaryote_schema.RegulatoryModule(
             gene=gene1,
             promoter=promoter1,
             activity=eukaryote_schema.ActivityLevel.active,
-            binding_factor=tf,
             type=eukaryote_schema.RegulationType.distal,
-            direction= eukaryote_schema.RegulatoryDirection.repression)
+            transcription_factor_regulation=[eukaryote_schema.TranscriptionFactorRegulation(
+                transcription_factor=tf1,
+                direction=eukaryote_schema.RegulatoryDirection.repression)]) 
 
         reg_module3 = eukaryote_schema.RegulatoryModule(
             id='rm3',
@@ -362,15 +440,17 @@ class RegulatoryModuleTestCase(unittest.TestCase):
         self.assertEqual(reg_module1.gene, gene1)
         self.assertEqual(reg_module1.promoter, promoter1)
         self.assertEqual(reg_module1.activity.name, 'active')
-        self.assertEqual(reg_module1.binding_factor, tf)
         self.assertEqual(reg_module1.type.value, 1)
-        self.assertEqual(reg_module1.direction.value, 1)
+        self.assertEqual(sorted([i.transcription_factor.id for i in reg_module1.transcription_factor_regulation]), 
+            ['tf1', 'tf2'])
+        self.assertEqual(sorted([i.direction.name for i in reg_module1.transcription_factor_regulation]), 
+            ['activation', 'repression'])
         self.assertEqual(reg_module2.gene, gene1)
         self.assertEqual(reg_module2.promoter, promoter1)
         self.assertEqual(reg_module2.activity.name, 'active')
-        self.assertEqual(reg_module2.binding_factor, tf)
         self.assertEqual(reg_module2.type.value, 2)
-        self.assertEqual(reg_module2.direction.value, -1)
+        self.assertEqual(reg_module2.transcription_factor_regulation[0].transcription_factor, tf1)
+        self.assertEqual(reg_module2.transcription_factor_regulation[0].direction.name, 'repression')
         self.assertEqual(reg_module3.id, 'rm3')
         self.assertEqual(reg_module3.activity.name, 'inactive')
         self.assertEqual(reg_module3.name, 'reg_module3')

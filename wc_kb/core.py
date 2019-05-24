@@ -433,7 +433,6 @@ class Identifier(obj_model.Model):
     class Meta(obj_model.Model.Meta):
         attribute_order = ('namespace', 'id')
         tabular_orientation = TabularOrientation.cell
-        unique_together = (('namespace', 'id'), )
         ordering = ('namespace', 'id')
 
     @staticmethod
@@ -878,7 +877,6 @@ class SpeciesTypeCoefficient(obj_model.Model):
         complex (:obj:`ComplexSpeciesType`): complex
     """
 
-    name = obj_model.StringAttribute()
     species_type = ManyToOneAttribute(SpeciesType, related_name='species_type_coefficients')
     coefficient = FloatAttribute(min=0.)
 

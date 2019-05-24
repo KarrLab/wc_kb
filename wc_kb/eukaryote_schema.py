@@ -32,7 +32,7 @@ class RegulationType(enum.Enum):
     proximal = 1
     distal = 2
 
-class RegulatoryDirection(enum.Enum):
+class RegulatoryDirection(int, enum.Enum):
     """ The direction of regulation """
     activation = 1
     repression = -1
@@ -110,6 +110,81 @@ class LocusAttribute(obj_model.ManyToManyAttribute):
         return (objs, None)
 
 
+class RegDirectionAttribute(obj_model.ManyToManyAttribute):
+    """ Regulatory direction attribute """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(RegDirectionAttribute, self).__init__('TranscriptionFactorRegulation',
+                                            related_name=related_name, 
+                                            verbose_name=verbose_name, 
+                                            verbose_related_name=verbose_related_name, help=help)
+
+    def serialize(self, directions, encoded=None):
+        """ Serialize related object
+        Args:
+            directions (:obj:`list` of :obj:`Model`): a list of instances of TFdirection Python representation
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+        Returns:
+            :obj:`str`: simple Python representation
+        """
+        if not directions:
+            return ''
+
+        return ', '.join(obj_model.serialize() for obj_model in directions)
+
+    def deserialize(self, value, objects, decoded=None):
+        """ Deserialize value
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+        Returns:
+            :obj:`tuple` of :obj:`list` of :obj:`RegDirection`, :obj:`InvalidAttribute` or :obj:`None`: :obj:`tuple` of cleaned value
+                and cleaning error
+        """
+        if not value:
+            return ([], None)
+
+        tf_id = r'[a-z][a-z0-9_]*'
+        direction = r'[a-z][a-z0-9_]*'
+        pattern = r'({})\:({})'.format(tf_id, direction)
+        if not re.match(pattern, value, flags=re.I):
+            return (None, obj_model.InvalidAttribute(self, ['Incorrectly formatted list of transcription factor regulation: {}'.format(value)]))
+
+        objs = []
+        errors = []
+        for pat_match in re.findall(pattern, value, flags=re.I):
+            tf = pat_match[0]
+            direction = pat_match[1]
+            
+            if self.related_class not in objects:
+                objects[self.related_class] = {}           
+            
+            serialized_value = self.related_class._serialize(tf, direction)           
+            
+            if serialized_value in objects[self.related_class]:
+                obj = objects[self.related_class][serialized_value]
+            else:
+                obj, error = self.related_class.deserialize(serialized_value, objects)
+                if error:
+                    errors.append(error)
+                else:    
+                    objects[self.related_class][serialized_value] = obj
+                    objs.append(obj)
+        
+        if errors:
+            return (None, obj_model.InvalidAttribute(self, errors))
+
+        return (objs, None)        
+
+
 #####################
 #####################
 # Locus types
@@ -135,6 +210,92 @@ class GeneLocus(core.PolymerLocus):
                            'end', 'identifiers', 'references', 'comments')
 
 
+class TranscriptionFactorRegulation(obj_model.Model):
+    """ Transcription factor and the direction of transcriptional regulation
+
+    Attributes:
+        transcription_factor (:obj:`ProteinSpeciesType`): transcription factor
+        direction (:obj:`RegulatoryDirection`): regulatory direction
+
+    Related attributes:
+        regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory modules
+    """
+
+    transcription_factor = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='transcription_factor_regulation')
+    direction = obj_model.EnumAttribute(RegulatoryDirection)    
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('transcription_factor', 'direction')
+        frozen_columns = 1
+        tabular_orientation = obj_model.TabularOrientation.cell
+        ordering = ('transcription_factor', 'direction')
+
+    @staticmethod
+    def _serialize(transcription_factor_id, direction_name):
+        """ Generate string representation
+
+        Args:
+            transcription_factor_id (:obj:`str`): transcription factor id
+            direction_name (:obj:`str`): regulatory direction name
+
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return '{}:{}'.format(transcription_factor_id, direction_name)
+
+    def serialize(self):
+        """ Generate string representation
+
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return self._serialize(self.transcription_factor.id, self.direction.name)
+
+    @classmethod
+    def deserialize(cls, value, objects):
+        """ Deserialize value
+        Args:
+            value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
+        Returns:
+            :obj:`tuple` of `list` of `TranscriptionFactorRegulation`, `InvalidAttribute` or `None`: tuple of cleaned value
+                and cleaning error
+        """
+        if cls in objects and value in objects[cls]:
+            return (objects[cls][value], None)
+
+        tf_id = r'[a-z][a-z0-9_]*'
+        direction = r'[a-z][a-z0-9_]*'
+        gbl_pattern = r'({})\:({})'.format(tf_id, direction)        
+        global_match = re.match(gbl_pattern, value, flags=re.I)       
+
+        if global_match:
+            errors = []
+
+            tf_reg_str = global_match.group(1)       
+            if ProteinSpeciesType in objects and tf_reg_str in objects[ProteinSpeciesType]:
+                transcription_factor = objects[ProteinSpeciesType][tf_reg_str]
+            else:
+                errors.append('Undefined transcription factor "{}"'.format(tf_reg_str))
+
+            direction_str = global_match.group(2)
+            if direction_str in [i.name for i in list(RegulatoryDirection)]:
+                direction = [i for i in list(RegulatoryDirection) if i.name==direction_str][0]
+            else:
+                errors.append('Undefined regulatory direction "{}"'.format(direction_str))
+
+            if errors:
+                return (None, obj_model.InvalidAttribute(cls, errors)) 
+            else:
+                obj = cls(transcription_factor=transcription_factor, direction=direction)
+                if cls not in objects:
+                    objects[cls] = {}
+                objects[cls][obj.serialize()] = obj
+                return (obj, None)
+
+        return (None, obj_model.InvalidAttribute(cls, ['Invalid transcription factor regulation']))
+            
+
 class RegulatoryModule(obj_model.Model):
     """ Knowledge about regulatory modules
 
@@ -144,29 +305,27 @@ class RegulatoryModule(obj_model.Model):
         gene (:obj:`GeneLocus`): gene
         promoter (:obj:`str`): promoter ensembl ID
         activity (:obj:`ActivityLevel`): cell-type specific activity level
-        binding_factor (:obj:`ProteinSpeciesType`): binding factor
         type (:obj:`RegulationType`): type of regulation (proximal or distal)
-        direction (:obj:`RegulatoryDirection`): direction of regulation
+        transcription_factor_regulation (:obj:`TranscriptionFactorRegulation`): 
+            transcription factor and direction of regulation
         comments (:obj:`str`): comments
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
     id = obj_model.SlugAttribute(primary=True, unique=True)
     name = obj_model.StringAttribute()
-    gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='regulatory_modules')
-    binding_factor = obj_model.ManyToManyAttribute('ProteinSpeciesType', related_name='regulatory_modules')
-    comments = obj_model.LongStringAttribute()
-    references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
-    identifiers = core.IdentifierAttribute(related_name='regulatory_modules')
+    gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='regulatory_modules')    
     promoter = obj_model.StringAttribute()
     activity = obj_model.EnumAttribute(ActivityLevel)
     type = obj_model.EnumAttribute(RegulationType)
-    direction = obj_model.EnumAttribute(RegulatoryDirection)    
-
+    transcription_factor_regulation = RegDirectionAttribute(related_name='regulatory_modules')
+    comments = obj_model.LongStringAttribute()
+    references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
+    identifiers = core.IdentifierAttribute(related_name='regulatory_modules')
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'name', 'gene', 'promoter', 'activity', 'binding_factor', 'type',
-                            'direction', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'name', 'gene', 'promoter', 'activity', 'type',
+                            'transcription_factor_regulation', 'identifiers', 'references', 'comments')
 
 
 class PtmSite(core.PolymerLocus):
@@ -337,8 +496,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         coding_regions (:obj:`list` of :obj:`LocusAttribute`): CDS coordinates
 
     Related attributes:
-        regulatory_elements (:obj:`list` of `RegulatoryElementLocus`): potential binding sites
-        regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory DNA binding sites
+        transcription_factor_regulation (:obj:`list` of `TranscriptionFactorRegulation`): transcription factor regulation
         ptm_sites (:obj:list` of `PtmSite`): protein modification sites
     """
 
