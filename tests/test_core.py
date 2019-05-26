@@ -202,7 +202,7 @@ class SpeciesTestCase(unittest.TestCase):
 
     def test_deserialize(self):
         comp1 = core.Compartment(id='c')
-        met1 = core.MetaboliteSpeciesType(id='met1')
+        met1 = core.MetaboliteSpeciesType(id='1met1')
         dna1 = core.DnaSpeciesType(id='dna1')
 
         objects = {
@@ -210,7 +210,7 @@ class SpeciesTestCase(unittest.TestCase):
                 'c': comp1,
             },
             core.MetaboliteSpeciesType: {
-                'met1': met1,
+                '1met1': met1,
             },
             core.DnaSpeciesType: {
                 'dna1': dna1,
@@ -218,15 +218,15 @@ class SpeciesTestCase(unittest.TestCase):
         }
 
         attr = core.SpeciesCoefficient.species
-        result = core.Species.deserialize(attr, 'met1[c]', objects)
+        result = core.Species.deserialize(attr, '1met1[c]', objects)
         self.assertEqual(result[0].species_type, met1)
         self.assertEqual(result[0].compartment, comp1)
         self.assertEqual(result[1], None)
 
-        result2 = core.Species.deserialize(attr, 'met1[c]', objects)
+        result2 = core.Species.deserialize(attr, '1met1[c]', objects)
         self.assertEqual(result2[0], result[0])
         self.assertIn(core.Species, objects)
-        self.assertIn('met1[c]', objects[core.Species])
+        self.assertIn('1met1[c]', objects[core.Species])
 
         self.assertNotIn('dna1[c]', objects[core.Species])
         self.assertEqual(core.Species.deserialize(
@@ -236,9 +236,9 @@ class SpeciesTestCase(unittest.TestCase):
         self.assertNotEqual(core.Species.deserialize(
             attr, 'met2[c]', objects)[1], None)
         self.assertNotEqual(core.Species.deserialize(
-            attr, 'met1[e]', objects)[1], None)
+            attr, '1met1[e]', objects)[1], None)
         self.assertNotEqual(core.Species.deserialize(
-            attr, 'met1', objects)[1], None)
+            attr, '1met1', objects)[1], None)
 
 
 # Done
@@ -610,7 +610,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
             reversible=False)
 
         self.rate_law_expression_2 = rate_law_expression_2 = core.RateLawExpression(
-            expression='p1*species_type_1[c]*species_type_2[c]/(p2+(obs1^2/p3))',
+            expression='p1 * species_type_1[c] * species_type_2[c] / ( p2 + ( obs1 ^ 2 / p3 ) )',
             species=[species_1, species_2],
             observables=[observable_1],
             parameters=[parameter_1, parameter_2, parameter_3]
@@ -682,7 +682,7 @@ class ReactionAndRelatedClassesTestCase(unittest.TestCase):
         self.assertTrue(error is None)
         self.assertEqual(rle_1.species, [self.species_1])
         rle_2, error = core.RateLawExpression().deserialize(
-            value='p1*species_type_1[c]*species_type_2[c]/(p2+(obs1**2/p3))',
+            value='p1 * species_type_1[c] * species_type_2[c] / ( p2 + ( obs1 ** 2 / p3 ) )',
             objects=self.objects)
         self.assertTrue(error is None)
         self.assertEqual(set(rle_2.species), set([self.species_1, self.species_2]))
@@ -719,7 +719,7 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
             value_type = kbOnt['WC:string'])
 
 
-        self.cofactor1 = core.MetaboliteSpeciesType(id='cofactor1',
+        self.cofactor1 = core.MetaboliteSpeciesType(id='1cofactor1',
                                                properties = [speciesProps1])
         self.cofactor2 = core.MetaboliteSpeciesType(id='cofactor2',
                                                properties = [speciesProps2])
@@ -797,7 +797,7 @@ class SpeciesCoefficientTestCase(unittest.TestCase):
     def test_deserialize(self):
         comp = core.Compartment(id='c')
         dna = core.DnaSpeciesType(id='dna')
-        met = core.MetaboliteSpeciesType(id='met')
+        met = core.MetaboliteSpeciesType(id='2met')
 
         spec = core.Species(species_type=dna, compartment=comp)
 
@@ -809,7 +809,7 @@ class SpeciesCoefficientTestCase(unittest.TestCase):
                 'dna': dna,
             },
             core.MetaboliteSpeciesType: {
-                'met': met,
+                '2met': met,
             },
             core.Species: {
                 'dna[c]': spec,
@@ -848,7 +848,7 @@ class SpeciesCoefficientTestCase(unittest.TestCase):
         self.assertEqual(len(objects[core.Species]), 1)
         self.assertEqual(len(objects[core.SpeciesCoefficient]), 3)
 
-        result = core.SpeciesCoefficient.deserialize(attr, 'met[c]', objects)
+        result = core.SpeciesCoefficient.deserialize(attr, '2met[c]', objects)
         self.assertEqual(result[0].species.species_type, met)
         self.assertEqual(result[0].species.compartment, comp)
         self.assertEqual(result[0].coefficient, 1)
@@ -909,6 +909,29 @@ class SpeciesTypeCoefficientTestCase(unittest.TestCase):
         self.assertEqual(core.SpeciesTypeCoefficient._serialize(
             species_type=met, coefficient=2000), '(2.000000e+03) met')
 
+    def test_deserialize(self):
+    
+        met1 = core.MetaboliteSpeciesType(id='1met1') 
+        met2 = core.MetaboliteSpeciesType(id='met2') 
+
+        objects = {
+            core.MetaboliteSpeciesType: {
+                '1met1': met1,
+                'met2': met2,
+            },
+        }        
+
+        attr = core.ComplexSpeciesType.subunits
+
+        result = core.SpeciesTypeCoefficient.deserialize(attr, '1met1 + met2', objects)
+        self.assertEqual(sorted(['{}:{}'.format(i.species_type.id, i.coefficient) for i in result[0]]), 
+            sorted(['1met1:1.0', 'met2:1.0']))
+        self.assertEqual(result[1], None)
+
+        result = core.SpeciesTypeCoefficient.deserialize(attr, '(0) 1met1 + (1) met2', objects)
+        self.assertEqual(sorted(['{}:{}'.format(i.species_type.id, i.coefficient) for i in result[0]]), 
+            sorted(['1met1:0.0', 'met2:1.0']))
+        self.assertEqual(result[1], None)
 
 #Done
 class SubunitAttributeTestCase(unittest.TestCase):
@@ -984,7 +1007,7 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
         cls.compart1 = core.Compartment(id='c')
         cls.compart2 = core.Compartment(id='m')
 
-        cls.met1 = core.MetaboliteSpeciesType(id='met1')
+        cls.met1 = core.MetaboliteSpeciesType(id='1met1')
         cls.met2 = core.MetaboliteSpeciesType(id='met2')
         cls.complex1 = core.ComplexSpeciesType(id='complex1')
 
@@ -1011,20 +1034,20 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
         self.assertEqual(
             core.ReactionParticipantAttribute().serialize(participants=[]), '')
         self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[self.species_coeff1]),
-                         '[c]: (2) met1 ==> ')
+                         '[c]: (2) 1met1 ==> ')
         self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[self.species_coeff1, self.species_coeff2]),
-                         '[c]: (2) met1 + (3) met2 ==> ')
+                         '[c]: (2) 1met1 + (3) met2 ==> ')
         self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[self.species_coeff1, self.species_coeff2, self.species_coeff3]),
-                         '[c]: (2) met1 + (3) met2 ==> (5) complex1')
+                         '[c]: (2) 1met1 + (3) met2 ==> (5) complex1')
         self.assertEqual(core.ReactionParticipantAttribute().serialize(participants=[self.species_coeff1, self.species_coeff2, self.species_coeff4]),
-                         '(2) met1[c] + (3) met2[c] ==> (7) complex1[m]')
+                         '(2) 1met1[c] + (3) met2[c] ==> (7) complex1[m]')
 
     def test_deserialize(self):
 
         objects = {
             core.DnaSpeciesType: {},
             core.MetaboliteSpeciesType: {
-                'met1': self.met1, 'met2': self.met2
+                '1met1': self.met1, 'met2': self.met2
             },
             core.ComplexSpeciesType: {
                 'complex1': self.complex1
@@ -1033,24 +1056,40 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
                 'c': self.compart1, 'm': self.compart2
             },
             core.Species: {
-                'met1[c]': self.species1, 'met2[c]': self.species2, 'complex1[c]': self.species3, 'complex[m]': self.species4
+                '1met1[c]': self.species1, 'met2[c]': self.species2, 'complex1[c]': self.species3, 'complex[m]': self.species4
             },
         }
 
         result = core.ReactionParticipantAttribute().deserialize(
-            value='[c]: met1 ==> met2', objects=objects)
+            value='[c]: 1met1 ==> met2', objects=objects)
         self.assertEqual(result[0][0].species.species_type, self.met1)
         self.assertEqual(result[0][1].species.species_type, self.met2)
         self.assertEqual(result[0][0].coefficient, -1)
         self.assertEqual(result[0][1].coefficient,  1)
         self.assertEqual(result[0][0].species.compartment, self.compart1)
         self.assertEqual(result[0][1].species.compartment, self.compart1)
-        self.assertEqual(result[0][0].species.id(), 'met1[c]')
+        self.assertEqual(result[0][0].species.id(), '1met1[c]')
         self.assertEqual(result[0][1].species.id(), 'met2[c]')
         self.assertEqual(result[1], None)
 
         result = core.ReactionParticipantAttribute().deserialize(
-            value='(2) met1[c] + (3) met2[c] ==> (7) complex1[m]', objects=objects)
+            value='[c]: 1met1 ==> ', objects=objects)
+        self.assertEqual(result[0][0].species.species_type, self.met1)
+        self.assertEqual(result[0][0].coefficient, -1)
+        self.assertEqual(result[0][0].species.compartment, self.compart1)
+        self.assertEqual(result[0][0].species.id(), '1met1[c]')
+        self.assertEqual(result[1], None)
+
+        result = core.ReactionParticipantAttribute().deserialize(
+            value='[c]: ==> met2', objects=objects)
+        self.assertEqual(result[0][0].species.species_type, self.met2)
+        self.assertEqual(result[0][0].coefficient,  1)
+        self.assertEqual(result[0][0].species.compartment, self.compart1)
+        self.assertEqual(result[0][0].species.id(), 'met2[c]')
+        self.assertEqual(result[1], None)
+
+        result = core.ReactionParticipantAttribute().deserialize(
+            value='(2) 1met1[c] + (3) met2[c] ==> (7) complex1[m]', objects=objects)
         self.assertEqual(result[0][0].species.species_type, self.met1)
         self.assertEqual(result[0][1].species.species_type, self.met2)
         self.assertEqual(result[0][2].species.species_type, self.complex1)
@@ -1060,7 +1099,7 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
         self.assertEqual(result[0][0].species.compartment, self.compart1)
         self.assertEqual(result[0][1].species.compartment, self.compart1)
         self.assertEqual(result[0][2].species.compartment, self.compart2)
-        self.assertEqual(result[0][0].species.id(), 'met1[c]')
+        self.assertEqual(result[0][0].species.id(), '1met1[c]')
         self.assertEqual(result[0][1].species.id(), 'met2[c]')
         self.assertEqual(result[0][2].species.id(), 'complex1[m]')
         self.assertEqual(result[1], None)
@@ -1072,10 +1111,10 @@ class ReactionParticipantAttributeTestCase(unittest.TestCase):
             result[1].messages[0], 'Incorrectly formatted participants: met2[c] ==>')
 
         result = core.ReactionParticipantAttribute().deserialize(
-            value='==> met1[c]', objects=objects)
+            value='==> 1met1[c]', objects=objects)
         self.assertEqual(result[0], None)
         self.assertEqual(
-            result[1].messages[0], 'Incorrectly formatted participants: ==> met1[c]')
+            result[1].messages[0], 'Incorrectly formatted participants: ==> 1met1[c]')
 
 # Organized + cover + passes
 class ObservableExpressionTestCase(unittest.TestCase):

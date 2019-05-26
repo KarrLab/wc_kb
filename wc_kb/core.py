@@ -295,7 +295,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         """
         errors = []
 
-        id = r'[a-z][a-z0-9_]*'
+        id = r'[a-z0-9][a-z0-9_]*'
         stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
         gbl_part = r'({} )*({})'.format(stoch, id)
         lcl_part = r'({} )*({}\[{}\])'.format(stoch, id, id)
@@ -304,9 +304,14 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         gbl_pattern = r'^\[({})\]: ({}) ==> ({})$'.format(
             id, gbl_side, gbl_side)
         lcl_pattern = r'^({}) ==> ({})$'.format(lcl_side, lcl_side)
+        
+        import_pattern = r'^\[({})\]: ==> ({})$'.format(id, id)
+        export_pattern = r'^\[({})\]: ({}) ==> $'.format(id, id)
 
         global_match = re.match(gbl_pattern, value, flags=re.I)
         local_match = re.match(lcl_pattern, value, flags=re.I)
+        import_match = re.match(import_pattern, value, flags=re.I)
+        export_match = re.match(export_pattern, value, flags=re.I)
 
         if global_match:
             if global_match.group(1) in objects[Compartment]:
@@ -323,17 +328,40 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
             lhs = local_match.group(1)
             rhs = local_match.group(13)
 
+        elif import_match:
+            if import_match.group(1) in objects[Compartment]:
+                global_comp = objects[Compartment][import_match.group(1)]
+            else:
+                global_comp = None
+                errors.append('Undefined compartment "{}"'.format(
+                    import_match.group(1)))
+            lhs = None
+            rhs = import_match.group(2)    
+                
+        elif export_match:
+            if export_match.group(1) in objects[Compartment]:
+                global_comp = objects[Compartment][export_match.group(1)]
+            else:
+                global_comp = None
+                errors.append('Undefined compartment "{}"'.format(
+                    export_match.group(1)))
+            lhs = export_match.group(2)
+            rhs = None        
+
         else:
             return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
 
-        lhs_parts, lhs_errors = self.deserialize_side(
-            -1., lhs, objects, global_comp)
-        rhs_parts, rhs_errors = self.deserialize_side(
-            1., rhs, objects, global_comp)
-
-        parts = lhs_parts + rhs_parts
-        errors.extend(lhs_errors)
-        errors.extend(rhs_errors)
+        lhs_parts = []
+        rhs_parts = []
+        if lhs:
+            lhs_parts, lhs_errors = self.deserialize_side(
+                -1., lhs, objects, global_comp)
+            errors.extend(lhs_errors)
+        if rhs:    
+            rhs_parts, rhs_errors = self.deserialize_side(
+                1., rhs, objects, global_comp)
+            errors.extend(rhs_errors)
+        parts = lhs_parts + rhs_parts       
 
         if errors:
             return (None, InvalidAttribute(self, errors))
@@ -355,7 +383,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         parts = []
         errors = []
 
-        for part in re.findall(r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
+        for part in re.findall(r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z0-9][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
             part_errors = []
 
             species_type = None
@@ -788,7 +816,7 @@ class Species(obj_model.Model):
             return (objects[cls][value], None)
 
         match = re.match(
-            r'^([a-z][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
+            r'^([a-z0-9][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
         if match:
             errors = []
 
@@ -932,7 +960,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
         """
         parts = []
         errors = []
-        id = r'[a-z][a-z0-9_]*'
+        id = r'[a-z0-9][a-z0-9_]*'
         stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
         gbl_part = r'({} )*({})'.format(stoch, id)
         gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)
@@ -946,8 +974,7 @@ class SpeciesTypeCoefficient(obj_model.Model):
             attr = cls.Meta.attributes['species_type']
             return (None, InvalidAttribute(attr, ['Incorrectly formatted participants: {}'.format(value)]))
 
-        for part in re.findall(r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)',
-                               subunits_str, flags=re.I):
+        for part in re.findall(gbl_part, subunits_str, flags=re.I):
 
             species_type = None
             for species_type_cls in get_subclasses(SpeciesType):
@@ -961,17 +988,15 @@ class SpeciesTypeCoefficient(obj_model.Model):
             coefficient = float(part[1] or 1.)
 
             if not errors:
-
-                if coefficient != 0:
-                    if cls not in objects:
-                        objects[cls] = {}
-                    serialized_value = cls._serialize(species_type, coefficient)
-                    if serialized_value in objects[cls]:
-                        subunit_part = objects[cls][serialized_value]
-                    else:
-                        subunit_part = cls(species_type=species_type, coefficient=coefficient)
-                        objects[cls][serialized_value] = subunit_part
-                    parts.append(subunit_part)
+                if cls not in objects:
+                    objects[cls] = {}
+                serialized_value = cls._serialize(species_type, coefficient)
+                if serialized_value in objects[cls]:
+                    subunit_part = objects[cls][serialized_value]
+                else:
+                    subunit_part = cls(species_type=species_type, coefficient=coefficient)
+                    objects[cls][serialized_value] = subunit_part
+                parts.append(subunit_part)
 
         if errors:
             return (None, InvalidAttribute(cls, errors))
@@ -1059,9 +1084,9 @@ class SpeciesCoefficient(obj_model.Model):
         errors = []
 
         if compartment:
-            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*)$'
+            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z0-9][a-z0-9_]*)$'
         else:
-            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z][a-z0-9_]*\[[a-z][a-z0-9_]*\])$'
+            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z0-9][a-z0-9_]*\[[a-z][a-z0-9_]*\])$'
 
         match = re.match(pattern, value, flags=re.I)
         if match:
