@@ -90,12 +90,13 @@ class LocusAttribute(obj_model.ManyToManyAttribute):
         if not value:
             return ([], None)
 
-        pattern = r'([0-9]+)\:([0-9]+)'
-        if not re.match(pattern, value, flags=re.I):
+        obj_pattern = r'([0-9]+) *\: *([0-9]+)'
+        lst_pattern = r'^{}( *, *{})*$'.format(obj_pattern, obj_pattern)
+        if not re.match(lst_pattern, value, flags=re.I):
             return (None, obj_model.InvalidAttribute(self, ['Incorrectly formatted list of coordinates: {}'.format(value)]))
 
         objs = []
-        for pat_match in re.findall(pattern, value, flags=re.I):
+        for pat_match in re.findall(obj_pattern, value, flags=re.I):
             start = int(pat_match[0])
             end = int(pat_match[1])
             if self.related_class not in objects:
@@ -152,17 +153,18 @@ class RegDirectionAttribute(obj_model.ManyToManyAttribute):
         if not value:
             return ([], None)
 
-        tf_id = r'[a-z][a-z0-9_]*'
-        direction = r'[a-z][a-z0-9_]*'
-        pattern = r'({})\:({})'.format(tf_id, direction)
-        if not re.match(pattern, value, flags=re.I):
+        tf_id = ProteinSpeciesType.id.pattern[1:-1]
+        direction = '|'.join(rd.name for rd in RegulatoryDirection)
+        obj_pattern = r'({}) *\: *({})'.format(tf_id, direction)
+        lst_pattern = r'^{}( *, *{})*$'.format(obj_pattern, obj_pattern)
+        if not re.match(lst_pattern, value, flags=re.I):
             return (None, obj_model.InvalidAttribute(self, ['Incorrectly formatted list of transcription factor regulation: {}'.format(value)]))
 
         objs = []
         errors = []
-        for pat_match in re.findall(pattern, value, flags=re.I):
+        for pat_match in re.findall(obj_pattern, value, flags=re.I):
             tf = pat_match[0]
-            direction = pat_match[1]
+            direction = pat_match[-1]
             
             if self.related_class not in objects:
                 objects[self.related_class] = {}           
@@ -264,21 +266,21 @@ class TranscriptionFactorRegulation(obj_model.Model):
         if cls in objects and value in objects[cls]:
             return (objects[cls][value], None)
 
-        tf_id = r'[a-z][a-z0-9_]*'
-        direction = r'[a-z][a-z0-9_]*'
-        gbl_pattern = r'({})\:({})'.format(tf_id, direction)        
-        global_match = re.match(gbl_pattern, value, flags=re.I)       
+        tf_id = ProteinSpeciesType.id.pattern[1:-1]
+        direction = '|'.join(rd.name for rd in RegulatoryDirection)
+        pattern = r'^({}) *\: *({})$'.format(tf_id, direction)        
+        match = re.match(pattern, value, flags=re.I)       
 
-        if global_match:
+        if match:
             errors = []
 
-            tf_reg_str = global_match.group(1)       
+            tf_reg_str = match.group(1)       
             if ProteinSpeciesType in objects and tf_reg_str in objects[ProteinSpeciesType]:
                 transcription_factor = objects[ProteinSpeciesType][tf_reg_str]
             else:
                 errors.append('Undefined transcription factor "{}"'.format(tf_reg_str))
 
-            direction_str = global_match.group(2)
+            direction_str = match.group(match.lastindex)
             if direction_str in [i.name for i in list(RegulatoryDirection)]:
                 direction = [i for i in list(RegulatoryDirection) if i.name==direction_str][0]
             else:

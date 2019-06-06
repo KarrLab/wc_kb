@@ -203,13 +203,14 @@ class IdentifierAttribute(ManyToManyAttribute):
         if not value:
             return ([], None)
 
-        pattern = r'([a-z][a-z0-9_\-]*)\:([a-z0-9_\-]*)'
+        obj_pattern = r'({}) *\: *({})'.format(Identifier.namespace.pattern[1:-1], Identifier.id.pattern[1:-1])
+        lst_pattern = obj_pattern + r'( *, *{})*'.format(obj_pattern)
 
-        if not re.match(pattern, value, flags=re.I):
+        if not re.match(lst_pattern, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of identifiers: {}'.format(value)]))
 
         objs = []
-        for pat_match in re.findall(pattern, value, flags=re.I):
+        for pat_match in re.findall(obj_pattern, value, flags=re.I):
             namespace_name = pat_match[0]
             data_id = pat_match[1]
             if self.related_class not in objects:
@@ -295,18 +296,19 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         """
         errors = []
 
-        id = r'[a-z0-9][a-z0-9_]*'
+        st_id = SpeciesType.id.pattern[1:-1]
+        comp_id = Compartment.id.pattern[1:-1]
         stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = r'({} )*({})'.format(stoch, id)
-        lcl_part = r'({} )*({}\[{}\])'.format(stoch, id, id)
+        gbl_part = r'({} )*({})'.format(stoch, st_id)
+        lcl_part = r'({} )*({}\[{}\])'.format(stoch, st_id, comp_id)
         gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)
         lcl_side = r'{}( \+ {})*'.format(lcl_part, lcl_part)
         gbl_pattern = r'^\[({})\]: ({}) ==> ({})$'.format(
-            id, gbl_side, gbl_side)
+            comp_id, gbl_side, gbl_side)
         lcl_pattern = r'^({}) ==> ({})$'.format(lcl_side, lcl_side)
         
-        import_pattern = r'^\[({})\]: ==> ({})$'.format(id, id)
-        export_pattern = r'^\[({})\]: ({}) ==> $'.format(id, id)
+        import_pattern = r'^\[({})\]: ==> ({})$'.format(comp_id, st_id)
+        export_pattern = r'^\[({})\]: ({}) ==> $'.format(comp_id, st_id)
 
         global_match = re.match(gbl_pattern, value, flags=re.I)
         local_match = re.match(lcl_pattern, value, flags=re.I)
@@ -320,13 +322,13 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                 global_comp = None
                 errors.append('Undefined compartment "{}"'.format(
                     global_match.group(1)))
-            lhs = global_match.group(2)
-            rhs = global_match.group(14)
+            lhs = global_match.group(11)
+            rhs = global_match.group(41)
 
         elif local_match:
             global_comp = None
             lhs = local_match.group(1)
-            rhs = local_match.group(13)
+            rhs = local_match.group(49)
 
         elif import_match:
             if import_match.group(1) in objects[Compartment]:
@@ -336,7 +338,7 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                 errors.append('Undefined compartment "{}"'.format(
                     import_match.group(1)))
             lhs = None
-            rhs = import_match.group(2)    
+            rhs = import_match.group(11) #todo
                 
         elif export_match:
             if export_match.group(1) in objects[Compartment]:
@@ -345,8 +347,8 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
                 global_comp = None
                 errors.append('Undefined compartment "{}"'.format(
                     export_match.group(1)))
-            lhs = export_match.group(2)
-            rhs = None        
+            lhs = export_match.group(11) #todo
+            rhs = None
 
         else:
             return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
@@ -383,25 +385,30 @@ class ReactionParticipantAttribute(ManyToManyAttribute):
         parts = []
         errors = []
 
-        for part in re.findall(r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z0-9][a-z0-9_]*)(\[([a-z][a-z0-9_]*)\])*', value, flags=re.I):
+        st_id = SpeciesType.id.pattern[1:-1]
+        comp_id = Compartment.id.pattern[1:-1]
+        pattern = r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*({})(\[({})\])*'.format(st_id, comp_id)
+        i_st = 4
+        i_comp = 15
+        for part in re.findall(pattern, value, flags=re.I):
             part_errors = []
 
             species_type = None
             for species_type_cls in get_subclasses(SpeciesType):
-                if species_type_cls in objects and part[4] in objects[species_type_cls]:
-                    species_type = objects[species_type_cls][part[4]]
+                if species_type_cls in objects and part[i_st] in objects[species_type_cls]:
+                    species_type = objects[species_type_cls][part[i_st]]
                     break
             if not species_type:
                 part_errors.append(
-                    'Undefined species type "{}"'.format(part[4]))
+                    'Undefined species type "{}"'.format(part[i_st]))
 
             if global_comp:
                 compartment = global_comp
-            elif part[6] in objects[Compartment]:
-                compartment = objects[Compartment][part[6]]
+            elif part[i_comp] in objects[Compartment]:
+                compartment = objects[Compartment][part[i_comp]]
             else:
                 part_errors.append(
-                    'Undefined compartment "{}"'.format(part[6]))
+                    'Undefined compartment "{}"'.format(part[i_comp]))
 
             coefficient = direction * float(part[1] or 1.)
 
@@ -455,8 +462,8 @@ class Identifier(obj_model.Model):
         rate_laws (:obj:`list` of :obj:`RateLaw`): rate_laws
         observables (:obj:`list` of :obj:`Observable`): observables
     """
-    namespace = obj_model.StringAttribute()
-    id = obj_model.StringAttribute()
+    namespace = obj_model.RegexAttribute(pattern=r'^[^ \:,]+$')
+    id = obj_model.RegexAttribute(pattern=r'^[^ \:,]+$')
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('namespace', 'id')
@@ -570,11 +577,11 @@ class KnowledgeBase(KnowledgeBaseObject):
     """
     translation_table = obj_model.IntegerAttribute()
     version = RegexAttribute(
-        min_length=1, pattern=r'^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I)
+        min_length=1, pattern=r'^[0-9]+\.[0-9+]\.[0-9]+[0-9a-z]*$', flags=re.I)
     url = obj_model.StringAttribute(verbose_name='URL')
     branch = obj_model.StringAttribute()
     revision = obj_model.StringAttribute()
-    wc_kb_version = RegexAttribute(min_length=1, pattern=r'^[0-9]+\.[0-9+]\.[0-9]+', flags=re.I,
+    wc_kb_version = RegexAttribute(min_length=1, pattern=r'^[0-9]+\.[0-9+]\.[0-9]+[0-9a-z]*$', flags=re.I,
                                    default=wc_kb_version, verbose_name='wc_kb version')
 
     class Meta(obj_model.Model.Meta):
@@ -671,6 +678,7 @@ class Compartment(KnowledgeBaseObject):
     Related attributes:
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """
+    id = obj_model.SlugAttribute(primary=True, unique=True)
     cell = obj_model.ManyToOneAttribute(Cell, related_name='compartments')
     volumetric_fraction = obj_model.FloatAttribute(min=0., max=1.)
     references = obj_model.ManyToManyAttribute(Reference, related_name='compartments')
@@ -692,6 +700,7 @@ class SpeciesType(six.with_metaclass(obj_model.abstract.AbstractModelMeta, Knowl
         reaction_participants (:obj:`list` of :obj:`ReactionParticipant`): reaction participants
     """
 
+    id = obj_model.SlugAttribute(primary=True, unique=True)
     cell = obj_model.ManyToOneAttribute(Cell, related_name='species_types')
     references = obj_model.ManyToManyAttribute(Reference, related_name='species_types')
     identifiers = IdentifierAttribute(related_name='species_types')
@@ -741,7 +750,7 @@ class Species(obj_model.Model):
         observable_expressions (:obj:`list` of :obj:`ObservableExpression`): participations in observables
     """
 
-    id = obj_model.SlugAttribute(primary=True, unique=True)
+    id = obj_model.StringAttribute(primary=True, unique=True)
     species_type = ManyToOneAttribute(
         SpeciesType, related_name='species', min_related=1)
     compartment = ManyToOneAttribute(
@@ -815,8 +824,8 @@ class Species(obj_model.Model):
         if cls in objects and value in objects[cls]:
             return (objects[cls][value], None)
 
-        match = re.match(
-            r'^([a-z0-9][a-z0-9_]*)\[([a-z][a-z0-9_]*)\]$', value, flags=re.I)
+        pattern = r'^({})\[({})\]$'.format(SpeciesType.id.pattern[1:-1], Compartment.id.pattern[1:-1])
+        match = re.match(pattern, value, flags=re.I)
         if match:
             errors = []
 
@@ -829,11 +838,11 @@ class Species(obj_model.Model):
                 errors.append(
                     'Species type "{}" is not defined'.format(match.group(1)))
 
-            if Compartment in objects and match.group(2) in objects[Compartment]:
-                compartment = objects[Compartment][match.group(2)]
+            if Compartment in objects and match.group(11) in objects[Compartment]:
+                compartment = objects[Compartment][match.group(11)]
             else:
                 errors.append(
-                    'Compartment "{}" is not defined'.format(match.group(2)))
+                    'Compartment "{}" is not defined'.format(match.group(11)))
 
             if errors:
                 return (None, InvalidAttribute(attribute, errors))
@@ -960,9 +969,9 @@ class SpeciesTypeCoefficient(obj_model.Model):
         """
         parts = []
         errors = []
-        id = r'[a-z0-9][a-z0-9_]*'
+        st_id = SpeciesType.id.pattern[1:-1]
         stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = r'({} )*({})'.format(stoch, id)
+        gbl_part = r'({} )*({})'.format(stoch, st_id)
         gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)
         gbl_pattern = r'^({})$'.format(gbl_side)
 
@@ -1083,10 +1092,12 @@ class SpeciesCoefficient(obj_model.Model):
         """
         errors = []
 
+        st_id = SpeciesType.id.pattern[1:-1]
+        comp_id = Compartment.id.pattern[1:-1]
         if compartment:
-            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z0-9][a-z0-9_]*)$'
+            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*({})$'.format(st_id)
         else:
-            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*([a-z0-9][a-z0-9_]*\[[a-z][a-z0-9_]*\])$'
+            pattern = r'^(\(((\-?\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*({}\[{}\])$'.format(st_id, comp_id)
 
         match = re.match(pattern, value, flags=re.I)
         if match:
@@ -1924,7 +1935,6 @@ class Evidence(KnowledgeBaseObject):
 
     """
 
-    id = obj_model.SlugAttribute(primary=True, unique=True)
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
     object   =  obj_model.StringAttribute()
     property = obj_model.StringAttribute()
@@ -1960,7 +1970,6 @@ class Experiment(KnowledgeBaseObject):
         Related attributes:
     """
 
-    id = obj_model.SlugAttribute(primary=True, unique=True)
     species = obj_model.StringAttribute()
     genetic_variant = obj_model.StringAttribute()
     external_media  = obj_model.StringAttribute()
