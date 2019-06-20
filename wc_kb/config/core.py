@@ -10,7 +10,6 @@ import configobj
 import os
 import pkg_resources
 import wc_utils.config
-import wc_utils.debug_logs.config
 
 
 def get_config(extra=None):
