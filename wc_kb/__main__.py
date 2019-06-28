@@ -19,6 +19,7 @@ class BaseController(cement.Controller):
     class Meta:
         label = 'base'
         description = "Command line programs for managing knowledge bases for whole-cell models"
+        help = "Command line programs for managing knowledge bases for whole-cell models"
         arguments = [
             (['-v', '--version'], dict(action='version', version=wc_kb.__version__)),
         ]
@@ -34,6 +35,7 @@ class ValidateController(cement.Controller):
     class Meta:
         label = 'validate'
         description = 'Validate knowledge base and display errors'
+        help = 'Validate knowledge base and display errors'
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
@@ -57,6 +59,7 @@ class DifferenceController(cement.Controller):
     class Meta:
         label = 'difference'
         description = 'Get difference between two knowledge bases'
+        help = 'Get difference between two knowledge bases'
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
@@ -94,6 +97,7 @@ class NormalizeController(cement.Controller):
     class Meta:
         label = 'normalize'
         description = 'Normalize knowledge base'
+        help = 'Normalize knowledge base'
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
@@ -128,6 +132,7 @@ class ConvertController(cement.Controller):
     class Meta:
         label = 'convert'
         description = 'Convert knowledge base among .csv, .json, .tsv, .xlsx, .yaml, and .yml formats'
+        help = 'Convert knowledge base among .csv, .json, .tsv, .xlsx, .yaml, and .yml formats'
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
@@ -149,6 +154,7 @@ class CreateTemplateController(cement.Controller):
     class Meta:
         label = 'create-template'
         description = 'Create file with knowledge base template: blank file(s) with row and column labels'
+        help = 'Create file with knowledge base template: blank file(s) with row and column labels'
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
@@ -171,6 +177,7 @@ class UpdateVersionMetadataController(cement.Controller):
     class Meta:
         label = 'update-version-metadata'
         description = 'Update version metadata of a knowledge base (URL, branch, revision, wc_kb version)'
+        help = 'Update version metadata of a knowledge base (URL, branch, revision, wc_kb version)'
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
