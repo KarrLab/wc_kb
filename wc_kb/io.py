@@ -78,7 +78,7 @@ class Writer(obj_model.io.Writer):
             seq_path=None, rewrite_seq_path=True, taxon='prokaryote',
             models=None, get_related=True, include_all_attributes=False, validate=True,
             title=None, description=None, keywords=None, version=None, language=None, creator=None,
-            extra_entries=0, set_repo_metadata_from_path=True):
+            extra_entries=0, data_repo_metadata=False, schema_package=None):
         """ Write knowledge base to file(s)
 
         Args:
@@ -102,8 +102,11 @@ class Writer(obj_model.io.Writer):
             language (:obj:`str`, optional): language
             creator (:obj:`str`, optional): creator
             extra_entries (:obj:`int`, optional): additional entries to display
-            set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
-                branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
+            data_repo_metadata (:obj:`bool`, optional): if :obj:`True`, try to write metadata information
+                about the file's Git repo; the repo must be current with origin, except for the file
+            schema_package (:obj:`str`, optional): the package which defines the `obj_model` schema
+                used by the file; if not :obj:`None`, try to write metadata information about the
+                the schema's Git repository: the repo must be current with origin
 
         Raises:
             :obj:`ValueError`: if any of the relationships with knowledge bases and cells are not set
@@ -117,11 +120,7 @@ class Writer(obj_model.io.Writer):
         elif taxon == 'eukaryote':
             models = EUKARYOTE_MODELS
 
-        # default meta data for exported KB
-        if set_repo_metadata_from_path:
-            util.set_git_repo_metadata_from_path(knowledge_base, core_path)
-
-        # default meta data for exported file
+        # default metadata for exported file
         if title is None:
             title = knowledge_base.id
         if description is None:
@@ -157,8 +156,9 @@ class Writer(obj_model.io.Writer):
         # export core
         super(Writer, self).run(core_path, knowledge_base, models=models, get_related=get_related,
                                 include_all_attributes=include_all_attributes, validate=validate,
-                                title=title, description=description, version=version, language=language, creator=creator,
-                                extra_entries=extra_entries)
+                                title=title, description=description, version=version, language=language,
+                                creator=creator, extra_entries=extra_entries,
+                                data_repo_metadata=data_repo_metadata, schema_package=schema_package)
 
         # reset sequence paths
         if seq_path and rewrite_seq_path:
@@ -240,7 +240,7 @@ class Reader(obj_model.io.Reader):
             seq_path='', rewrite_seq_path=True, taxon='prokaryote',
             models=None, ignore_missing_sheets=None, ignore_extra_sheets=None, ignore_sheet_order=None,
             include_all_attributes=False, ignore_missing_attributes=None, ignore_extra_attributes=None, ignore_attribute_order=None,
-            group_objects_by_model=True, validate=True):
+            group_objects_by_model=True, validate=True, read_metadata=False):
 
 
                 """ Read knowledge base from file(s)
@@ -270,6 +270,7 @@ class Reader(obj_model.io.Reader):
                     group_objects_by_model (:obj:`bool`, optional): if :obj:`True`, group decoded objects by their
                         types
                     validate (:obj:`bool`, optional): if :obj:`True`, validate the data
+                    read_metadata (:obj:`bool`, optional): if :obj:`True`, read metadata models
 
                 Returns:
                     :obj:`dict`: model objects grouped by `obj_model.Model` class
@@ -289,6 +290,11 @@ class Reader(obj_model.io.Reader):
                     models = EUKARYOTE_MODELS
                 else:
                     raise ValueError('Unsupported taxon "{}"'.format(taxon))
+
+                if read_metadata:
+                    models = list(models) + [obj_model.utils.DataRepoMetadata, obj_model.utils.SchemaRepoMetadata]
+                    ignore_missing_sheets = True
+                    ignore_sheet_order = True
 
                 config = wc_kb.config.core.get_config()['wc_kb']['io']
                 if ignore_missing_sheets is None:
@@ -372,7 +378,6 @@ class Reader(obj_model.io.Reader):
                         raise ValueError(
                             indent_forest(['The knowledge base cannot be loaded because it fails to validate:', [errors]]))
 
-                # return objects
                 return objects
 
 
@@ -392,21 +397,21 @@ def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True)
             core of the knowledge base will be updated to the path of the converted genome sequence
     """
     kb = Reader().run(source_core, seq_path=source_seq)[core.KnowledgeBase][0]
-    Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path, set_repo_metadata_from_path=False)
+    Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path, data_repo_metadata=False)
 
 
-def create_template(core_path, seq_path, extra_entries=10, set_repo_metadata_from_path=True):
+def create_template(core_path, seq_path, extra_entries=10, data_repo_metadata=True):
     """ Create file with knowledge base template, including row and column headings
 
     Args:
         core_path (:obj:`str`): path to save template of core knowledge base
         seq_path (:obj:`str`): path to save genome sequence
         extra_entries (:obj:`int`, optional): additional entries to display
-        set_repo_metadata_from_path (:obj:`bool`, optional): if :obj:`True`, set the Git repository metadata (URL,
-            branch, revision) for the knowledge base from the parent directory of :obj:`core_path`
+        data_repo_metadata (:obj:`bool`, optional): if :obj:`True`, try to write metadata information
+            about the file's Git repo
     """
     kb = core.KnowledgeBase(
         id='template', name='Template', version=wc_kb.__version__)
     Writer().run(core_path, kb, seq_path=seq_path,
                  extra_entries=extra_entries,
-                 set_repo_metadata_from_path=set_repo_metadata_from_path)
+                 data_repo_metadata=data_repo_metadata)

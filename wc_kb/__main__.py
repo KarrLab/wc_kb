@@ -120,9 +120,9 @@ class NormalizeController(cement.Controller):
         args = self.app.pargs
         kb = io.Reader().run(args.source_core, seq_path=args.source_seq)[core.KnowledgeBase][0]
         if args.dest_core or args.dest_seq:
-            io.Writer().run(args.dest_core, kb, seq_path=args.dest_seq, set_repo_metadata_from_path=False)
+            io.Writer().run(args.dest_core, kb, seq_path=args.dest_seq, data_repo_metadata=False)
         else:
-            io.Writer().run(args.source_core, kb, seq_path=args.source_seq, set_repo_metadata_from_path=False)
+            io.Writer().run(args.source_core, kb, seq_path=args.source_seq, data_repo_metadata=False)
 
 
 class ConvertController(cement.Controller):
@@ -158,17 +158,19 @@ class CreateTemplateController(cement.Controller):
         stacked_on = 'base'
         stacked_type = 'nested'
         arguments = [
-            (['path_core'], dict(metavar='path-core', type=str, help='Path to save a template of the core of a knowledge base')),
-            (['path_seq'], dict(metavar='path-seq', type=str, help='Path to save a template of the genome sequence of a knowledge base')),
-            (['--ignore-repo-metadata'], dict(dest='set_repo_metadata_from_path', default=True, action='store_false',
+            (['path_core'], dict(metavar='path-core', type=str,
+                help='Path to save a template of the core of a knowledge base')),
+            (['path_seq'], dict(metavar='path-seq', type=str,
+                help='Path to save a template of the genome sequence of a knowledge base')),
+            (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
-                                                    'the parent directory of `path-core`'))),
+                                                    'the Git repo containing `path-core`'))),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        io.create_template(args.path_core, args.path_seq, set_repo_metadata_from_path=args.set_repo_metadata_from_path)
+        io.create_template(args.path_core, args.path_seq, data_repo_metadata=args.data_repo_metadata)
 
 
 class UpdateVersionMetadataController(cement.Controller):
@@ -183,9 +185,9 @@ class UpdateVersionMetadataController(cement.Controller):
         arguments = [
             (['path_core'], dict(type=str, help='Path to the core of the knowledge base')),
             (['path_seq'], dict(type=str, help='Path to the FASTA-formatted genome sequence of a knowledge base')),
-            (['--ignore-repo-metadata'], dict(dest='set_repo_metadata_from_path', default=True, action='store_false',
+            (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
-                                                    'the parent directory of `path-core`'))),
+                                                    'the Git repo containing `path-core`'))),
         ]
 
     @cement.ex(hide=True)
@@ -193,7 +195,7 @@ class UpdateVersionMetadataController(cement.Controller):
         args = self.app.pargs
         kb = io.Reader().run(args.path_core, seq_path=args.path_seq)[core.KnowledgeBase][0]
         kb.wc_kb_version = wc_kb.__version__
-        io.Writer().run(args.path_core, kb, seq_path=args.path_seq, set_repo_metadata_from_path=args.set_repo_metadata_from_path)
+        io.Writer().run(args.path_core, kb, seq_path=args.path_seq, data_repo_metadata=args.data_repo_metadata)
 
 
 class App(cement.App):

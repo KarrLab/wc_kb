@@ -22,26 +22,3 @@ class TestUtil(unittest.TestCase):
 
         self.assertIn(core.KnowledgeBase, util.get_models(inline=False))
         self.assertIn(core.Cell, util.get_models(inline=False))
-
-    def test_set_git_repo_metadata_from_path(self):
-        kb = core.KnowledgeBase()
-        self.assertEqual(kb.url, '')
-
-        util.set_git_repo_metadata_from_path(kb, path='.')
-        self.assertIn(kb.url, [
-            'https://github.com/KarrLab/wc_kb.git',
-            'ssh://git@github.com/KarrLab/wc_kb.git',
-            'git@github.com:KarrLab/wc_kb.git',
-        ])
-
-    def test_set_git_repo_metadata_from_path_error(self):
-        tempdir = tempfile.mkdtemp()
-
-        kb = core.KnowledgeBase()
-        self.assertEqual(kb.url, '')
-
-        with self.assertRaisesRegex(ValueError, 'is not in a Git repository'):
-            util.set_git_repo_metadata_from_path(kb, path=tempdir)
-        self.assertEqual(kb.url, '')
-
-        shutil.rmtree(tempdir)

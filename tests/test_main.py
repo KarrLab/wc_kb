@@ -44,7 +44,7 @@ class TestCli(unittest.TestCase):
         self.assertEqual(Validator().run(kb, get_related=True), None)
         filename_core = path.join(self.tempdir, 'core.xlsx')
         filename_seq = path.join(self.tempdir, 'seq.fna')
-        io.Writer().run(filename_core, kb, seq_path=filename_seq, set_repo_metadata_from_path=False)
+        io.Writer().run(filename_core, kb, seq_path=filename_seq, data_repo_metadata=False)
 
         with CaptureOutput() as capturer:
             with __main__.App(argv=['validate', filename_core, filename_seq]) as app:
@@ -60,7 +60,7 @@ class TestCli(unittest.TestCase):
         self.assertNotEqual(Validator().run(kb, get_related=True), None)
         filename_core = path.join(self.tempdir, 'core.xlsx')
         filename_seq = path.join(self.tempdir, 'seq.fna')
-        io.Writer().run(filename_core, kb, seq_path=filename_seq, set_repo_metadata_from_path=False)
+        io.Writer().run(filename_core, kb, seq_path=filename_seq, data_repo_metadata=False)
 
         with self.assertRaisesRegex(SystemExit, '^Knowledge base is invalid: '):
             with __main__.App(argv=['validate', filename_core, filename_seq]) as app:
@@ -70,17 +70,17 @@ class TestCli(unittest.TestCase):
         kb1 = wc_kb.core.KnowledgeBase(id='kb', name='KB', version='0.0.1a', wc_kb_version='0.0.0')
         filename_core_1 = path.join(self.tempdir, 'core1.xlsx')
         filename_seq_1 = path.join(self.tempdir, 'seq1.fna')
-        io.Writer().run(filename_core_1, kb1, seq_path=filename_seq_1, set_repo_metadata_from_path=False)
+        io.Writer().run(filename_core_1, kb1, seq_path=filename_seq_1, data_repo_metadata=False)
 
         kb2 = wc_kb.core.KnowledgeBase(id='kb', name='KB', version='0.0.1a', wc_kb_version='0.0.0')
         filename_core_2 = path.join(self.tempdir, 'core2.xlsx')
         filename_seq_2 = path.join(self.tempdir, 'seq2.fna')
-        io.Writer().run(filename_core_2, kb2, seq_path=filename_seq_2, set_repo_metadata_from_path=False)
+        io.Writer().run(filename_core_2, kb2, seq_path=filename_seq_2, data_repo_metadata=False)
 
         kb3 = wc_kb.core.KnowledgeBase(id='kb', name='KB', version='0.0.1a', wc_kb_version='0.0.1')
         filename_core_3 = path.join(self.tempdir, 'core3.xlsx')
         filename_seq_3 = path.join(self.tempdir, 'seq3.fna')
-        io.Writer().run(filename_core_3, kb3, seq_path=filename_seq_3, set_repo_metadata_from_path=False)
+        io.Writer().run(filename_core_3, kb3, seq_path=filename_seq_3, data_repo_metadata=False)
 
         with CaptureOutput() as capturer:
             with __main__.App(argv=['difference',
@@ -125,7 +125,7 @@ class TestCli(unittest.TestCase):
         filename_seq_2 = path.join(self.tempdir, 'seq-2.fna')
 
         kb = wc_kb.core.KnowledgeBase(id='kb', name='KB', version='0.0.1a', wc_kb_version='0.0.0')
-        io.Writer().run(filename_core_1, kb, seq_path=filename_seq_1, set_repo_metadata_from_path=False)
+        io.Writer().run(filename_core_1, kb, seq_path=filename_seq_1, data_repo_metadata=False)
 
         # with same dest
         with __main__.App(argv=['normalize', filename_core_1, filename_seq_1]) as app:
@@ -149,7 +149,7 @@ class TestCli(unittest.TestCase):
         filename_out_seq = path.join(self.tempdir, 'out.seq.fna')
 
         kb = wc_kb.core.KnowledgeBase(id='kb', name='KB', version='0.0.1a', wc_kb_version='0.0.0')
-        io.Writer().run(filename_in_core, kb, seq_path=filename_in_seq, set_repo_metadata_from_path=False)
+        io.Writer().run(filename_in_core, kb, seq_path=filename_in_seq, data_repo_metadata=False)
 
         with __main__.App(argv=['convert',
                                 filename_in_core, filename_in_seq,
@@ -175,7 +175,7 @@ class TestCli(unittest.TestCase):
 
         kb = wc_kb.core.KnowledgeBase(id='kb', name='KB', version='0.0.1a', wc_kb_version='0.0.0')
         self.assertNotEqual(kb.wc_kb_version, wc_kb.__version__)
-        io.Writer().run(filename_core, kb, seq_path=filename_seq, set_repo_metadata_from_path=False)
+        io.Writer().run(filename_core, kb, seq_path=filename_seq, data_repo_metadata=False)
 
         with __main__.App(argv=['update-version-metadata', filename_core, filename_seq, '--ignore-repo-metadata']) as app:
             app.run()

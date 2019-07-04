@@ -7,9 +7,11 @@
 :License: MIT
 """
 
+from obj_model import utils
 from test.support import EnvironmentVarGuard
 from wc_kb import core, prokaryote_schema
 from wc_kb import io
+from wc_utils.util.git import GitHubRepoForTests
 import Bio.Seq
 import Bio.SeqRecord
 import filecmp
@@ -67,14 +69,14 @@ class TestIO(unittest.TestCase):
         core_path = os.path.join(self.dir, 'core.xlsx')
 
         writer = io.Writer()
-        writer.run(core_path, self.kb, set_repo_metadata_from_path=False)
+        writer.run(core_path, self.kb, data_repo_metadata=False)
 
         reader = io.Reader()
         kb = reader.run(core_path, seq_path=self.seq_path)[core.KnowledgeBase][0]
 
         core_path = os.path.join(self.dir, 'core2.xlsx')
         seq_path = os.path.join(self.dir, 'seq2.fna')
-        writer.run(core_path, kb, seq_path, set_repo_metadata_from_path=False)
+        writer.run(core_path, kb, seq_path, data_repo_metadata=False)
 
         self.assertTrue(self.kb.is_equal(kb))
         self.assertTrue(filecmp.cmp(self.seq_path, seq_path, shallow=False))
@@ -91,7 +93,7 @@ class TestIO(unittest.TestCase):
         tmp_seq_path = os.path.join(self.dir, 'tmp_seq.fna')
 
         writer = io.Writer()
-        writer.run(tmp_core_path, kb, seq_path=tmp_seq_path, set_repo_metadata_from_path=False)
+        writer.run(tmp_core_path, kb, seq_path=tmp_seq_path, data_repo_metadata=False)
 
         tmp_kb = reader.run(tmp_core_path, seq_path)[core.KnowledgeBase][0]
 
@@ -110,7 +112,7 @@ class TestIO(unittest.TestCase):
         tmp_seq_path = os.path.join(self.dir, 'tmp_eukaryote_seq.fna')
 
         writer = io.Writer()
-        writer.run(tmp_core_path, kb, seq_path=tmp_seq_path, taxon='eukaryote', set_repo_metadata_from_path=False)
+        writer.run(tmp_core_path, kb, seq_path=tmp_seq_path, taxon='eukaryote', data_repo_metadata=False)
 
         tmp_kb = reader.run(tmp_core_path, seq_path, taxon='eukaryote')[core.KnowledgeBase][0]
 
@@ -123,7 +125,7 @@ class TestIO(unittest.TestCase):
         path_seq_1 = os.path.join(self.dir, 'seq_1.fna')
         path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
 
-        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, set_repo_metadata_from_path=False)
+        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, data_repo_metadata=False)
         kb1 = io.Reader().run(path_core_1, seq_path=path_seq_1)[core.KnowledgeBase][0]
         kb2 = io.Reader().run(path_core_1, seq_path=path_seq_1, rewrite_seq_path=False)[core.KnowledgeBase][0]
         kb3 = io.Reader().run(path_core_1, seq_path=self.seq_path)[core.KnowledgeBase][0]
@@ -134,7 +136,7 @@ class TestIO(unittest.TestCase):
         self.assertFalse(kb4.is_equal(self.kb))
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
-        io.Writer().run(path_core_2, self.kb, seq_path=path_seq_2, rewrite_seq_path=False, set_repo_metadata_from_path=False)
+        io.Writer().run(path_core_2, self.kb, seq_path=path_seq_2, rewrite_seq_path=False, data_repo_metadata=False)
         kb5 = io.Reader().run(path_core_2, seq_path=path_seq_2)[core.KnowledgeBase][0]
         kb6 = io.Reader().run(path_core_2, seq_path=path_seq_2, rewrite_seq_path=False)[core.KnowledgeBase][0]
         kb7 = io.Reader().run(path_core_2, seq_path=self.seq_path)[core.KnowledgeBase][0]
@@ -145,24 +147,29 @@ class TestIO(unittest.TestCase):
         self.assertTrue(kb8.is_equal(self.kb))
         self.assertTrue(filecmp.cmp(path_seq_2, self.seq_path, shallow=False))
 
-    def test_write_with_repo_md(self):
+    def test_write_with_repo_metadata(self):
 
-        _, core_path = tempfile.mkstemp(suffix='.xlsx', dir='.')
-        _, seq_path = tempfile.mkstemp(suffix='.fna', dir='.')
+        with tempfile.TemporaryDirectory() as temp_dir:
 
-        self.assertEqual(self.kb.url, '')
+            # create temp git repo & write file into it
+            test_repo_name = 'test_wc_kb_test_io'
+            test_github_repo = GitHubRepoForTests(test_repo_name)
+            repo = test_github_repo.make_test_repo(temp_dir)
 
-        writer = io.Writer()
-        writer.run(core_path, self.kb, seq_path=seq_path, set_repo_metadata_from_path=True)
+            _, core_path = tempfile.mkstemp(dir=temp_dir, suffix='.xlsx')
+            _, seq_path = tempfile.mkstemp(dir=temp_dir, suffix='.fna')
 
-        self.assertIn(self.kb.url, [
-            'https://github.com/KarrLab/wc_kb.git',
-            'ssh://git@github.com/KarrLab/wc_kb.git',
-            'git@github.com:KarrLab/wc_kb.git',
-        ])
+            # write data repo metadata in data_file
+            writer = io.Writer()
+            writer.run(core_path, self.kb, seq_path=seq_path, data_repo_metadata=True)
 
-        os.remove(seq_path)
-        os.remove(core_path)
+            # deliberately read metadata
+            reader = io.Reader()
+            objs_read = reader.run(core_path, seq_path=seq_path, read_metadata=True)
+            data_repo_metadata = objs_read[utils.DataRepoMetadata][0]
+            self.assertTrue(data_repo_metadata.url.startswith('https://github.com/'))
+            self.assertEqual(data_repo_metadata.branch, 'master')
+            self.assertEqual(len(data_repo_metadata.revision), 40)
 
     def test_write_without_cell_relationships(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
@@ -180,14 +187,14 @@ class TestIO(unittest.TestCase):
 
         writer = io.Writer()
         with self.assertRaisesRegex(ValueError, 'must be set to the instance of `Cell`'):
-            writer.run(core_path, self.kb, seq_path=seq_path, set_repo_metadata_from_path=False)
+            writer.run(core_path, self.kb, seq_path=seq_path, data_repo_metadata=False)
 
     def test_write_read_sloppy(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
         seq_path = os.path.join(self.dir, 'test_seq.fna')
 
         writer = io.Writer()
-        writer.run(core_path, self.kb, seq_path=seq_path, set_repo_metadata_from_path=False)
+        writer.run(core_path, self.kb, seq_path=seq_path, data_repo_metadata=False)
 
         wb = wc_utils.workbook.io.read(core_path)
 
@@ -271,7 +278,7 @@ class TestIO(unittest.TestCase):
         path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
         path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
-        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, set_repo_metadata_from_path=False)
+        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, data_repo_metadata=False)
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
@@ -292,7 +299,7 @@ class TestIO(unittest.TestCase):
         path_seq_2 = os.path.join(self.dir, 'seq_2.fna')
         path_seq_3 = os.path.join(self.dir, 'seq_3.fna')
 
-        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, set_repo_metadata_from_path=False)
+        io.Writer().run(path_core_1, self.kb, seq_path=path_seq_1, data_repo_metadata=False)
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         wb = wc_utils.workbook.io.read(path_core_1)
@@ -318,7 +325,7 @@ class TestIO(unittest.TestCase):
     def test_create_template(self):
         path_core = os.path.join(self.dir, 'template.xlsx')
         path_seq = os.path.join(self.dir, 'template_seq.fna')
-        io.create_template(path_core, path_seq, set_repo_metadata_from_path=False)
+        io.create_template(path_core, path_seq, data_repo_metadata=False)
         kb = io.Reader().run(path_core, seq_path=path_seq)[core.KnowledgeBase][0]
 
     def test_validate_implicit_relationships(self):
