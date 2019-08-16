@@ -1934,7 +1934,8 @@ class Evidence(KnowledgeBaseObject):
         Related attributes:
 
     """
-
+    # Git branch test comment
+    # Git branch test comment
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
     object   =  obj_model.StringAttribute()
     property = obj_model.StringAttribute()
