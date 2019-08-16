@@ -1338,6 +1338,8 @@ class Observable(KnowledgeBaseObject):
     Related attributes:
         observable_expressions (:obj:`list` of :obj:`ObservableExpression`): observable expressions
         rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): rate law expressions
+        evidences (:obj:`list` of :obj:`Evidence`): evidence
+        controlled_variables (:obj:`list` of :obj:`ControlledVariables): controlled variables
     """
 
     cell = ManyToOneAttribute(Cell, related_name='observables')
@@ -1923,9 +1925,15 @@ class Evidence(KnowledgeBaseObject):
             id (:obj:`str`): identifier
             cell (:obj:`Cell`): cell
             object (:obj:`str`): object
+            observable (:obj:`Observable`): observable
             property (:obj:`str`): property
             value (:obj:`float`): value
             units (:obj:`Units`): units
+            value_uncertainty (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other)
+            controlled_variables (:obj:`list` of :obj:`ControlledVariable`): controlled variables / perturbation course 
+            time (:obj:`float`): value
+            time_type (:obj:`pronto): time_type
+            time_bin (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other)
             identifiers(:obj:`list` of :obj:`Identifier`): identifiers
             references (:obj:`list` of :obj:`Reference`): references
             experiment (:obj:`Experiment`): experiment
@@ -1934,20 +1942,72 @@ class Evidence(KnowledgeBaseObject):
         Related attributes:
 
     """
-    # Git branch test comment
-    # Git branch test comment
+
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
+
     object   =  obj_model.StringAttribute()
-    property = obj_model.StringAttribute()
+    observable =  obj_model.ManyToOneAttribute(Observable, related_name='evidence') # Todo: change this to wc_rules pattern or similar at some point
+    property = obj_model.StringAttribute() # Todo: make this concentration or phenotype
     value = obj_model.FloatAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
+    
+    controlled_variables = obj_model.ManyToManyAttribute('ControlledVariable', related_name='evidence')
+
+    time = obj_model.FloatAttribute() 
+    time_type = obj_model.ontology.OntologyAttribute(wc_onto,
+                                                     terms=wc_onto['WC:time'].rchildren(),
+                                                     none=True)
+    time_bin = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
+    
     identifiers = IdentifierAttribute(related_name='evidence')
     references = obj_model.ManyToManyAttribute('Reference', related_name='evidence')
     experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='evidence')
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'cell', 'object', 'property', 'value', 'units', 'experiment', 'identifiers', 'references', 'comments')
+        attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
+            'value_uncertainty', 'controlled_variables', 'time', 'time_type', 'time_bin', 
+            'experiment', 'identifiers', 'references', 'comments')
+
+
+class ControlledVariable(KnowledgeBaseObject):
+    """ Represents variables that are actively controlled / perturbed in an experiment
+
+        Attributes:
+            id (:obj:`str`): identifier
+            object (:obj:`str`): object
+            observable (:obj:`Observable`): observable
+            property (:obj:`str`): property
+            value (:obj:`float`): value
+            units (:obj:`Units`): units
+            value_uncertainty (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other)
+            time (:obj:`float`): value
+            time_type (:obj:`pronto): time_type
+            time_bin (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other)
+            comments(:obj:`str`): comments
+
+        Related attributes:
+            evidence (:obj:`list` of :obj:`Evidence`): evidence, i.e. dependent variables
+
+    """
+
+    object   =  obj_model.StringAttribute()
+    observable =  obj_model.ManyToOneAttribute(Observable, related_name='controlled_variables')
+    property = obj_model.StringAttribute() # Todo: make this concentration
+    value = obj_model.FloatAttribute()
+    units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
+    time = obj_model.FloatAttribute() 
+    time_type = obj_model.ontology.OntologyAttribute(wc_onto,
+                                                     terms=wc_onto['WC:time'].rchildren(),
+                                                     none=True)
+    time_bin = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
+    comments = obj_model.LongStringAttribute()
+
+    class Meta(obj_model.Model.Meta):
+        attribute_order = ('id', 'object', 'observable', 'property', 'value', 'units', 
+        'value_uncertainty', 'time', 'time_type', 'time_bin', 'comments')
 
 
 class Experiment(KnowledgeBaseObject):

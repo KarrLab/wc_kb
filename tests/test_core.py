@@ -1221,7 +1221,6 @@ class ValidatorTestCase(unittest.TestCase):
 class SpeciesTypePropertyTestCase(unittest.TestCase):
 
     def test_get_value(self):
-
         cell1 = core.Cell(id='cell1')
         kb = core.KnowledgeBase(cell = cell1)
         c = core.Compartment(id='c', cell=cell1)
@@ -1240,3 +1239,105 @@ class SpeciesTypePropertyTestCase(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             met.properties.get_one(id='stp6').get_value()
+
+# Branch time-course-incorporation
+class EvidenceTestCase(unittest.TestCase):
+
+    def test_get_nested_metadata(self):
+        cell1 = core.Cell(id='cell1')
+        kb = core.KnowledgeBase(cell = cell1)
+        met = core.MetaboliteSpeciesType(id='met1', cell=cell1)
+
+        # Test null case
+        self.assertEqual(met.get_nested_metadata(),
+                        {'met1': [], core.SpeciesTypeProperty: [],
+                        core.Evidence: [], core.Experiment:[]})
+
+        # Load min KB to test some relationships
+        ref1=core.Reference(id='ref1')
+        ref2=core.Reference(id='ref2')
+
+        met2 = core.MetaboliteSpeciesType(id='met2', cell=cell1, references=[ref1, ref2], comments = 'test comment')
+        self.assertEqual(met2.get_nested_metadata(),
+            {'met2': [ref1, ref2, 'test comment'],
+            core.SpeciesTypeProperty: [],
+            core.Evidence: [],
+            core.Experiment: []})
+
+        ref3 = core.Reference(id='ref3')
+        dbref1 = core.Identifier(id='dbref1')
+        exp1 = core.Experiment(id='exp1', references = [ref3], comments = 'exp comment')
+        evi1 = core.Evidence(id='evi1', experiment=exp1, comments = 'evidence comment')
+        stp = core.SpeciesTypeProperty(id='stp1', evidence=[evi1], identifiers=[dbref1], references = [ref1])
+        met3 = core.MetaboliteSpeciesType(id='met3', cell=cell1, properties = [stp], comments='met comment')
+
+        self.assertEqual(met3.get_nested_metadata(),
+            {'met3': ['met comment'],
+             core.SpeciesTypeProperty: [ref1, dbref1],
+             core.Evidence: ['evidence comment'],
+             core.Experiment: [ref3, 'exp comment']})
+
+    def test_evidence(self):   
+        cell  = core.Cell()
+        comp1 = core.Compartment(id='c')
+        met1  = core.MetaboliteSpeciesType(id='met1')
+        dna1  = core.DnaSpeciesType(id='dna1')
+        species1 = core.Species(species_type=met1, compartment=comp1)
+        species2 = core.Species(species_type=dna1, compartment=comp1)
+        expr1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[species1, species2])        
+        observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
+        ref1=core.Reference(id='ref1')
+        expe1 = core.Experiment(id='expe1', references = [ref1], comments = 'expe comment')
+
+        # object = obj_model.StringAttribute()
+        
+        unit = unit_registry.parse_units('molar')
+        value_uncertainty = numpy.random.standard_normal()        
+        # controlled_variables = obj_model.ManyToManyAttribute('ControlledVariable', related_name='evidence')
+        time_type = obj_model.ontology.OntologyAttribute(wc_onto,
+                                                         terms=wc_onto['WC:time'].rchildren(),
+                                                         none=True)
+        time_bin = lambda bin_width: numpy.random.uniform(low=-bin_width/2, high=bin_width/2)
+        
+
+        evi1 = core.Evidence(id='evi1', cell=cell, observable=observable1, property = 'concentration',
+            value = [1, 1.1], unit=unit, time = [0.25, 0.75], time_type=time_type, experiment=expe1,
+            time_bin=time_bin, identifiers = core.Identifier(id='dbref1'), comments = 'evidence1 comment',)
+        self.assertEqual(evi1.id, 'evi1')
+        self.assertEqual(evi1.cell, cell)
+        self.assertEqual(evi1.observable, observable1)
+        self.assertEqual(evi1.property, 'concentration')
+        self.assertEqual(evi1.value, [1, 1.1])
+        self.assertEqual(evi1.unit, unit)
+        self.assertEqual(evi1.time, [0.25, 0.75])
+        self.assertEqual(evi1.time_type, time_type)
+        self.assertEqual(evi1.experiment, expe1)
+        self.assertEqual(evi1.time_bin, time_bin)
+        self.assertEqual(evi1.identifiers, core.Identifier(id='dbref1'))
+        self.assertEqual(evi1.comments, 'evidence1')
+
+
+
+
+
+        # with self.assertRaises(ValueError): # Value should be (list of (lists of)) float
+        #     evi1 = core.Evidence(id='evi1', value='a', observable=observable1)
+
+        evi1 = core.Evidence(id='evi1', experiment=expe1, comments = 'evidence1 comment', value=[1, 1.1], observable=observable1)
+        self.assertEqual(evi1.value, [1, 1.1])
+
+        print('--------')
+        print(evi1.id)
+        print(evi1.cell)
+        print(evi1.observable)
+        print(evi1.object)
+        print(evi1.property)
+        print(evi1.value)
+        print(evi1.units)
+        print(evi1.identifiers)
+        print(evi1.references)
+        print(evi1.experiment)
+        print(evi1.comments)
+
+        print('--------')
+
