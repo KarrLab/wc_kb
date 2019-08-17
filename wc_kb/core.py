@@ -1955,8 +1955,8 @@ class Evidence(KnowledgeBaseObject):
     controlled_variables = obj_model.ManyToManyAttribute('ControlledVariable', related_name='evidence')
 
     time = obj_model.FloatAttribute() 
-    time_type = obj_model.ontology.OntologyAttribute(wc_onto,
-                                                     terms=wc_onto['WC:time'].rchildren(),
+    time_type = obj_model.ontology.OntologyAttribute(kbOnt,
+                                                     terms=kbOnt['WC:time'].rchildren(),
                                                      none=True)
     time_bin = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
     
