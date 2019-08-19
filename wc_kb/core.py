@@ -1944,20 +1944,18 @@ class Evidence(KnowledgeBaseObject):
     """
 
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
-
     object   =  obj_model.StringAttribute()
     observable =  obj_model.ManyToOneAttribute(Observable, related_name='evidence') # Todo: change this to wc_rules pattern or similar at some point
     property = obj_model.StringAttribute() # Todo: make this concentration or phenotype
     value = obj_model.FloatAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
-    
+    value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?    
     controlled_variables = obj_model.ManyToManyAttribute('ControlledVariable', related_name='evidence')
-
     time = obj_model.FloatAttribute() 
     time_type = obj_model.ontology.OntologyAttribute(kbOnt,
                                                      terms=kbOnt['WC:time'].rchildren(),
                                                      none=True)
+    # Todo: add WC:time to wc_onto
     time_bin = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
     
     identifiers = IdentifierAttribute(related_name='evidence')
@@ -1967,8 +1965,9 @@ class Evidence(KnowledgeBaseObject):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
-            'value_uncertainty', 'controlled_variables', 'time', 'time_type', 'time_bin', 
+            'value_uncertainty', 'controlled_variables', 'time', 'time_bin', 
             'experiment', 'identifiers', 'references', 'comments')
+        #  'time_type',
 
 
 class ControlledVariable(KnowledgeBaseObject):
@@ -1999,15 +1998,147 @@ class ControlledVariable(KnowledgeBaseObject):
     units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
     value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
     time = obj_model.FloatAttribute() 
-    time_type = obj_model.ontology.OntologyAttribute(wc_onto,
-                                                     terms=wc_onto['WC:time'].rchildren(),
-                                                     none=True)
+    # time_type = obj_model.ontology.OntologyAttribute(wc_onto,
+    #                                                  terms=wc_onto['WC:time'].rchildren(),
+    #                                                  none=True)
     time_bin = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'object', 'observable', 'property', 'value', 'units', 
-        'value_uncertainty', 'time', 'time_type', 'time_bin', 'comments')
+        'value_uncertainty', 'time', 'time_bin', 'comments')
+#  'time_type',
+
+
+class ProbabilityDensityFunction(object):
+    """Options to create a MockData object 
+    
+    Attributes:
+        n_cells (TYPE): Description
+        sampling_type (TYPE): Description
+    
+    Deleted Attributes:
+        noise_distribution (TYPE): Description
+    """
+    def __init__(self, pdf_type, kwargs, absolute):
+        """
+        Args:
+            n_cells (:obj:`int`, optional): number of cells to be sampled
+            sampling_type (:obj:`str`, optional): distribution of cells to be sampled
+            noise_type (TYPE, optional): Description
+            time_course_type (str, optional): Description
+            std (int, optional): Description
+        
+        Deleted Parameters:
+            noise_distribution (None, optional): distribution of protein expression
+        """
+
+        self.pdf_type = pdf_type
+        self.absolute = absolute
+        # self.args = args
+        self.kwargs = kwargs
+        self.validate()
+
+    @property
+    def pdf_type(self):
+        """ Get the pdf_type
+        
+        Returns:
+            :obj:`method`: np.random method
+        """
+        return self._pdf_type
+    
+    @pdf_type.setter
+    def pdf_type(self, value):
+        """ Set pdf_type
+        
+        Args:
+            value (:obj:`method`): np.random method
+        
+        Raises:
+            ValueError: if value not np.random method
+        """
+        if not callable(value) or not re.search(' of mtrand.RandomState object at ', str(value)):
+            raise ValueError('First argument `pdf_type` has to be a `np.random` method')
+        self._pdf_type = value
+
+    @property
+    def kwargs(self):
+        """Get the kwargs
+        
+        Returns:
+            :obj:`dict`: kwargs
+        """
+        return self._kwargs
+
+    @kwargs.setter
+    def kwargs(self, value):
+        """Set the kwargs
+        
+        Args:
+            value (:obj:`dict`): kwargs
+        
+        Raises:
+            ValueError: if not dict
+        """
+        if not isinstance(value, dict):
+            raise ValueError('`kwargs` must be of type `dict`')
+        self._kwargs = value
+
+    @property
+    def absolute(self):
+        """ Get absolute
+        
+        Returns:
+            :obj:`bool`: absolute
+        """
+        return self._absolute
+    
+    @absolute.setter
+    def absolute(self, value):
+        """ Set absolute
+        
+        Args:
+            value (:obj:`bool`): absolute
+        
+        Raises:
+            ValueError: if value not of type `bool`
+        """
+        if not isinstance(value, bool):
+            raise ValueError('absolute must be of type `bool`.')
+        self._absolute = value
+
+    # @property
+    # def args(self):
+    #     """Get args
+        
+    #     Returns:
+    #         :obj:`tuple`: args
+    #     """
+    #     return self._args
+    
+    # @args.setter
+    # def args(self, value):
+    #     """Set args
+        
+    #     Args:
+    #         value (:obj:`tuple`): args
+        
+    #     Raises:
+    #         ValueError: if not tuple
+    #     """
+    #     if not isinstance(value, tuple):
+    #         raise ValueError('`args` must be a tuple')
+    #     self._args = value
+
+
+    def validate(self):
+        """ Check that pdf_type, args and kwars define a probability density function
+
+        Returns:
+            :obj:`list` of :obj:`str`: list of errors, if any
+        """
+        val = self.pdf_type(**self.kwargs)
 
 
 class Experiment(KnowledgeBaseObject):

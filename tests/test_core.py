@@ -12,6 +12,7 @@
 
 from wc_kb import core
 from wc_onto import onto as kbOnt
+import obj_model
 from wc_utils.util import chem
 from wc_utils.util.units import unit_registry
 from wc_utils.util.ontology import are_terms_equivalent
@@ -1278,6 +1279,8 @@ class EvidenceTestCase(unittest.TestCase):
              core.Experiment: [ref3, 'exp comment']})
 
     def test_evidence(self):   
+        # with self.assertRaisesRegex(TypeError, 'Can\'t instantiate abstract class'):
+        #     core.Evidence()
         cell  = core.Cell()
         comp1 = core.Compartment(id='c')
         met1  = core.MetaboliteSpeciesType(id='met1')
@@ -1288,43 +1291,68 @@ class EvidenceTestCase(unittest.TestCase):
         observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
         ref1=core.Reference(id='ref1')
         expe1 = core.Experiment(id='expe1', references = [ref1], comments = 'expe comment')
-
+        dbref = core.Identifier(id='dbref1')
         # object = obj_model.StringAttribute()
-        
         unit = unit_registry.parse_units('molar')
-        value_uncertainty = numpy.random.standard_normal()        
+        value_uncertainty = core.ProbabilityDensityFunction(pdf_type=numpy.random.normal, absolute=False, kwargs={'loc': 1, 'scale': 0.1}) # Todo: this should probably be an obj_model attribute.
         # controlled_variables = obj_model.ManyToManyAttribute('ControlledVariable', related_name='evidence')
-        time_type = obj_model.ontology.OntologyAttribute(wc_onto,
-                                                         terms=wc_onto['WC:time'].rchildren(),
-                                                         none=True)
-        time_bin = lambda bin_width: numpy.random.uniform(low=-bin_width/2, high=bin_width/2)
+        time_type = kbOnt['WC:time']
+        time_bin = core.ProbabilityDensityFunction(pdf_type=numpy.random.uniform, absolute=True, kwargs={'low': -0.25, 'high': 0.25}) # Todo: this should probably be an obj_model attribute.
         
-
+        # Positive tests
         evi1 = core.Evidence(id='evi1', cell=cell, observable=observable1, property = 'concentration',
-            value = [1, 1.1], unit=unit, time = [0.25, 0.75], time_type=time_type, experiment=expe1,
-            time_bin=time_bin, identifiers = core.Identifier(id='dbref1'), comments = 'evidence1 comment',)
+            value = [1, 1.1], units=unit, value_uncertainty=value_uncertainty, time_type=time_type, time = [0.25, 0.75], experiment=expe1,
+            time_bin=time_bin, identifiers =[dbref], comments = 'evidence1 comment')
         self.assertEqual(evi1.id, 'evi1')
         self.assertEqual(evi1.cell, cell)
         self.assertEqual(evi1.observable, observable1)
         self.assertEqual(evi1.property, 'concentration')
         self.assertEqual(evi1.value, [1, 1.1])
-        self.assertEqual(evi1.unit, unit)
+        self.assertEqual(evi1.units, unit)
+        self.assertEqual(evi1.value_uncertainty, value_uncertainty)
         self.assertEqual(evi1.time, [0.25, 0.75])
         self.assertEqual(evi1.time_type, time_type)
         self.assertEqual(evi1.experiment, expe1)
         self.assertEqual(evi1.time_bin, time_bin)
-        self.assertEqual(evi1.identifiers, core.Identifier(id='dbref1'))
-        self.assertEqual(evi1.comments, 'evidence1')
+        self.assertEqual(evi1.identifiers, [dbref])
+        self.assertEqual(evi1.comments, 'evidence1 comment')
 
+        # Simple negative tests
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(id=[1,2])
+        with self.assertRaises(AttributeError):
+            evi1 = core.Evidence(observable=1)
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(property=[1,2])
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(value='a')
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(value=[1, 'a'])
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(units='a')
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(time_type='a')
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(time='a')
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(time=[1, 'a'])
+        with self.assertRaises(AttributeError):
+            evi1 = core.Evidence(experiment='a')
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(time_bin='a')
+        # with self.assertRaises(AttributeError):
+        #     evi1 = core.Evidence(identifiers='a')
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(comments=1)
 
+        # More complex negative tests
+        # with self.assertRaises(ValueError): # `value` and `time` must be of same length
+        #     evi1 = core.Evidence(id='evi1', value=[1, 2], time=[1, 2, 3], observable=observable1)
+        # with self.assertRaises(ValueError): # time[i] must be < time[i+1]
+        #     evi1 = core.Evidence(id='evi1', time=[2, 1], observable=observable1)
+        # Todo: Do we need to enforce `id`, `value`, `property` and `units` and either of `observable` or `object`
+        # as required arguments?
 
-
-
-        # with self.assertRaises(ValueError): # Value should be (list of (lists of)) float
-        #     evi1 = core.Evidence(id='evi1', value='a', observable=observable1)
-
-        evi1 = core.Evidence(id='evi1', experiment=expe1, comments = 'evidence1 comment', value=[1, 1.1], observable=observable1)
-        self.assertEqual(evi1.value, [1, 1.1])
 
         print('--------')
         print(evi1.id)
@@ -1340,4 +1368,44 @@ class EvidenceTestCase(unittest.TestCase):
         print(evi1.comments)
 
         print('--------')
+        a
 
+
+class ProbabilityDensityFunctionTestCase(unittest.TestCase):
+    def test_init(self):
+        value_uncertainty = core.ProbabilityDensityFunction(pdf_type=numpy.random.lognormal, kwargs={'sigma': 0.1}, absolute=False)
+        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, False)
+        self.assertEqual(value_uncertainty.pdf_type, numpy.random.lognormal)
+        self.assertEqual(value_uncertainty.kwargs, {'sigma': 0.1})
+        self.assertEqual(value_uncertainty.absolute, False)
+        with self.assertRaises(TypeError):
+            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1})
+        with self.assertRaises(TypeError):
+            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'something': 0.1})
+        with self.assertRaises(TypeError):
+            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 'a'})
+
+    def test_pdf_type_setter(self):
+        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, False)
+        self.assertEqual(value_uncertainty.pdf_type, numpy.random.lognormal)
+        with self.assertRaises(AttributeError):
+            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.something, False)
+
+    def test_absolute_setter(self):
+        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, True)
+        self.assertEqual(value_uncertainty.absolute, True)
+        with self.assertRaises(TypeError):
+            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, 'True')
+
+    def test_kwargs_setter(self):
+        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, True)
+        self.assertEqual(value_uncertainty.kwargs, {'sigma': 0.1})
+        with self.assertRaises(ValueError):
+            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma', 0.1}, True)
+
+    def test_validate(self):
+        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, True)
+        with self.assertRaises(TypeError):
+            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'something': 0.1}, True)
+        with self.assertRaises(ValueError):
+            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 'a'}, True)
