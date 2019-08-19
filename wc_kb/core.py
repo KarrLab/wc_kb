@@ -1929,35 +1929,32 @@ class Evidence(KnowledgeBaseObject):
             property (:obj:`str`): property
             value (:obj:`float`): value
             units (:obj:`Units`): units
-            value_uncertainty (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other)
+            value_uncertainty (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other if combined errors affected the measurement)
             controlled_variables (:obj:`list` of :obj:`ControlledVariable`): controlled variables / perturbation course 
-            time (:obj:`float`): value
-            time_type (:obj:`pronto): time_type
-            time_bin (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other)
+            time (:obj:`list` of :obj:`float`): time points of measurement / observation
+            time_units (:obj:`Units`): time units
+            time_0 (:obj:`pronto): optional ontology term corresponding to time=0
+            time_bin (:obj:`tuple` of :obj: `method`): pdf in np.random (to be convolved with each other if combined errors affected the measurement)
             identifiers(:obj:`list` of :obj:`Identifier`): identifiers
             references (:obj:`list` of :obj:`Reference`): references
             experiment (:obj:`Experiment`): experiment
             comments(:obj:`str`): comments
-
-        Related attributes:
-
     """
 
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
     object   =  obj_model.StringAttribute()
     observable =  obj_model.ManyToOneAttribute(Observable, related_name='evidence') # Todo: change this to wc_rules pattern or similar at some point
-    property = obj_model.StringAttribute() # Todo: make this concentration or phenotype
+    property = obj_model.StringAttribute()
     value = obj_model.FloatAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?    
+    value_uncertainty = obj_model.FloatAttribute() # Todo: is `FloatAttribute` the right thing here?    
     controlled_variables = obj_model.ManyToManyAttribute('ControlledVariable', related_name='evidence')
     time = obj_model.FloatAttribute() 
-    time_type = obj_model.ontology.OntologyAttribute(kbOnt,
+    time_units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units # Todo: how to restrict units to be of dimension time?
+    time_0 = obj_model.ontology.OntologyAttribute(kbOnt,
                                                      terms=kbOnt['WC:time'].rchildren(),
-                                                     none=True)
-    # Todo: add WC:time to wc_onto
+                                                     none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
     time_bin = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
-    
     identifiers = IdentifierAttribute(related_name='evidence')
     references = obj_model.ManyToManyAttribute('Reference', related_name='evidence')
     experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='evidence')
@@ -1965,78 +1962,84 @@ class Evidence(KnowledgeBaseObject):
 
     class Meta(obj_model.Model.Meta):
         attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
-            'value_uncertainty', 'controlled_variables', 'time', 'time_bin', 
-            'experiment', 'identifiers', 'references', 'comments')
-        #  'time_type',
+            'value_uncertainty', 'controlled_variables', 'time', 'time_units', 'time_0', 'time_bin', 
+            'identifiers', 'references', 'experiment', 'comments')
 
 
-class ControlledVariable(KnowledgeBaseObject):
-    """ Represents variables that are actively controlled / perturbed in an experiment
+class ControlledVariable(KnowledgeBaseObject): # This class is identical to the class `Evidence` except that the `controlled_variable` attribute is replaced with the related_attribute `evidence`.
+    # Todo: How to encfore consistency between instances of `ControlledVariable` and instances of `Evidence` wrt several of their attributes? Just by deleting these attributes from `ControlledVariables`?
+
+    """ Represents variables / perturbation courses that are controlled during an experiment.
 
         Attributes:
             id (:obj:`str`): identifier
+            cell (:obj:`Cell`): cell
             object (:obj:`str`): object
             observable (:obj:`Observable`): observable
             property (:obj:`str`): property
             value (:obj:`float`): value
             units (:obj:`Units`): units
-            value_uncertainty (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other)
-            time (:obj:`float`): value
-            time_type (:obj:`pronto): time_type
-            time_bin (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other)
+            value_uncertainty (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other if combined errors affected the measurement)
+            time (:obj:`list` of :obj:`float`): time points of measurement / observation
+            time_units (:obj:`Units`): time units
+            time_0 (:obj:`pronto): optional ontology term corresponding to time=0
+            time_bin (:obj:`tuple` of :obj: `method`): pdf in np.random (to be convolved with each other if combined errors affected the measurement)
+            identifiers(:obj:`list` of :obj:`Identifier`): identifiers
+            references (:obj:`list` of :obj:`Reference`): references
+            experiment (:obj:`Experiment`): experiment
             comments(:obj:`str`): comments
 
         Related attributes:
-            evidence (:obj:`list` of :obj:`Evidence`): evidence, i.e. dependent variables
-
+            evidence (:obj:`list` of :obj: `Evidence`): list of evidence
     """
 
+    cell = obj_model.ManyToOneAttribute('Cell', related_name='controlled_variable')
     object   =  obj_model.StringAttribute()
-    observable =  obj_model.ManyToOneAttribute(Observable, related_name='controlled_variables')
-    property = obj_model.StringAttribute() # Todo: make this concentration
+    observable =  obj_model.ManyToOneAttribute(Observable, related_name='controlled_variable') # Todo: change this to wc_rules pattern or similar at some point
+    property = obj_model.StringAttribute()
     value = obj_model.FloatAttribute()
     units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
+    value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?    
     time = obj_model.FloatAttribute() 
-    # time_type = obj_model.ontology.OntologyAttribute(wc_onto,
-    #                                                  terms=wc_onto['WC:time'].rchildren(),
-    #                                                  none=True)
+    time_units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    time_0 = obj_model.ontology.OntologyAttribute(kbOnt,
+                                                     terms=kbOnt['WC:time'].rchildren(),
+                                                     none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
     time_bin = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
+    identifiers = IdentifierAttribute(related_name='controlled_variable')
+    references = obj_model.ManyToManyAttribute('Reference', related_name='controlled_variable')
+    experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='controlled_variable')
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'object', 'observable', 'property', 'value', 'units', 
-        'value_uncertainty', 'time', 'time_bin', 'comments')
-#  'time_type',
-
+        attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
+            'value_uncertainty', 'time', 'time_units', 'time_0', 'time_bin', 
+            'identifiers', 'references', 'experiment', 'comments')
+        
 
 class ProbabilityDensityFunction(object):
-    """Options to create a MockData object 
+    # Todo: Think how to rewrite this class such that it inherits from `KnowledgeBaseObject` and uses obj_model.____Attributes() to define attributes.
+
+    """Probability density function for error characterisation of values
     
     Attributes:
-        n_cells (TYPE): Description
-        sampling_type (TYPE): Description
-    
-    Deleted Attributes:
-        noise_distribution (TYPE): Description
+        pdf_type (:obj:`method`): np.random method
+        kwargs (:obj:`dict): dict with keyword arguments to be passed to np.random method
+        multiplicative (:obj:`bool`): ProbabilityDensityFunction is to be multiplied with value if `True`, added if `False`.
     """
-    def __init__(self, pdf_type, kwargs, absolute):
+    
+    def __init__(self, pdf_type, kwargs, multiplicative):
         """
         Args:
-            n_cells (:obj:`int`, optional): number of cells to be sampled
-            sampling_type (:obj:`str`, optional): distribution of cells to be sampled
-            noise_type (TYPE, optional): Description
-            time_course_type (str, optional): Description
-            std (int, optional): Description
-        
-        Deleted Parameters:
-            noise_distribution (None, optional): distribution of protein expression
+            pdf_type (:obj:`method`): np.random method
+            kwargs (:obj:`dict): dict with keyword arguments to be passed to np.random method
+            multiplicative (:obj:`bool`): ProbabilityDensityFunction is to be multiplied with value if `True`, added if `False`.
         """
 
         self.pdf_type = pdf_type
-        self.absolute = absolute
-        # self.args = args
         self.kwargs = kwargs
+        self.multiplicative = multiplicative
+        # self.args = args
         self.validate()
 
     @property
@@ -2056,7 +2059,7 @@ class ProbabilityDensityFunction(object):
             value (:obj:`method`): np.random method
         
         Raises:
-            ValueError: if value not np.random method
+            ValueError: if pdf_type is not np.random method
         """
         if not callable(value) or not re.search(' of mtrand.RandomState object at ', str(value)):
             raise ValueError('First argument `pdf_type` has to be a `np.random` method')
@@ -2067,7 +2070,7 @@ class ProbabilityDensityFunction(object):
         """Get the kwargs
         
         Returns:
-            :obj:`dict`: kwargs
+            :obj:`dict: kwargs
         """
         return self._kwargs
 
@@ -2076,37 +2079,37 @@ class ProbabilityDensityFunction(object):
         """Set the kwargs
         
         Args:
-            value (:obj:`dict`): kwargs
+            value (:obj:`dict`): keyword arguments to be passed to np.random method
         
         Raises:
-            ValueError: if not dict
+            ValueError: if kwargs is not a `dict`
         """
         if not isinstance(value, dict):
             raise ValueError('`kwargs` must be of type `dict`')
         self._kwargs = value
 
     @property
-    def absolute(self):
-        """ Get absolute
+    def multiplicative(self):
+        """ Get multiplicative
         
         Returns:
-            :obj:`bool`: absolute
+            :obj:`bool`: multiplicative
         """
-        return self._absolute
+        return self._multiplicative
     
-    @absolute.setter
-    def absolute(self, value):
-        """ Set absolute
+    @multiplicative.setter
+    def multiplicative(self, value):
+        """ Set multiplicative
         
         Args:
-            value (:obj:`bool`): absolute
+            value (:obj:`bool`): multiplicative
         
         Raises:
-            ValueError: if value not of type `bool`
+            ValueError: if multiplicative not of type `bool`
         """
         if not isinstance(value, bool):
-            raise ValueError('absolute must be of type `bool`.')
-        self._absolute = value
+            raise ValueError('multiplicative must be of type `bool`.')
+        self._multiplicative = value
 
     # @property
     # def args(self):
@@ -2133,10 +2136,7 @@ class ProbabilityDensityFunction(object):
 
 
     def validate(self):
-        """ Check that pdf_type, args and kwars define a probability density function
-
-        Returns:
-            :obj:`list` of :obj:`str`: list of errors, if any
+        """ Checks if pdf_type and kwargs define a probability density function
         """
         val = self.pdf_type(**self.kwargs)
 
