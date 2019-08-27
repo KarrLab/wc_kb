@@ -1438,6 +1438,9 @@ class MetaboliteSpeciesType(SpeciesType):
     def get_structure(self, ph=7.4):
         """ Get the structure
 
+        Args:
+            pH (:obj:`float`, optional): pH, default is 7.4
+
         Returns:
             :obj:`str`: structure
 
@@ -1472,6 +1475,9 @@ class MetaboliteSpeciesType(SpeciesType):
     def get_empirical_formula(self, ph=7.4):
         """ Get the empirical formula
 
+        Args:
+            pH (:obj:`float`, optional): pH, default is 7.4
+
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
@@ -1488,6 +1494,9 @@ class MetaboliteSpeciesType(SpeciesType):
     def get_charge(self, ph=7.4):
         """ Get the charge
 
+        Args:
+            pH (:obj:`float`, optional): pH, default is 7.4
+
         Returns:
             :obj:`int`: charge
         """
@@ -1501,8 +1510,11 @@ class MetaboliteSpeciesType(SpeciesType):
         conversion.ReadString(mol,  inchi)
         return mol.GetTotalCharge()
 
-    def get_mol_wt(self):
+    def get_mol_wt(self, ph=7.4):
         """ Get the molecular weight
+
+        Args:
+            pH (:obj:`float`, optional): pH, default is 7.4
 
         Returns:
             :obj:`float`: molecular weight
@@ -1511,16 +1523,21 @@ class MetaboliteSpeciesType(SpeciesType):
             :obj:`ValueError`: if there is not enough information to calculate molecular weight
         """
         if self.properties.get_one(property='structure'):
-            mol = self.to_openbabel_mol()
+            inchi = self.get_structure(ph=ph)
+            mol = openbabel.OBMol()
+            conversion = openbabel.OBConversion()
+            conversion.SetInFormat('inchi')
+            conversion.ReadString(mol,  inchi)
+            return mol.GetMolWt()
+            
         elif self.properties.get_one(property='empirical_formula'):
             return chem.EmpiricalFormula(self.properties.get_one(
                 property='empirical_formula').get_value()).get_molecular_weight()
+        
         else:
             raise ValueError('Molecular weight cannot be calculated because no structure or '
                 'empirical formula has been provided for {}'.format(self.id))
-
-        return mol.GetMolWt()
-
+      
 
 class DnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of a DNA species
