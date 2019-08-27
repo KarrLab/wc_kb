@@ -1968,13 +1968,13 @@ class TimeCourse(KnowledgeBaseObject):
             property (:obj:`str`): property
             values (:obj:`list` of :obj:`float`): values
             times (:obj:`list` of :obj:`float`): times
-            evidence (:obj:`Evidence`): evidence
             comments(:obj:`str`): comments
     """
     observable =  obj_model.ManyToOneAttribute(Observable, related_name='evidence') # Todo: change this to wc_rules pattern or similar at some point
     property = obj_model.StringAttribute()
     values = TimeCourseAttribute()
-    values = TimeCourseAttribute()
+    times = TimeCourseAttribute()
+    comments = obj_model.LongStringAttribute()
     
 
 class PerturbationCourse(TimeCourse):
