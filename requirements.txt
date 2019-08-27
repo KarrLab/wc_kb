@@ -4,5 +4,5 @@ obj_model
 openbabel
 pyfaidx
 setuptools
-wc_utils
+wc_utils[chem, protonation]
 wc_onto
