@@ -505,10 +505,10 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
                 '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
                 '/p-2/t4-,6-,7-,10-'
                 '/m1'
-                '/s1\n'))
-
+                '/s1'))
         met = core.MetaboliteSpeciesType(properties = [speciesTypeProperties])
 
+        print(met.get_structure())
         self.assertEqual(met.get_structure(), speciesTypeProperties.value)
         self.assertEqual(met.get_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O7P'))

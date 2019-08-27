@@ -14,6 +14,7 @@ from natsort import natsorted, ns
 from math import ceil, floor, exp, log, log10, isnan
 from pyfaidx import Fasta
 from wc_utils.util import chem
+from wc_utils.util.chem.core import get_major_micro_species, OpenBabelUtils
 from wc_utils.util.list import det_dedupe
 from wc_utils.util.units import unit_registry
 from wc_onto import onto as kbOnt
@@ -1434,7 +1435,7 @@ class MetaboliteSpeciesType(SpeciesType):
         verbose_name = 'Metabolite'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'identifiers', 'references', 'comments')
 
-    def get_structure(self, ph=7.95):
+    def get_structure(self, ph=7.4):
         """ Get the structure
 
         Returns:
@@ -1445,16 +1446,9 @@ class MetaboliteSpeciesType(SpeciesType):
         """
         if not self.properties.get_one(property='structure'):
             raise ValueError('The structure of {} has not been provided'.format(self.id))
-
-        mol = openbabel.OBMol()
-        conversion = openbabel.OBConversion()
-        conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
-        mol.CorrectForPH(ph)
-        conversion.SetOutFormat('inchi')
-        protonated_inchi = conversion.WriteString(mol)
-
-        return protonated_inchi
+        
+        inchi = self.properties.get_one(property='structure').get_value()
+        return get_major_micro_species(inchi, 'inchi', 'inchi', ph=ph)
 
     def to_openbabel_mol(self):
         """ Convert species type to an Open Babel molecule
@@ -1475,7 +1469,7 @@ class MetaboliteSpeciesType(SpeciesType):
 
         return mol
 
-    def get_empirical_formula(self, ph=7.95):
+    def get_empirical_formula(self, ph=7.4):
         """ Get the empirical formula
 
         Returns:
@@ -1484,18 +1478,14 @@ class MetaboliteSpeciesType(SpeciesType):
         if self.properties.get_one(property='empirical_formula'):
             return chem.EmpiricalFormula(self.properties.get_one(property='empirical_formula').get_value())
 
-        mol = self.to_openbabel_mol()
+        inchi = self.get_structure(ph=ph)
+        mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol,  self.properties.get_one(property='structure').get_value())
-        mol.CorrectForPH(ph)
-        conversion.SetOutFormat('inchi')
-        protontated_inchi = conversion.WriteString(mol)
-        protonated_formula = mol.GetFormula().rstrip('+-')
+        conversion.ReadString(mol,  inchi)
+        return OpenBabelUtils.get_formula(mol)
 
-        return chem.EmpiricalFormula(protonated_formula)
-
-    def get_charge(self, ph=7.95):
+    def get_charge(self, ph=7.4):
         """ Get the charge
 
         Returns:
@@ -1504,13 +1494,11 @@ class MetaboliteSpeciesType(SpeciesType):
         if self.properties.get_one(property='charge'):
             return self.properties.get_one(property='charge').get_value()
 
-        mol = self.to_openbabel_mol()
+        inchi = self.get_structure(ph=ph)
+        mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
-        mol.CorrectForPH(ph)
-        conversion.SetOutFormat('inchi')
-
+        conversion.ReadString(mol,  inchi)
         return mol.GetTotalCharge()
 
     def get_mol_wt(self):
