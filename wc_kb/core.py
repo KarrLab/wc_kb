@@ -1924,11 +1924,6 @@ class Evidence(KnowledgeBaseObject):
         Attributes:
             id (:obj:`str`): identifier
             cell (:obj:`Cell`): cell
-            object (:obj:`str`): object
-            property (:obj:`str`): property
-            value (:obj:`float`): value
-            perturbation_courses (:obj:`list` of :obj:`time_series): perturbation courses
-            time_course_measurements (:obj:`list` of :obj:`time_series`): time course measurements
             time_0 (:obj:`pronto): optional ontology term corresponding to time=0
             identifiers(:obj:`list` of :obj:`Identifier`): identifiers
             references (:obj:`list` of :obj:`Reference`): references
@@ -1942,9 +1937,6 @@ class Evidence(KnowledgeBaseObject):
     """
 
     cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
-    object   =  obj_model.StringAttribute()
-    property = obj_model.StringAttribute()
-    value = obj_model.FloatAttribute()
     time_0 = obj_model.ontology.OntologyAttribute(kbOnt,
                                                      terms=kbOnt['WC:time'].rchildren(),
                                                      none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
@@ -1954,9 +1946,47 @@ class Evidence(KnowledgeBaseObject):
     comments = obj_model.LongStringAttribute()
 
     class Meta(obj_model.Model.Meta):
-        attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
-            'value_uncertainty', 'controlled_variables', 'time', 'time_units', 'time_0', 'time_bin', 
+        attribute_order = ('id', 'cell', 'time_0',
             'identifiers', 'references', 'experiment', 'comments')
+
+
+class FloatValue(obj_model.Model):
+    """ A float value
+    Attributes:
+        value (:obj:`float`): value
+    """
+    value = FloatAttribute()
+
+    # class Meta(obj_model.Model.Meta):
+    #     attribute_order = ('species', 'coefficient')
+    #     frozen_columns = 1
+    #     tabular_orientation = TabularOrientation.cell
+    #     ordering = ('species',)
+
+
+class TimeCourseAttribute(ManyToOneAttribute):
+    """ Reaction participants """
+
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+        """
+        Args:
+            related_name (:obj:`str`, optional): name of related attribute on `related_class`
+            verbose_name (:obj:`str`, optional): verbose name
+            verbose_related_name (:obj:`str`, optional): verbose related name
+            help (:obj:`str`, optional): help message
+        """
+        super(TimeCourseAttribute, self).__init__(FloatValue, help=help)
+
+    def serialize(self, participants, encoded=None):
+        """ 
+        """
+        # return str([part.value for part in participants])
+        pass
+
+    def deserialize(self, value, objects, decoded=None):
+        """
+        """
+        pass
 
 
 class TimeCourse(KnowledgeBaseObject):
@@ -1967,13 +1997,17 @@ class TimeCourse(KnowledgeBaseObject):
             observable(:obj:`Obervable`) observable
             property (:obj:`str`): property
             values (:obj:`list` of :obj:`float`): values
+            values_units (:obj:`Units`): unit of values
             times (:obj:`list` of :obj:`float`): times
+            times_unit (:obj:`Units`): unit of times
             comments(:obj:`str`): comments
     """
     observable =  obj_model.ManyToOneAttribute(Observable, related_name='evidence') # Todo: change this to wc_rules pattern or similar at some point
     property = obj_model.StringAttribute()
     values = TimeCourseAttribute()
+    values_unit = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
     times = TimeCourseAttribute()
+    times_unit = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
     comments = obj_model.LongStringAttribute()
     
 
@@ -1985,8 +2019,9 @@ class PerturbationCourse(TimeCourse):
             observable(:obj:`Obervable`) observable
             property (:obj:`str`): property
             values (:obj:`list` of :obj:`float`): values
+            values_units (:obj:`Units`): unit of values
             times (:obj:`list` of :obj:`float`): times
-            evidence (:obj:`Evidence`): evidence
+            times_unit (:obj:`Units`): unit of times
             comments(:obj:`str`): comments
     """
     evidence = obj_model.ManyToOneAttribute('Evidence', related_name='perturbation_courses')
@@ -2000,226 +2035,13 @@ class TimeCourseMeasurement(TimeCourse):
             observable(:obj:`Obervable`) observable
             property (:obj:`str`): property
             values (:obj:`list` of :obj:`float`): values
+            values_units (:obj:`Units`): unit of values
             times (:obj:`list` of :obj:`float`): times
-            evidence (:obj:`Evidence`): evidence
+            times_unit (:obj:`Units`): unit of times
             comments(:obj:`str`): comments
     """
     evidence = obj_model.ManyToOneAttribute('Evidence', related_name='time_course_measurements')
 
-
-class TimeCourseAttribute(ManyToManyAttribute):
-    """ Reaction participants """
-
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
-        """
-        Args:
-            related_name (:obj:`str`, optional): name of related attribute on `related_class`
-            verbose_name (:obj:`str`, optional): verbose name
-            verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
-        """
-        super(TimeCourseAttribute, self).__init__(float, related_name=related_name,
-                                                           verbose_name=verbose_name,
-                                                           verbose_related_name=verbose_related_name,
-                                                           help=help)
-
-    def serialize(self, participants, encoded=None):
-        """ Serialize related object
-
-        Args:
-            participants (:obj:`list` of :obj:`SpeciesCoefficient`): Python representation of reaction participants
-            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
-
-        Returns:
-            :obj:`str`: simple Python representation
-        """
-        if not participants:
-            return ''
-
-        comps = set([part.species.compartment for part in participants])
-        if len(comps) == 1:
-            global_comp = comps.pop()
-        else:
-            global_comp = None
-
-        if global_comp:
-            participants = natsorted(
-                participants, lambda part: part.species.species_type.id, alg=ns.IGNORECASE)
-        else:
-            participants = natsorted(participants, lambda part: (
-                part.species.species_type.id, part.species.compartment.id), alg=ns.IGNORECASE)
-
-        lhs = []
-        rhs = []
-        for part in participants:
-            if part.coefficient < 0:
-                lhs.append(part.serialize(
-                    show_compartment=global_comp is None, show_coefficient_sign=False))
-            elif part.coefficient > 0:
-                rhs.append(part.serialize(
-                    show_compartment=global_comp is None, show_coefficient_sign=False))
-
-        if global_comp:
-            return '[{}]: {} ==> {}'.format(global_comp.get_primary_attribute(), ' + '.join(lhs), ' + '.join(rhs))
-        else:
-            return '{} ==> {}'.format(' + '.join(lhs), ' + '.join(rhs))
-
-    def deserialize(self, value, objects, decoded=None):
-        """ Deserialize value
-
-        Args:
-            value (:obj:`str`): String representation
-            objects (:obj:`dict`): dictionary of objects, grouped by model
-            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
-
-        Returns:
-            :obj:`tuple` of `list` of `SpeciesCoefficient`, `InvalidAttribute` or `None`: tuple of cleaned value
-                and cleaning error
-        """
-        errors = []
-
-        st_id = SpeciesType.id.pattern[1:-1]
-        comp_id = Compartment.id.pattern[1:-1]
-        stoch = r'\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\)'
-        gbl_part = r'({} )*({})'.format(stoch, st_id)
-        lcl_part = r'({} )*({}\[{}\])'.format(stoch, st_id, comp_id)
-        gbl_side = r'{}( \+ {})*'.format(gbl_part, gbl_part)
-        lcl_side = r'{}( \+ {})*'.format(lcl_part, lcl_part)
-        gbl_pattern = r'^\[({})\]: ({}) ==> ({})$'.format(
-            comp_id, gbl_side, gbl_side)
-        lcl_pattern = r'^({}) ==> ({})$'.format(lcl_side, lcl_side)
-        
-        import_pattern = r'^\[({})\]: ==> ({})$'.format(comp_id, st_id)
-        export_pattern = r'^\[({})\]: ({}) ==> $'.format(comp_id, st_id)
-
-        global_match = re.match(gbl_pattern, value, flags=re.I)
-        local_match = re.match(lcl_pattern, value, flags=re.I)
-        import_match = re.match(import_pattern, value, flags=re.I)
-        export_match = re.match(export_pattern, value, flags=re.I)
-
-        if global_match:
-            if global_match.group(1) in objects[Compartment]:
-                global_comp = objects[Compartment][global_match.group(1)]
-            else:
-                global_comp = None
-                errors.append('Undefined compartment "{}"'.format(
-                    global_match.group(1)))
-            lhs = global_match.group(11)
-            rhs = global_match.group(41)
-
-        elif local_match:
-            global_comp = None
-            lhs = local_match.group(1)
-            rhs = local_match.group(49)
-
-        elif import_match:
-            if import_match.group(1) in objects[Compartment]:
-                global_comp = objects[Compartment][import_match.group(1)]
-            else:
-                global_comp = None
-                errors.append('Undefined compartment "{}"'.format(
-                    import_match.group(1)))
-            lhs = None
-            rhs = import_match.group(11) #todo
-                
-        elif export_match:
-            if export_match.group(1) in objects[Compartment]:
-                global_comp = objects[Compartment][export_match.group(1)]
-            else:
-                global_comp = None
-                errors.append('Undefined compartment "{}"'.format(
-                    export_match.group(1)))
-            lhs = export_match.group(11) #todo
-            rhs = None
-
-        else:
-            return (None, InvalidAttribute(self, ['Incorrectly formatted participants: {}'.format(value)]))
-
-        lhs_parts = []
-        rhs_parts = []
-        if lhs:
-            lhs_parts, lhs_errors = self.deserialize_side(
-                -1., lhs, objects, global_comp)
-            errors.extend(lhs_errors)
-        if rhs:    
-            rhs_parts, rhs_errors = self.deserialize_side(
-                1., rhs, objects, global_comp)
-            errors.extend(rhs_errors)
-        parts = lhs_parts + rhs_parts       
-
-        if errors:
-            return (None, InvalidAttribute(self, errors))
-        return (parts, None)
-
-    def deserialize_side(self, direction, value, objects, global_comp):
-        """ Deserialize the LHS or RHS of a reaction equation
-        Args:
-            direction (:obj:`float`): -1. indicates LHS, +1. indicates RHS
-            value (:obj:`str`): String representation
-            objects (:obj:`dict`): dictionary of objects, grouped by model
-            global_comp (:obj:`Compartment`): global compartment of the reaction
-
-        Returns:
-            :obj:`tuple`:
-                * :obj:`list` of :obj:`SpeciesCoefficient`: list of species coefficients
-                * :obj:`list` of :obj:`Exception`: list of errors
-        """
-        parts = []
-        errors = []
-
-        st_id = SpeciesType.id.pattern[1:-1]
-        comp_id = Compartment.id.pattern[1:-1]
-        pattern = r'(\(((\d*\.?\d+|\d+\.)(e[\-\+]?\d+)?)\) )*({})(\[({})\])*'.format(st_id, comp_id)
-        i_st = 4
-        i_comp = 15
-        for part in re.findall(pattern, value, flags=re.I):
-            part_errors = []
-
-            species_type = None
-            for species_type_cls in get_subclasses(SpeciesType):
-                if species_type_cls in objects and part[i_st] in objects[species_type_cls]:
-                    species_type = objects[species_type_cls][part[i_st]]
-                    break
-            if not species_type:
-                part_errors.append(
-                    'Undefined species type "{}"'.format(part[i_st]))
-
-            if global_comp:
-                compartment = global_comp
-            elif part[i_comp] in objects[Compartment]:
-                compartment = objects[Compartment][part[i_comp]]
-            else:
-                part_errors.append(
-                    'Undefined compartment "{}"'.format(part[i_comp]))
-
-            coefficient = direction * float(part[1] or 1.)
-
-            if part_errors:
-                errors += part_errors
-            else:
-                spec_primary_attribute = Species.gen_id(species_type.get_primary_attribute(),
-                                                        compartment.get_primary_attribute())
-                species, error = Species.deserialize(
-                    self, spec_primary_attribute, objects)
-                if error:
-                    raise ValueError('Invalid species "{}"'.format(
-                        spec_primary_attribute))
-                    # pragma: no cover # unreachable due to error checking above
-
-                if coefficient != 0:
-                    if SpeciesCoefficient not in objects:
-                        objects[SpeciesCoefficient] = {}
-                    serialized_value = SpeciesCoefficient._serialize(
-                        species, coefficient)
-                    if serialized_value in objects[SpeciesCoefficient]:
-                        rxn_part = objects[SpeciesCoefficient][serialized_value]
-                    else:
-                        rxn_part = SpeciesCoefficient(
-                            species=species, coefficient=coefficient)
-                        objects[SpeciesCoefficient][serialized_value] = rxn_part
-                    parts.append(rxn_part)
-
-        return (parts, errors)
 
 '''
 class Evidence(KnowledgeBaseObject):

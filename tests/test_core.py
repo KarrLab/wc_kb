@@ -1410,7 +1410,40 @@ class EvidenceTestCase(unittest.TestCase):
         # Todo: Do we need to enforce `id`, `value`, `property` and `units` and either of `observable` or `object`
 
 
+class PerturbationCourseTestCase(unittest.TestCase):
+    def test_perturbation_course(self):
+        cell  = core.Cell()
+        comp1 = core.Compartment(id='c')
+        met1  = core.MetaboliteSpeciesType(id='met1')
+        dna1  = core.DnaSpeciesType(id='dna1')
+        species1 = core.Species(species_type=met1, compartment=comp1)
+        species2 = core.Species(species_type=dna1, compartment=comp1)
+        expr1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[species1, species2])        
+        observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
+        ref1=core.Reference(id='ref1')
+        expe1 = core.Experiment(id='expe1', references = [ref1], comments = 'expe comment')
+        dbref = core.Identifier(id='dbref1')
+        unit = unit_registry.parse_units('molar')
+        time_units = unit_registry.parse_units('s')
+        time_0 = kbOnt['WC:cell_division']
+        evi1 = core.Evidence(id='evi1')
 
+        # Positive tests
+
+        cv1 = core.PerturbationCourse(id='cv1', observable=observable1, property = 'concentration',
+            values = [1, 1.1, 1], values_unit=unit, times = [0.25, 0.75],
+            times_unit=time_units, comments='evidence1 comment', evidence=evi1)
+
+        self.assertEqual(cv1.id, 'cv1')
+        self.assertEqual(cv1.observable, observable1)
+        self.assertEqual(cv1.property, 'concentration')
+        self.assertEqual(cv1.values, [1, 1.1, 1])
+        self.assertEqual(cv1.values_unit, unit)
+        self.assertEqual(cv1.times, [0.25, 0.75])
+        self.assertEqual(cv1.times_unit, time_units)
+        self.assertEqual(cv1.comments, 'evidence1 comment')
+        self.assertEqual(cv1.evidence, evi1)
+        self.assertEqual(evi1.perturbation_courses, [cv1])
 
 
 class ControlledVariableTestCase(unittest.TestCase):
