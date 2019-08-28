@@ -1309,43 +1309,30 @@ class EvidenceTestCase(unittest.TestCase):
         expe1 = core.Experiment(id='expe1', references = [ref1], comments = 'expe comment')
         dbref = core.Identifier(id='dbref1')
         unit = unit_registry.parse_units('molar')
-        pdf_n = core.ProbabilityDensityFunction(pdf_type=numpy.random.normal, multiplicative=True, kwargs={'loc': 1, 'scale': 0.1}) # Todo: this should probably be an obj_model attribute.
         time_units = unit_registry.parse_units('s')
         time_0 = kbOnt['WC:cell_division']
-        pdf_u = core.ProbabilityDensityFunction(pdf_type=numpy.random.uniform, multiplicative=False, kwargs={'low': 0, 'high': 0.5}) # Todo: this should probably be an obj_model attribute.
         
         ### Positive tests (examplify typical time course experiment)
         #
-        inh = core.ControlledVariable(id='inh', observable=observable1,
-            value = [0, 1, 0], units=unit, value_uncertainty=pdf_n, time = [0, 0.5, 1],
-            time_units=time_units, time_0=time_0, time_bin=pdf_u, identifiers =[dbref],
-            references=[ref1], experiment=expe1, comments='inh comment')
-        act = core.ControlledVariable(id='act', observable=observable2,
-            value = [0, 0, 1], units=unit, value_uncertainty=pdf_n, time = [0, 0.5, 1],
-            time_units=time_units, time_0=time_0, time_bin=pdf_u, identifiers =[dbref],
-            references=[ref1], experiment=expe1, comments='act comment')
-        evi1 = core.Evidence(id='evi1', cell=cell, observable=observable3, property = 'concentration',
-            value = [3, 1, 2.0], units=unit, value_uncertainty=pdf_n, controlled_variables=[inh, act],
-            time = [0, 0.5, 1], time_units=time_units, time_0=time_0, time_bin=(pdf_n, pdf_u),
-            identifiers =[dbref], references=[ref1], experiment=expe1, comments='evidence1 comment')
-        evi2 = core.Evidence(id='evi2', cell=cell, observable=observable4, property = 'concentration',
-            value = [1, 1, 1], units=unit, value_uncertainty=(pdf_n), controlled_variables=[inh, act],
-            time = [0, 0.5, 1], time_units=time_units, time_0=time_0, time_bin=(pdf_n, pdf_u),
-            identifiers =[dbref], references=[ref1], experiment=expe1, comments='evidence2 comment')
-        
+        # inh = core.ControlledVariable(id='inh', observable=observable1,
+        #     value = [0, 1, 0], units=unit, value_uncertainty=pdf_n, time = [0, 0.5, 1],
+        #     time_units=time_units, time_0=time_0, time_bin=pdf_u, identifiers =[dbref],
+        #     references=[ref1], experiment=expe1, comments='inh comment')
+        # act = core.ControlledVariable(id='act', observable=observable2,
+        #     value = [0, 0, 1], units=unit, value_uncertainty=pdf_n, time = [0, 0.5, 1],
+        #     time_units=time_units, time_0=time_0, time_bin=pdf_u, identifiers =[dbref],
+        #     references=[ref1], experiment=expe1, comments='act comment')
+        evi1 = core.Evidence(id='evi1', cell=cell, time_0=time_0, identifiers =[dbref],
+            references=[ref1], experiment=expe1, comments='evidence1 comment')
+               
         self.assertEqual(evi1.id, 'evi1')
         self.assertEqual(evi1.cell, cell)
-        self.assertEqual(evi1.observable, observable3)
-        self.assertEqual(evi1.property, 'concentration')
-        self.assertEqual(evi1.value, [3.0, 1, 2])
-        self.assertEqual(evi1.units, unit)
-        self.assertEqual(evi1.value_uncertainty, pdf_n)
-        self.assertEqual(evi1.controlled_variables, [inh, act])
+        
+        #  self.assertEqual(evi1.controlled_variables, [inh, act])
         # self.assertEqual(evi1.controlled_variables, [act, inh])
-        self.assertEqual(evi1.time, [0, 0.5, 1])
-        self.assertEqual(evi1.time_units, time_units)
+       
         self.assertEqual(evi1.time_0, time_0)
-        self.assertEqual(evi1.time_bin, (pdf_n, pdf_u))
+
         self.assertEqual(evi1.identifiers, [dbref])
         self.assertEqual(evi1.references, [ref1])
         self.assertEqual(evi1.experiment, expe1)
@@ -1353,20 +1340,20 @@ class EvidenceTestCase(unittest.TestCase):
 
         ### Example for (conditional) knockout; avoided a new class `Phenotype` by just using the `object` property of `Evidence`
         #
-        ccna2  = core.DnaSpeciesType(id='ccna2')
-        ccna2_species = core.Species(species_type=ccna2, compartment=comp1)
-        expr1 = core.ObservableExpression(expression='ccna2[c]', species=[ccna2_species])        
-        ccna2_observable = core.Observable(cell=cell, id='ccna2_observable', expression=expr1)
-        ccna2_cv = core.ControlledVariable(id='ccna2_cv', observable=ccna2_observable, value=[1, 0, 0, 0, 0],
-            time=[0, 1, 2, 3, 4])
-        evi1 = core.Evidence(id='evi1', object=kbOnt['WC:mitosis_arrested'], property='automated_identification_confidence_score',
-            value=[0, 0, 0.1, 0.9, 0], controlled_variables=[ccna2_cv], time=[0, 1, 2, 3, 4])
-        evi2 = core.Evidence(id='evi2', object=kbOnt['WC:cell_death'], property='automated_identification_confidence_score',
-            value=[0, 0, 0, 0.1, 1], controlled_variables=[ccna2_cv], time=[0, 1, 2, 3, 4])
-        self.assertEqual(evi1.object, kbOnt['WC:mitosis_arrested'])
-        self.assertEqual(evi1.controlled_variables, [ccna2_cv])
-        self.assertEqual(evi2.object, kbOnt['WC:cell_death'])
-        self.assertEqual(evi2.controlled_variables, [ccna2_cv])
+        # ccna2  = core.DnaSpeciesType(id='ccna2')
+        # ccna2_species = core.Species(species_type=ccna2, compartment=comp1)
+        # expr1 = core.ObservableExpression(expression='ccna2[c]', species=[ccna2_species])        
+        # ccna2_observable = core.Observable(cell=cell, id='ccna2_observable', expression=expr1)
+        # ccna2_cv = core.ControlledVariable(id='ccna2_cv', observable=ccna2_observable, value=[1, 0, 0, 0, 0],
+        #     time=[0, 1, 2, 3, 4])
+        # evi1 = core.Evidence(id='evi1', object=kbOnt['WC:mitosis_arrested'], property='automated_identification_confidence_score',
+        #     value=[0, 0, 0.1, 0.9, 0], controlled_variables=[ccna2_cv], time=[0, 1, 2, 3, 4])
+        # evi2 = core.Evidence(id='evi2', object=kbOnt['WC:cell_death'], property='automated_identification_confidence_score',
+        #     value=[0, 0, 0, 0.1, 1], controlled_variables=[ccna2_cv], time=[0, 1, 2, 3, 4])
+        # self.assertEqual(evi1.object, kbOnt['WC:mitosis_arrested'])
+        # self.assertEqual(evi1.controlled_variables, [ccna2_cv])
+        # self.assertEqual(evi2.object, kbOnt['WC:cell_death'])
+        # self.assertEqual(evi2.controlled_variables, [ccna2_cv])
 
         ### Simple negative tests
         #
@@ -1433,7 +1420,6 @@ class PerturbationCourseTestCase(unittest.TestCase):
         cv1 = core.PerturbationCourse(id='cv1', observable=observable1, property = 'concentration',
             values = [1, 1.1, 1], values_unit=unit, times = [0.25, 0.75],
             times_unit=time_units, comments='evidence1 comment', evidence=evi1)
-
         self.assertEqual(cv1.id, 'cv1')
         self.assertEqual(cv1.observable, observable1)
         self.assertEqual(cv1.property, 'concentration')
@@ -1444,6 +1430,47 @@ class PerturbationCourseTestCase(unittest.TestCase):
         self.assertEqual(cv1.comments, 'evidence1 comment')
         self.assertEqual(cv1.evidence, evi1)
         self.assertEqual(evi1.perturbation_courses, [cv1])
+
+        ### Simple negative tests
+        #
+        # with self.assertRaises(ValueError):
+        #     evi1 = core.Evidence(id=[1,2])
+        with self.assertRaises(AttributeError):
+            cv1 = core.PerturbationCourse(observable=1)
+        # with self.assertRaises(ValueError):
+        #     cv1 = core.PerturbationCourse(property=[1,2])
+        # with self.assertRaises(ValueError):
+        #     cv1 = core.PerturbationCourse(value='a')
+        with self.assertRaises(TypeError): # Todo: this error needs to be raised
+            cv1 = core.PerturbationCourse(values=[1, 'a'])
+        # with self.assertRaises(ValueError):
+        #     cv1 = core.PerturbationCourse(units='a')
+        with self.assertRaises(AttributeError):
+            cv1 = core.PerturbationCourse(controlled_variables=['a'])
+        # with self.assertRaises(ValueError):
+        #     cv1 = core.PerturbationCourse(time='a')
+        # with self.assertRaises(ValueError):
+        #     cv1 = core.PerturbationCourse(time=[1, 'a'])
+        # with self.assertRaises(ValueError):
+        # with self.assertRaises(ValueError):
+        #     cv1 = core.PerturbationCourse(time_units=unit_registry.parse_units('molar'))
+        #     cv1 = core.PerturbationCourse(time_0='a')
+        with self.assertRaises(AttributeError):
+            cv1 = core.PerturbationCourse(experiment='a')
+        # with self.assertRaises(ValueError):
+        #     cv1 = core.PerturbationCourse(time_bin='a')
+        # with self.assertRaises(AttributeError):
+        #     cv1 = core.PerturbationCourse(identifiers='a')
+        # with self.assertRaises(ValueError):
+        #     cv1 = core.PerturbationCourse(comments=1)
+
+        # More complex negative tests
+        #
+        # with self.assertRaises(ValueError): # `value` and `time` must be of same length
+        #     cv1 = core.PerturbationCourse(id='cv1', value=[1, 2], time=[1, 2, 3], observable=observable1)
+        # with self.assertRaises(ValueError): # time[i] must be < time[i+1]
+        #     cv1 = core.Evidence(id='cv1', time=[2, 1], observable=observable1)
+        # Todo: Do we need to enforce `id`, `value`, `property` and `units` and either of `observable` or `object`
 
 
 class ControlledVariableTestCase(unittest.TestCase):
