@@ -25,6 +25,10 @@ import os
 import shutil
 import tempfile
 import unittest
+# Workaround due to issue with jnius being overwritten
+import importlib
+import jnius
+importlib.reload(jnius)
 
 
 class TestCore(unittest.TestCase):
