@@ -9,7 +9,7 @@
 
 from obj_model import utils
 from test.support import EnvironmentVarGuard
-from wc_kb import core, prokaryote_schema
+from wc_kb import core, prokaryote
 from wc_kb import io
 from wc_utils.util.git import GitHubRepoForTests
 import Bio.Seq
@@ -49,7 +49,7 @@ class TestIO(unittest.TestCase):
                 Bio.Seq.Seq(seq), dna.id))
 
             for i_trn in range(5):
-                trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
+                trn = prokaryote.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
                 trn.type = random.choice(['WC:mRNA', 'WC:sRNA', 'WC:tRNA', 'WC:rRNA', 'WC:intergenic', 'WC:mixed'])
                 trn.cell = cell
                 dna.loci.append(trn)
@@ -181,7 +181,7 @@ class TestIO(unittest.TestCase):
         dna = core.DnaSpeciesType(id='chr_x', sequence_path=seq_path)
         self.kb.cell.species_types.append(dna)
 
-        trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_x_0')
+        trn = prokaryote.TranscriptionUnitLocus(id='tu_x_0')
         dna.loci.append(trn)
         trn.cell = None
 
