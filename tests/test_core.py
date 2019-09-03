@@ -493,27 +493,7 @@ class PolymerLocusTestCase(unittest.TestCase):
             self.locus1.get_direction()
 
 class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
-    def test_constructor(self):
-
-        speciesTypeProperties = core.SpeciesTypeProperty(
-            property = 'structure',
-            value_type = kbOnt['WC:string'],
-            value = (
-                'InChI=1S'
-                '/C10H14N5O7P'
-                '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
-                '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
-                '/p-2/t4-,6-,7-,10-'
-                '/m1'
-                '/s1'))
-        met = core.MetaboliteSpeciesType(properties = [speciesTypeProperties])
-        """
-        self.assertEqual(met.get_structure(), speciesTypeProperties.value)
-        self.assertEqual(met.get_empirical_formula(),
-                         chem.EmpiricalFormula('C10H12N5O7P'))
-        self.assertEqual(met.get_charge(), -2)
-        self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
-        """
+    def test_constructor(self):       
         prop1 = core.SpeciesTypeProperty(
             property = 'empirical_formula',
             value_type = kbOnt['WC:string'],
@@ -533,6 +513,25 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
             met2.get_empirical_formula()
             met2.get_charge()
             met2.get_mol_wt()
+
+    def test_get_structure(self):
+        speciesTypeProperties = core.SpeciesTypeProperty(
+            property = 'structure',
+            value_type = kbOnt['WC:string'],
+            value = (
+                'InChI=1S'
+                '/C10H14N5O7P'
+                '/c11-8-5-9(13-2-12-8)15(3-14-5)10-7(17)6(16)4(22-10)1-21-23(18,19)20'
+                '/h2-4,6-7,10,16-17H,1H2,(H2,11,12,13)(H2,18,19,20)'
+                '/p-2/t4-,6-,7-,10-'
+                '/m1'
+                '/s1'))
+        met = core.MetaboliteSpeciesType(properties = [speciesTypeProperties])
+        self.assertEqual(met.get_structure(), speciesTypeProperties.value)
+        self.assertEqual(met.get_empirical_formula(),
+                         chem.EmpiricalFormula('C10H12N5O7P'))
+        self.assertEqual(met.get_charge(), -2)
+        self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
         
 class ReactionAndRelatedClassesTestCase(unittest.TestCase):
 
