@@ -1435,23 +1435,35 @@ class MetaboliteSpeciesType(SpeciesType):
         verbose_name = 'Metabolite'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'identifiers', 'references', 'comments')
 
-    def get_structure(self, ph=7.4):
+    def get_structure(self):
         """ Get the structure
 
-        Args:
-            pH (:obj:`float`, optional): pH, default is 7.4
-
         Returns:
-            :obj:`str`: structure
+            :obj:`str`: InChI-encoded structure
 
         Raises:
             :obj:`ValueError`: if structure has not been provided
         """
-        if not self.properties.get_one(property='structure'):
+        prop = self.properties.get_one(property='structure')
+        if not prop:
             raise ValueError('The structure of {} has not been provided'.format(self.id))
+        return prop.get_value()
         
-        inchi = self.properties.get_one(property='structure').get_value()
-        return get_major_micro_species(inchi, 'inchi', 'inchi', ph=ph)
+    def calc_structure(self, ph=7.4, major_tautomer=False, keep_hydrogens=False, dearomatize=False):
+        """ Get the major microspecies
+
+        Args:
+            pH (:obj:`float`, optional): pH, default is 7.4
+            major_tautomer (:obj:`bool`, optional): if :obj:`True`, use the major tautomeric in the calculation
+            keep_hydrogens (:obj:`bool`, optional): if :obj:`True`, keep explicity defined hydrogens
+            dearomatize (:obj:`bool`, optional): if :obj:`True`, dearomatize molecule
+
+        Returns:
+            :obj:`str`: InChI-encoded structure
+        """
+        inchi = self.get_structure()
+        return get_major_micro_species(inchi, 'inchi', 'inchi', 
+            ph=ph, major_tautomer=major_tautomer, keep_hydrogens=keep_hydrogens, dearomatize=dearomatize)
 
     def to_openbabel_mol(self):
         """ Convert species type to an Open Babel molecule
@@ -1472,49 +1484,58 @@ class MetaboliteSpeciesType(SpeciesType):
 
         return mol
 
-    def get_empirical_formula(self, ph=7.4):
+    def get_empirical_formula(self):
         """ Get the empirical formula
-
-        Args:
-            pH (:obj:`float`, optional): pH, default is 7.4
 
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-        if self.properties.get_one(property='empirical_formula'):
-            return chem.EmpiricalFormula(self.properties.get_one(property='empirical_formula').get_value())
+        prop = self.properties.get_one(property='empirical_formula')
+        if prop:
+            return chem.EmpiricalFormula(prop.get_value())
 
-        inchi = self.get_structure(ph=ph)
+        return self.calc_empirical_formula()
+
+    def calc_empirical_formula(self):
+        """ Calculate the empirical formula
+
+        Returns:
+            :obj:`chem.EmpiricalFormula`: empirical formula
+        """
+        inchi = self.get_structure()
         mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
         conversion.ReadString(mol,  inchi)
         return OpenBabelUtils.get_formula(mol)
 
-    def get_charge(self, ph=7.4):
+    def get_charge(self):
         """ Get the charge
-
-        Args:
-            pH (:obj:`float`, optional): pH, default is 7.4
 
         Returns:
             :obj:`int`: charge
         """
-        if self.properties.get_one(property='charge'):
-            return self.properties.get_one(property='charge').get_value()
+        prop = self.properties.get_one(property='charge')
+        if prop:
+            return prop.get_value()
 
-        inchi = self.get_structure(ph=ph)
+        return self.calc_charge()
+
+    def calc_charge(self):
+        """ Calculate the charge
+
+        Returns:
+            :obj:`int`: charge
+        """
+        inchi = self.get_structure()
         mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
         conversion.ReadString(mol,  inchi)
         return mol.GetTotalCharge()
 
-    def get_mol_wt(self, ph=7.4):
+    def get_mol_wt(self):
         """ Get the molecular weight
-
-        Args:
-            pH (:obj:`float`, optional): pH, default is 7.4
 
         Returns:
             :obj:`float`: molecular weight
@@ -1522,17 +1543,17 @@ class MetaboliteSpeciesType(SpeciesType):
         Raises:
             :obj:`ValueError`: if there is not enough information to calculate molecular weight
         """
-        if self.properties.get_one(property='structure'):
-            inchi = self.get_structure(ph=ph)
+        prop = self.properties.get_one(property='empirical_formula')
+        if prop:
+            return chem.EmpiricalFormula(prop.get_value()).get_molecular_weight()
+
+        elif self.properties.get_one(property='structure'):
+            inchi = self.get_structure()
             mol = openbabel.OBMol()
             conversion = openbabel.OBConversion()
             conversion.SetInFormat('inchi')
             conversion.ReadString(mol,  inchi)
             return mol.GetMolWt()
-            
-        elif self.properties.get_one(property='empirical_formula'):
-            return chem.EmpiricalFormula(self.properties.get_one(
-                property='empirical_formula').get_value()).get_molecular_weight()
         
         else:
             raise ValueError('Molecular weight cannot be calculated because no structure or '
