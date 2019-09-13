@@ -587,6 +587,7 @@ class KnowledgeBase(KnowledgeBaseObject):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'KB'
+        help = 'Knowledge base'
         attribute_order = ('id', 'name', 'translation_table', 'version',
                            'url', 'branch', 'revision', 'wc_kb_version', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
