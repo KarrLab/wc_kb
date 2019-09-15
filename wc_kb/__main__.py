@@ -9,7 +9,9 @@
 from wc_kb import core
 from wc_kb import io
 import cement
+import obj_model
 import wc_kb
+import wc_utils.workbook
 import wc_utils.workbook.io
 
 
@@ -69,6 +71,8 @@ class DifferenceController(cement.Controller):
             (['seq_path_2'], dict(type=str, help='Path to FASTA-formatted genome sequence for second knowledge base')),
             (['--compare-files'], dict(dest='compare_files', default=False, action='store_true',
                                        help='If true, compare knowledge bases; otherwise compare files directly')),
+            (['--compare-metadata'], dict(dest='compare_metadata', default=False, action='store_true',
+                                       help='If true, compare metadata (tables of contents, header rows)')),
         ]
 
     @cement.ex(hide=True)
@@ -78,6 +82,10 @@ class DifferenceController(cement.Controller):
         if args.compare_files:
             kb1 = wc_utils.workbook.io.read(args.core_path_1)
             kb2 = wc_utils.workbook.io.read(args.core_path_2)
+            if not args.compare_metadata:                
+                self.remove_metadata(kb1)
+                self.remove_metadata(kb2)
+
             diff = kb1.difference(kb2)
 
         else:
@@ -89,6 +97,22 @@ class DifferenceController(cement.Controller):
             print(diff)
         else:
             print('Knowledge bases are identical')
+
+    @staticmethod
+    def remove_metadata(kb):       
+        """ Remove metadata from Knowledge base
+        
+        Args:
+            kb (:obj:`wc_utils.workbook.Workbook`): knowledge base
+        """
+        if obj_model.TOC_NAME in kb:
+            kb.pop(obj_model.TOC_NAME)
+        for sheet in kb.values():
+            for row in list(sheet):
+                if row and isinstance(row[0], str) and row[0].startswith('!!'):
+                    sheet.remove(row)
+                else:
+                    break
 
 
 class NormalizeController(cement.Controller):
