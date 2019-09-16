@@ -72,20 +72,20 @@ PolymerDirection = enum.Enum(value='PolymerDirection', names=[
 class SubunitAttribute(ManyToManyAttribute):
     """ Subunits """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
 
         super(SubunitAttribute, self).__init__('SpeciesTypeCoefficient',
                                                related_name=related_name,
                                                verbose_name=verbose_name,
                                                verbose_related_name=verbose_related_name,
-                                               help=help)
+                                               description=description)
 
     def serialize(self, subunits, encoded=None):
         """ Serialize related object
@@ -126,17 +126,17 @@ class SubunitAttribute(ManyToManyAttribute):
 class OneToOneSpeciesAttribute(OneToOneAttribute):
     """ Species attribute """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
         super(OneToOneSpeciesAttribute, self).__init__('Species',
                                                        related_name=related_name, min_related=1, min_related_rev=0,
-                                                       verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+                                                       verbose_name=verbose_name, verbose_related_name=verbose_related_name, description=description)
 
     def serialize(self, value, encoded=None):
         """ Serialize related object
@@ -166,17 +166,17 @@ class OneToOneSpeciesAttribute(OneToOneAttribute):
 class IdentifierAttribute(ManyToManyAttribute):
     """ Identifier attribute """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
         super(IdentifierAttribute, self).__init__(Identifier,
                                                          related_name=related_name, min_related=0, min_related_rev=0,
-                                                         verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+                                                         verbose_name=verbose_name, verbose_related_name=verbose_related_name, description=description)
 
     def serialize(self, identifiers, encoded=None):
         """ Serialize related object
@@ -229,18 +229,18 @@ class IdentifierAttribute(ManyToManyAttribute):
 class ReactionParticipantAttribute(ManyToManyAttribute):
     """ Reaction participants """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
         super(ReactionParticipantAttribute, self).__init__('SpeciesCoefficient', related_name=related_name,
                                                            verbose_name=verbose_name,
                                                            verbose_related_name=verbose_related_name,
-                                                           help=help)
+                                                           description=description)
 
     def serialize(self, participants, encoded=None):
         """ Serialize related object
@@ -587,7 +587,7 @@ class KnowledgeBase(KnowledgeBaseObject):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'KB'
-        help = 'Knowledge base'
+        description = 'Knowledge base'
         attribute_order = ('id', 'name', 'translation_table', 'version',
                            'url', 'branch', 'revision', 'wc_kb_version', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
