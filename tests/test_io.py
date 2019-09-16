@@ -215,7 +215,7 @@ class TestIO(unittest.TestCase):
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -224,7 +224,7 @@ class TestIO(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
             io.Reader().run(core_path, seq_path=seq_path)
 
-        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
         with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
             io.Reader().run(core_path, seq_path=seq_path)
 
@@ -233,7 +233,7 @@ class TestIO(unittest.TestCase):
         kb2 = core.KnowledgeBase(id='kb2', name='kb2', version='0.0.1')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -247,7 +247,7 @@ class TestIO(unittest.TestCase):
         dna = core.DnaSpeciesType(id='chr')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -261,7 +261,7 @@ class TestIO(unittest.TestCase):
         cell2 = core.Cell(id='cell2', name='cell2')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
