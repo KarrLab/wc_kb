@@ -11,7 +11,7 @@ from wc_utils.util import chem
 import Bio.Alphabet
 import Bio.Seq
 import enum
-import obj_model
+import obj_tables
 import re
 
 #####################
@@ -49,7 +49,7 @@ class TranscriptType(enum.Enum):
 #####################
 # Attributes
 
-class LocusAttribute(obj_model.ManyToManyAttribute):
+class LocusAttribute(obj_tables.ManyToManyAttribute):
     """ Start and end coordinates attribute """
 
     def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
@@ -75,7 +75,7 @@ class LocusAttribute(obj_model.ManyToManyAttribute):
         if not coordinates:
             return ''
 
-        return ', '.join(obj_model.serialize() for obj_model in coordinates)
+        return ', '.join(obj_tables.serialize() for obj_tables in coordinates)
 
     def deserialize(self, value, objects, decoded=None):
         """ Deserialize value
@@ -93,7 +93,7 @@ class LocusAttribute(obj_model.ManyToManyAttribute):
         obj_pattern = r'([0-9]+) *\: *([0-9]+)'
         lst_pattern = r'^{}( *, *{})*$'.format(obj_pattern, obj_pattern)
         if not re.match(lst_pattern, value, flags=re.I):
-            return (None, obj_model.InvalidAttribute(self, ['Incorrectly formatted list of coordinates: {}'.format(value)]))
+            return (None, obj_tables.InvalidAttribute(self, ['Incorrectly formatted list of coordinates: {}'.format(value)]))
 
         objs = []
         for pat_match in re.findall(obj_pattern, value, flags=re.I):
@@ -111,7 +111,7 @@ class LocusAttribute(obj_model.ManyToManyAttribute):
         return (objs, None)
 
 
-class RegDirectionAttribute(obj_model.ManyToManyAttribute):
+class RegDirectionAttribute(obj_tables.ManyToManyAttribute):
     """ Regulatory direction attribute """
 
     def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
@@ -138,7 +138,7 @@ class RegDirectionAttribute(obj_model.ManyToManyAttribute):
         if not directions:
             return ''
 
-        return ', '.join(obj_model.serialize() for obj_model in directions)
+        return ', '.join(obj_tables.serialize() for obj_tables in directions)
 
     def deserialize(self, value, objects, decoded=None):
         """ Deserialize value
@@ -158,7 +158,7 @@ class RegDirectionAttribute(obj_model.ManyToManyAttribute):
         obj_pattern = r'({}) *\: *({})'.format(tf_id, direction)
         lst_pattern = r'^{}( *, *{})*$'.format(obj_pattern, obj_pattern)
         if not re.match(lst_pattern, value, flags=re.I):
-            return (None, obj_model.InvalidAttribute(self, ['Incorrectly formatted list of transcription factor regulation: {}'.format(value)]))
+            return (None, obj_tables.InvalidAttribute(self, ['Incorrectly formatted list of transcription factor regulation: {}'.format(value)]))
 
         objs = []
         errors = []
@@ -182,7 +182,7 @@ class RegDirectionAttribute(obj_model.ManyToManyAttribute):
                     objs.append(obj)
         
         if errors:
-            return (None, obj_model.InvalidAttribute(self, errors))
+            return (None, obj_tables.InvalidAttribute(self, errors))
 
         return (objs, None)        
 
@@ -203,16 +203,16 @@ class GeneLocus(core.PolymerLocus):
         transcripts (:obj:`list` of :obj:`TranscriptSpeciesType`): transcripts
         regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory_modules
     """
-    symbol = obj_model.StringAttribute()
-    homologs = obj_model.LongStringAttribute()
+    symbol = obj_tables.StringAttribute()
+    homologs = obj_tables.LongStringAttribute()
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         verbose_name = 'Gene'
         attribute_order = ('id', 'name', 'synonyms', 'symbol', 'homologs', 'polymer', 'strand', 'start',
                            'end', 'identifiers', 'references', 'comments')
 
 
-class TranscriptionFactorRegulation(obj_model.Model):
+class TranscriptionFactorRegulation(obj_tables.Model):
     """ Transcription factor and the direction of transcriptional regulation
 
     Attributes:
@@ -223,13 +223,13 @@ class TranscriptionFactorRegulation(obj_model.Model):
         regulatory_modules (:obj:`list` of `RegulatoryModule`): regulatory modules
     """
 
-    transcription_factor = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='transcription_factor_regulation')
-    direction = obj_model.EnumAttribute(RegulatoryDirection)    
+    transcription_factor = obj_tables.ManyToOneAttribute('ProteinSpeciesType', related_name='transcription_factor_regulation')
+    direction = obj_tables.EnumAttribute(RegulatoryDirection)    
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         attribute_order = ('transcription_factor', 'direction')
         frozen_columns = 1
-        table_format = obj_model.TabularOrientation.cell
+        table_format = obj_tables.TabularOrientation.cell
         ordering = ('transcription_factor', 'direction')
 
     @staticmethod
@@ -287,7 +287,7 @@ class TranscriptionFactorRegulation(obj_model.Model):
                 errors.append('Undefined regulatory direction "{}"'.format(direction_str))
 
             if errors:
-                return (None, obj_model.InvalidAttribute(cls, errors)) 
+                return (None, obj_tables.InvalidAttribute(cls, errors)) 
             else:
                 obj = cls(transcription_factor=transcription_factor, direction=direction)
                 if cls not in objects:
@@ -295,10 +295,10 @@ class TranscriptionFactorRegulation(obj_model.Model):
                 objects[cls][obj.serialize()] = obj
                 return (obj, None)
 
-        return (None, obj_model.InvalidAttribute(cls, ['Invalid transcription factor regulation']))
+        return (None, obj_tables.InvalidAttribute(cls, ['Invalid transcription factor regulation']))
             
 
-class RegulatoryModule(obj_model.Model):
+class RegulatoryModule(obj_tables.Model):
     """ Knowledge about regulatory modules
 
     Attributes:
@@ -314,18 +314,18 @@ class RegulatoryModule(obj_model.Model):
         references (:obj:`list` of :obj:`Reference`): references
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
-    id = obj_model.SlugAttribute(primary=True, unique=True)
-    name = obj_model.StringAttribute()
-    gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='regulatory_modules')    
-    promoter = obj_model.StringAttribute()
-    activity = obj_model.EnumAttribute(ActivityLevel)
-    type = obj_model.EnumAttribute(RegulationType)
+    id = obj_tables.SlugAttribute(primary=True, unique=True)
+    name = obj_tables.StringAttribute()
+    gene = obj_tables.ManyToOneAttribute(GeneLocus, related_name='regulatory_modules')    
+    promoter = obj_tables.StringAttribute()
+    activity = obj_tables.EnumAttribute(ActivityLevel)
+    type = obj_tables.EnumAttribute(RegulationType)
     transcription_factor_regulation = RegDirectionAttribute(related_name='regulatory_modules')
-    comments = obj_model.LongStringAttribute()
-    references = obj_model.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
+    comments = obj_tables.LongStringAttribute()
+    references = obj_tables.ManyToManyAttribute(core.Reference, related_name='regulatory_modules')
     identifiers = core.IdentifierAttribute(related_name='regulatory_modules')
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'name', 'gene', 'promoter', 'activity', 'type',
                             'transcription_factor_regulation', 'identifiers', 'references', 'comments')
 
@@ -339,17 +339,17 @@ class PtmSite(core.PolymerLocus):
         modified_residue (:obj:`str`): residue name and position in protein sequence
         fractional_abundance (:obj:`int`): ratio of modified protein abundance
     """
-    type = obj_model.StringAttribute()
-    modified_protein = obj_model.ManyToOneAttribute('ProteinSpeciesType', related_name='ptm_sites')
-    modified_residue = obj_model.StringAttribute()
-    fractional_abundance = obj_model.FloatAttribute()
+    type = obj_tables.StringAttribute()
+    modified_protein = obj_tables.ManyToOneAttribute('ProteinSpeciesType', related_name='ptm_sites')
+    modified_residue = obj_tables.StringAttribute()
+    fractional_abundance = obj_tables.FloatAttribute()
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'name', 'modified_protein', 'type', 'modified_residue',
                            'fractional_abundance', 'identifiers', 'references', 'comments')
 
 
-class GenericLocus(obj_model.Model):
+class GenericLocus(obj_tables.Model):
     """ Start and end coordinates of exons and CDSs
 
     Attributes:
@@ -360,12 +360,12 @@ class GenericLocus(obj_model.Model):
         transcripts (:obj:`list` of :obj:`TranscriptSpeciesType`): transcripts
         proteins (:obj:`list` of :obj:`ProteinSpeciesType`): proteins
     """
-    start = obj_model.PositiveIntegerAttribute()
-    end = obj_model.PositiveIntegerAttribute()
+    start = obj_tables.PositiveIntegerAttribute()
+    end = obj_tables.PositiveIntegerAttribute()
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         attribute_order = ('start', 'end')
-        table_format = obj_model.TabularOrientation.cell
+        table_format = obj_tables.TabularOrientation.cell
         ordering = ('start', 'end')
 
     @staticmethod
@@ -406,11 +406,11 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
     Related attributes:
         protein (:obj:`ProteinSpeciesType`): protein
     """
-    gene = obj_model.ManyToOneAttribute(GeneLocus, related_name='transcripts')    
+    gene = obj_tables.ManyToOneAttribute(GeneLocus, related_name='transcripts')    
     exons = LocusAttribute(related_name='transcripts')
-    type = obj_model.EnumAttribute(TranscriptType)
+    type = obj_tables.EnumAttribute(TranscriptType)
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         verbose_name = 'Transcript'
         attribute_order = ('id', 'name', 'gene', 'exons', 'type', 'identifiers', 'references', 'comments')
 
@@ -502,11 +502,11 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         ptm_sites (:obj:list` of `PtmSite`): protein modification sites
     """
 
-    uniprot = obj_model.StringAttribute()
-    transcript = obj_model.OneToOneAttribute(TranscriptSpeciesType, related_name='protein')
+    uniprot = obj_tables.StringAttribute()
+    transcript = obj_tables.OneToOneAttribute(TranscriptSpeciesType, related_name='protein')
     coding_regions = LocusAttribute(related_name='proteins')
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         verbose_name = 'Protein'
         attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 
                            'identifiers', 'references', 'comments')

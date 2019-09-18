@@ -8,7 +8,7 @@
 
 from . import core
 from wc_utils.util import git
-import obj_model.core
+import obj_tables.core
 
 
 def get_models(inline=True):
@@ -21,4 +21,4 @@ def get_models(inline=True):
         :obj:`list` of :obj:`class`: list of models
     """
 
-    return obj_model.core.get_models(module=core, inline=inline)
+    return obj_tables.core.get_models(module=core, inline=inline)

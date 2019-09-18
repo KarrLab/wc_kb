@@ -9,7 +9,7 @@
 from wc_kb import core
 from wc_kb import io
 import cement
-import obj_model
+import obj_tables
 import wc_kb
 import wc_utils.workbook
 import wc_utils.workbook.io
@@ -105,8 +105,8 @@ class DifferenceController(cement.Controller):
         Args:
             kb (:obj:`wc_utils.workbook.Workbook`): knowledge base
         """
-        if obj_model.TOC_NAME in kb:
-            kb.pop(obj_model.TOC_NAME)
+        if obj_tables.TOC_NAME in kb:
+            kb.pop(obj_tables.TOC_NAME)
         for sheet in kb.values():
             for row in list(sheet):
                 if row and isinstance(row[0], str) and row[0].startswith('!!'):
