@@ -1395,205 +1395,93 @@ class EvidenceTestCase(unittest.TestCase):
         # Todo: Do we need to enforce `id`, `value`, `property` and `units` and either of `observable` or `object`
 
 
-class PerturbationCourseTestCase(unittest.TestCase):
-    def test_perturbation_course(self):
-        cell  = core.Cell()
-        comp1 = core.Compartment(id='c')
-        met1  = core.MetaboliteSpeciesType(id='met1')
-        dna1  = core.DnaSpeciesType(id='dna1')
-        species1 = core.Species(species_type=met1, compartment=comp1)
-        species2 = core.Species(species_type=dna1, compartment=comp1)
-        expr1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[species1, species2])        
-        observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
-        ref1=core.Reference(id='ref1')
-        expe1 = core.Experiment(id='expe1', references = [ref1], comments = 'expe comment')
-        dbref = core.Identifier(id='dbref1')
-        unit = unit_registry.parse_units('molar')
-        time_units = unit_registry.parse_units('s')
-        time_0 = kbOnt['WC:cell_division']
-        evi1 = core.Evidence(id='evi1')
+class TimeCourseTestCase(unittest.TestCase):
+    
+    cell  = core.Cell()
+    comp1 = core.Compartment(id='c')
+    met1a  = core.MetaboliteSpeciesType(id='met1a')
+    met1b  = core.MetaboliteSpeciesType(id='met1b')
+    met2  = core.MetaboliteSpeciesType(id='met2')
+    species1a = core.Species(species_type=met1a, compartment=comp1)
+    species1b = core.Species(species_type=met1b, compartment=comp1)
+    species2 = core.Species(species_type=met2, compartment=comp1)
+    expr1 = core.ObservableExpression(expression='met1a[c] + met1b[c]', species=[species1a, species1b])
+    expr2 = core.ObservableExpression(expression='met2[c]', species=[species2])
+    observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
+    observable2 = core.Observable(cell=cell, id='obs1', expression=expr2)
+    ref1=core.Reference(id='ref1')
+    expe1 = core.Experiment(id='expe1', references = [ref1], comments = 'expe comment')
+    dbref = core.Identifier(id='dbref1')
+    unit = unit_registry.parse_units('molar')
+    time_units = unit_registry.parse_units('s')
+    time_0 = kbOnt['WC:cell_division']
+    evi1 = core.Evidence(id='evi1')
 
-        # Positive tests
+    test_time_course(self):
+        
+        tc1 = core.TimeCourse(id='tc1', observable=observable1, property = 'concentration',
+                values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1],
+                times_unit=time_units, comments='tc1 comment')
 
-        cv1 = core.PerturbationCourse(id='cv1', observable=observable1, property = 'concentration',
-            values = [1, 1.1, 1], values_unit=unit, times = [0.25, 0.75],
-            times_unit=time_units, comments='evidence1 comment', evidence=evi1)
-        self.assertEqual(cv1.id, 'cv1')
-        self.assertEqual(cv1.observable, observable1)
-        self.assertEqual(cv1.property, 'concentration')
-        self.assertEqual(cv1.values, [1, 1.1, 1])
-        self.assertEqual(cv1.values_unit, unit)
-        self.assertEqual(cv1.times, [0.25, 0.75])
-        self.assertEqual(cv1.times_unit, time_units)
-        self.assertEqual(cv1.comments, 'evidence1 comment')
-        self.assertEqual(cv1.evidence, evi1)
-        self.assertEqual(evi1.perturbation_courses, [cv1])
+        self.assertEqual(tc1.id, 'tc1')
+        self.assertEqual(tc1.observable, observable1)
+        self.assertEqual(tc1.property, 'concentration')
+        self.assertEqual(tc1.values, [1, 1.1, 1])
+        self.assertEqual(tc1.values_unit, unit)
+        self.assertEqual(tc1.times, [0.5, 1])
+        self.assertEqual(tc1.times_unit, time_units)
+        self.assertEqual(tc1.comments, 'tc1 comment')
+        self.assertEqual(tc1.evidence, evi1)
 
         ### Simple negative tests
-        #
+        # Todo: How can I enforce that attributes of Perturbation course are of a certain type?
         # with self.assertRaises(ValueError):
-        #     evi1 = core.Evidence(id=[1,2])
-        with self.assertRaises(AttributeError):
-            cv1 = core.PerturbationCourse(observable=1)
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.PerturbationCourse(property=[1,2])
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.PerturbationCourse(value='a')
-#        with self.assertRaises(TypeError): # Todo: this error needs to be raised
-#            cv1 = core.PerturbationCourse(values=[1, 'a'])
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.PerturbationCourse(units='a')
-#        with self.assertRaises(AttributeError):
-#            cv1 = core.PerturbationCourse(controlled_variables=['a'])
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.PerturbationCourse(time='a')
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.PerturbationCourse(time=[1, 'a'])
-        # with self.assertRaises(ValueError):
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.PerturbationCourse(time_units=unit_registry.parse_units('molar'))
-        #     cv1 = core.PerturbationCourse(time_0='a')
-        with self.assertRaises(AttributeError):
-            cv1 = core.PerturbationCourse(experiment='a')
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.PerturbationCourse(time_bin='a')
-        # with self.assertRaises(AttributeError):
-        #     cv1 = core.PerturbationCourse(identifiers='a')
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.PerturbationCourse(comments=1)
+        #     tc1 = core.Perturbation course(id=[1,2])
+        #     tc1 = core.PerturbationCourse(observable=1)
+        #     tc1 = core.PerturbationCourse(property=[1,2])
+        #     tc1 = core.PerturbationCourse(values=[1, 'a'])
+        #     tc1 = core.PerturbationCourse(values_unit='a')
+        #     tc1 = core.PerturbationCourse(times=[1, 'a'])
+        #     tc1 = core.PerturbationCourse(times_unit=unit_registry.parse_units('molar'))
+        #     tc1 = core.PerturbationCourse(comments=1)
 
-        # More complex negative tests
+        ### More complex negative tests
         #
         # with self.assertRaises(ValueError): # `value` and `time` must be of same length
-        #     cv1 = core.PerturbationCourse(id='cv1', value=[1, 2], time=[1, 2, 3], observable=observable1)
+        #     tc1 = core.PerturbationCourse(id='tc1', value=[1, 2], time=[1, 2, 3], observable=observable1)
         # with self.assertRaises(ValueError): # time[i] must be < time[i+1]
-        #     cv1 = core.Evidence(id='cv1', time=[2, 1], observable=observable1)
-        # Todo: Do we need to enforce `id`, `value`, `property` and `units` and either of `observable` or `object`
+        #     tc1 = core.Evidence(id='tc1', time=[2, 1], observable=observable1)
+        # Todo: How to specify which attributes are optional?
+
+    def test_perturbation_course(self):
+
+        ### Positive tests
+        tcm1 = core.PerturbationCourse(id='pc1', observable=observable1, property = 'concentration',
+            values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1],
+            times_unit=time_units, comments='pc1 comment', evidence=evi1)
+        self.assertEqual(evi1.perturbation_courses, [pc1])
+        pc2 = core.PerturbationCourse(id='pc2', observable=observable2, property = 'concentration',
+            values = [1.1, 0, 1], values_unit=unit, times = [0.4, 0.9],
+            times_unit=time_units, comments='pc2 comment', evidence=evi1)
+        self.assertEqual(evi1.perturbation_courses, [pc1, pc2])
+
+    def test_time_course_measurement(self):
+        ### Positive tests
+        tcm1 = core.TimeCourseMeasurement(id='tcm1', observable=observable1, property = 'concentration',
+            values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1],
+            times_unit=time_units, comments='tcm1 comment', evidence=evi1)
+        self.assertEqual(evi1.test_time_course_measurements, [tcm1])
+        tcm2 = core.TimeCourseMeasurement(id='tcm2', observable=observable2, property = 'concentration',
+            values = [1.1, 0, 1], values_unit=unit, times = [0.4, 0.9],
+            times_unit=time_units, comments='tcm2 comment', evidence=evi1)
+        self.assertEqual(evi1.test_time_course_measurements, [tcm1, tcm2])
 
 
-class ControlledVariableTestCase(unittest.TestCase):
-    ### Todo: get tests working that are currently commended out.
+    class FloatValueTestCase(unittest.TestCase):
 
-    def test_controlled_variable(self):   
-        # with self.assertRaisesRegex(TypeError, 'Can\'t instantiate abstract class'):
-        #     core.ControlledVariable()
-        cell  = core.Cell()
-        comp1 = core.Compartment(id='c')
-        met1  = core.MetaboliteSpeciesType(id='met1')
-        dna1  = core.DnaSpeciesType(id='dna1')
-        species1 = core.Species(species_type=met1, compartment=comp1)
-        species2 = core.Species(species_type=dna1, compartment=comp1)
-        expr1 = core.ObservableExpression(expression='2 * met1[c] + 3.3 * dna1[c]', species=[species1, species2])        
-        observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
-        ref1=core.Reference(id='ref1')
-        expe1 = core.Experiment(id='expe1', references = [ref1], comments = 'expe comment')
-        dbref = core.Identifier(id='dbref1')
-        unit = unit_registry.parse_units('molar')
-        value_uncertainty = core.ProbabilityDensityFunction(pdf_type=numpy.random.normal, multiplicative=True, kwargs={'loc': 0, 'scale': 0.1}) # Todo: this should probably be an obj_model attribute.
-        time_units = unit_registry.parse_units('s')
-        time_0 = kbOnt['WC:cell_division']
-        time_bin = core.ProbabilityDensityFunction(pdf_type=numpy.random.uniform, multiplicative=False, kwargs={'low': -0.25, 'high': 0.25}) # Todo: this should probably be an obj_model attribute.
+        def test_float_value(self):
 
-        # Positive tests
-        cv1 = core.ControlledVariable(id='cv1', cell=cell, observable=observable1, property = 'concentration',
-            value = [1, 1.1], units=unit, value_uncertainty=value_uncertainty, time = [0.25, 0.75],
-            time_units=time_units, time_0=time_0, time_bin=time_bin, identifiers =[dbref],
-            references=[ref1], experiment=expe1, comments='evidence1 comment')
-        self.assertEqual(cv1.id, 'cv1')
-        self.assertEqual(cv1.cell, cell)
-        self.assertEqual(cv1.observable, observable1)
-        self.assertEqual(cv1.property, 'concentration')
-        self.assertEqual(cv1.value, [1, 1.1])
-        self.assertEqual(cv1.units, unit)
-        self.assertEqual(cv1.value_uncertainty, value_uncertainty)
-        self.assertEqual(cv1.time, [0.25, 0.75])
-        self.assertEqual(cv1.time_units, time_units)
-        self.assertEqual(cv1.time_0, time_0)
-        self.assertEqual(cv1.time_bin, time_bin)
-        self.assertEqual(cv1.identifiers, [dbref])
-        self.assertEqual(cv1.references, [ref1])
-        self.assertEqual(cv1.experiment, expe1)
-        self.assertEqual(cv1.comments, 'evidence1 comment')
+    class TimeCourseAttributeTestCase(unittest.TestCase):
 
-        evi1 = core.Evidence(id='evi1', controlled_variables=[cv1])
-        self.assertEqual(cv1.evidence, [evi1])
-
-        # Simple negative tests
-        #
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(id=[1,2])
-        with self.assertRaises(AttributeError):
-            cv1 = core.Evidence(observable=1)
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(property=[1,2])
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(value='a')
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(value=[1, 'a'])
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(units='a')
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(time='a')
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(time=[1, 'a'])
-        # with self.assertRaises(ValueError):
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(time_units=unit_registry.parse_units('molar'))
-        #     cv1 = core.Evidence(time_0='a')
-        with self.assertRaises(AttributeError):
-            cv1 = core.Evidence(experiment='a')
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(time_bin='a')
-        # with self.assertRaises(AttributeError):
-        #     cv1 = core.Evidence(identifiers='a')
-        # with self.assertRaises(ValueError):
-        #     cv1 = core.Evidence(comments=1)
-
-        # More complex negative tests
-        # with self.assertRaises(ValueError): # `value` and `time` must be of same length
-        #     cv1 = core.Evidence(id='cv1', value=[1, 2], time=[1, 2, 3], observable=observable1)
-        # with self.assertRaises(ValueError): # time[i] must be < time[i+1]
-        #     cv1 = core.Evidence(id='cv1', time=[2, 1], observable=observable1)
-        # Todo: Do we need to enforce `id`, `value`, `property` and `units` and either of `observable` or `object`
-        # as required arguments?
-
-
-class ProbabilityDensityFunctionTestCase(unittest.TestCase):
-    
-    def test_init(self):
-        value_uncertainty = core.ProbabilityDensityFunction(pdf_type=numpy.random.lognormal, kwargs={'sigma': 0.1}, multiplicative=False)
-        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, False)
-        self.assertEqual(value_uncertainty.pdf_type, numpy.random.lognormal)
-        self.assertEqual(value_uncertainty.kwargs, {'sigma': 0.1})
-        self.assertEqual(value_uncertainty.multiplicative, False)
-        with self.assertRaises(TypeError):
-            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1})
-        with self.assertRaises(TypeError):
-            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'something': 0.1})
-        with self.assertRaises(TypeError):
-            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 'a'})
-
-    def test_pdf_type_setter(self):
-        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, False)
-        self.assertEqual(value_uncertainty.pdf_type, numpy.random.lognormal)
-        with self.assertRaises(AttributeError):
-            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.something, False)
-
-    def test_multiplicative_setter(self):
-        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, True)
-        self.assertEqual(value_uncertainty.multiplicative, True)
-        with self.assertRaises(TypeError):
-            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, 'True')
-
-    def test_kwargs_setter(self):
-        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, True)
-        self.assertEqual(value_uncertainty.kwargs, {'sigma': 0.1})
-        with self.assertRaises(ValueError):
-            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma', 0.1}, True)
-
-    def test_validate(self):
-        value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 0.1}, True)
-        with self.assertRaises(TypeError):
-            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'something': 0.1}, True)
-        with self.assertRaises(ValueError):
-            value_uncertainty = core.ProbabilityDensityFunction(numpy.random.lognormal, {'sigma': 'a'}, True)
+        def test_init(self):
+            tc1 = core.TimeCourseAttribute([1, 1.1, 1])
