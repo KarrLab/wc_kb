@@ -1994,7 +1994,7 @@ class FloatValue(obj_model.Model):
 class TimeCourseAttribute(ManyToOneAttribute):
     """ Reaction participants """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
@@ -2002,7 +2002,7 @@ class TimeCourseAttribute(ManyToOneAttribute):
             verbose_related_name (:obj:`str`, optional): verbose related name
             help (:obj:`str`, optional): help message
         """
-        super(TimeCourseAttribute, self).__init__(FloatValue, help=help)
+        super(TimeCourseAttribute, self).__init__(FloatValue, description=description)
 
     def serialize(self, participants, encoded=None):
         """ 
