@@ -29,7 +29,7 @@ setuptools.setup(
     url="https://github.com/KarrLab/" + name,
     download_url='https://github.com/KarrLab/' + name,
     author="Karr Lab",
-    author_email="jonrkarr@gmail.com",
+    author_email="info@karrlab.org",
     license="MIT",
     keywords='whole-cell systems biology',
     packages=setuptools.find_packages(exclude=['tests', 'tests.*']),

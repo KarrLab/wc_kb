@@ -9,7 +9,7 @@
 
 from obj_model import utils
 from test.support import EnvironmentVarGuard
-from wc_kb import core, prokaryote_schema
+from wc_kb import core, prokaryote
 from wc_kb import io
 from wc_utils.util.git import GitHubRepoForTests
 import Bio.Seq
@@ -49,7 +49,7 @@ class TestIO(unittest.TestCase):
                 Bio.Seq.Seq(seq), dna.id))
 
             for i_trn in range(5):
-                trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
+                trn = prokaryote.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
                 trn.type = random.choice(['WC:mRNA', 'WC:sRNA', 'WC:tRNA', 'WC:rRNA', 'WC:intergenic', 'WC:mixed'])
                 trn.cell = cell
                 dna.loci.append(trn)
@@ -181,7 +181,7 @@ class TestIO(unittest.TestCase):
         dna = core.DnaSpeciesType(id='chr_x', sequence_path=seq_path)
         self.kb.cell.species_types.append(dna)
 
-        trn = prokaryote_schema.TranscriptionUnitLocus(id='tu_x_0')
+        trn = prokaryote.TranscriptionUnitLocus(id='tu_x_0')
         dna.loci.append(trn)
         trn.cell = None
 
@@ -198,8 +198,8 @@ class TestIO(unittest.TestCase):
 
         wb = wc_utils.workbook.io.read(core_path)
 
-        row = wb['KB'].pop(0)
-        wb['KB'].insert(1, row)
+        row = wb['KB'].pop(3)
+        wb['KB'].insert(4, row)
         wc_utils.workbook.io.write(core_path, wb)
 
         reader = io.Reader()
@@ -215,7 +215,7 @@ class TestIO(unittest.TestCase):
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -224,7 +224,7 @@ class TestIO(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
             io.Reader().run(core_path, seq_path=seq_path)
 
-        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
         with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
             io.Reader().run(core_path, seq_path=seq_path)
 
@@ -233,7 +233,7 @@ class TestIO(unittest.TestCase):
         kb2 = core.KnowledgeBase(id='kb2', name='kb2', version='0.0.1')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -247,7 +247,7 @@ class TestIO(unittest.TestCase):
         dna = core.DnaSpeciesType(id='chr')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -261,7 +261,7 @@ class TestIO(unittest.TestCase):
         cell2 = core.Cell(id='cell2', name='cell2')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -303,8 +303,8 @@ class TestIO(unittest.TestCase):
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         wb = wc_utils.workbook.io.read(path_core_1)
-        row = wb['KB'].pop(0)
-        wb['KB'].insert(1, row)
+        row = wb['KB'].pop(3)
+        wb['KB'].insert(4, row)
         wc_utils.workbook.io.write(path_core_1, wb)
 
         with self.assertRaisesRegex(ValueError, "The model cannot be loaded because"):

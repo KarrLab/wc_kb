@@ -13,8 +13,8 @@ Supported file types:
 """
 
 from . import core
-from . import eukaryote_schema
-from . import prokaryote_schema
+from . import eukaryote
+from . import prokaryote
 from . import util
 from wc_utils.util.string import indent_forest
 import Bio.SeqIO
@@ -33,10 +33,10 @@ PROKARYOTE_MODELS = (
     core.Compartment,
     core.DnaSpeciesType,
     core.ChromosomeFeature,
-    prokaryote_schema.TranscriptionUnitLocus,
-    prokaryote_schema.GeneLocus,
-    prokaryote_schema.RnaSpeciesType,
-    prokaryote_schema.ProteinSpeciesType,
+    prokaryote.TranscriptionUnitLocus,
+    prokaryote.GeneLocus,
+    prokaryote.RnaSpeciesType,
+    prokaryote.ProteinSpeciesType,
     core.ComplexSpeciesType,
     core.MetaboliteSpeciesType,
     core.SpeciesTypeProperty,
@@ -54,11 +54,11 @@ EUKARYOTE_MODELS = (
     core.Cell,
     core.Compartment,
     core.DnaSpeciesType,
-    eukaryote_schema.GeneLocus,
-    eukaryote_schema.RegulatoryModule,
-    eukaryote_schema.TranscriptSpeciesType,
-    eukaryote_schema.ProteinSpeciesType,
-    eukaryote_schema.PtmSite,
+    eukaryote.GeneLocus,
+    eukaryote.RegulatoryModule,
+    eukaryote.TranscriptSpeciesType,
+    eukaryote.ProteinSpeciesType,
+    eukaryote.PtmSite,
     core.ComplexSpeciesType,
     core.MetaboliteSpeciesType,
     core.SpeciesTypeProperty,

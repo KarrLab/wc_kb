@@ -52,17 +52,17 @@ class TranscriptType(enum.Enum):
 class LocusAttribute(obj_model.ManyToManyAttribute):
     """ Start and end coordinates attribute """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
         super(LocusAttribute, self).__init__(GenericLocus,
                                             related_name=related_name, min_related=0, min_related_rev=0,
-                                            verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+                                            verbose_name=verbose_name, verbose_related_name=verbose_related_name, description=description)
 
     def serialize(self, coordinates, encoded=None):
         """ Serialize related object
@@ -114,18 +114,18 @@ class LocusAttribute(obj_model.ManyToManyAttribute):
 class RegDirectionAttribute(obj_model.ManyToManyAttribute):
     """ Regulatory direction attribute """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
         super(RegDirectionAttribute, self).__init__('TranscriptionFactorRegulation',
                                             related_name=related_name, 
                                             verbose_name=verbose_name, 
-                                            verbose_related_name=verbose_related_name, help=help)
+                                            verbose_related_name=verbose_related_name, description=description)
 
     def serialize(self, directions, encoded=None):
         """ Serialize related object

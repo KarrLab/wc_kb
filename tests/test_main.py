@@ -18,6 +18,7 @@ import unittest
 import wc_kb
 import wc_kb.core
 
+
 class TestCli(unittest.TestCase):
 
     def setUp(self):
@@ -82,7 +83,7 @@ class TestCli(unittest.TestCase):
         filename_seq_3 = path.join(self.tempdir, 'seq3.fna')
         io.Writer().run(filename_core_3, kb3, seq_path=filename_seq_3, data_repo_metadata=False)
 
-        with CaptureOutput() as capturer:
+        with CaptureOutput(termination_delay=0.1) as capturer:
             with __main__.App(argv=['difference',
                                     filename_core_1, filename_seq_1,
                                     filename_core_2, filename_seq_2,
@@ -115,7 +116,7 @@ class TestCli(unittest.TestCase):
                                     '--compare-files']) as app:
                 app.run()
             diff = 'Sheet KB:\n  Row 8:\n    Cell B: 0.0.0 != 0.0.1'
-            #diff = 'Sheet KBnowledge base:\n  Row 8:\n    Cell B: 0.0.0 != 0.0.1'
+            #diff = 'Sheet KBnowledge base:\n  Row 11:\n    Cell B: 0.0.0 != 0.0.1'
             self.assertEqual(capturer.get_text(), diff)
 
     def test_normalize(self):

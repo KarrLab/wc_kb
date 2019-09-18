@@ -14,6 +14,7 @@ from natsort import natsorted, ns
 from math import ceil, floor, exp, log, log10, isnan
 from pyfaidx import Fasta
 from wc_utils.util import chem
+from wc_utils.util.chem.core import get_major_micro_species, OpenBabelUtils
 from wc_utils.util.list import det_dedupe
 from wc_utils.util.units import unit_registry
 from wc_onto import onto as kbOnt
@@ -71,20 +72,20 @@ PolymerDirection = enum.Enum(value='PolymerDirection', names=[
 class SubunitAttribute(ManyToManyAttribute):
     """ Subunits """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
 
         super(SubunitAttribute, self).__init__('SpeciesTypeCoefficient',
                                                related_name=related_name,
                                                verbose_name=verbose_name,
                                                verbose_related_name=verbose_related_name,
-                                               help=help)
+                                               description=description)
 
     def serialize(self, subunits, encoded=None):
         """ Serialize related object
@@ -125,17 +126,17 @@ class SubunitAttribute(ManyToManyAttribute):
 class OneToOneSpeciesAttribute(OneToOneAttribute):
     """ Species attribute """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
         super(OneToOneSpeciesAttribute, self).__init__('Species',
                                                        related_name=related_name, min_related=1, min_related_rev=0,
-                                                       verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+                                                       verbose_name=verbose_name, verbose_related_name=verbose_related_name, description=description)
 
     def serialize(self, value, encoded=None):
         """ Serialize related object
@@ -165,17 +166,17 @@ class OneToOneSpeciesAttribute(OneToOneAttribute):
 class IdentifierAttribute(ManyToManyAttribute):
     """ Identifier attribute """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
         super(IdentifierAttribute, self).__init__(Identifier,
                                                          related_name=related_name, min_related=0, min_related_rev=0,
-                                                         verbose_name=verbose_name, verbose_related_name=verbose_related_name, help=help)
+                                                         verbose_name=verbose_name, verbose_related_name=verbose_related_name, description=description)
 
     def serialize(self, identifiers, encoded=None):
         """ Serialize related object
@@ -228,18 +229,18 @@ class IdentifierAttribute(ManyToManyAttribute):
 class ReactionParticipantAttribute(ManyToManyAttribute):
     """ Reaction participants """
 
-    def __init__(self, related_name='', verbose_name='', verbose_related_name='', help=''):
+    def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
         super(ReactionParticipantAttribute, self).__init__('SpeciesCoefficient', related_name=related_name,
                                                            verbose_name=verbose_name,
                                                            verbose_related_name=verbose_related_name,
-                                                           help=help)
+                                                           description=description)
 
     def serialize(self, participants, encoded=None):
         """ Serialize related object
@@ -586,6 +587,7 @@ class KnowledgeBase(KnowledgeBaseObject):
 
     class Meta(obj_model.Model.Meta):
         verbose_name = 'KB'
+        description = 'Knowledge base'
         attribute_order = ('id', 'name', 'translation_table', 'version',
                            'url', 'branch', 'revision', 'wc_kb_version', 'comments')
         tabular_orientation = obj_model.TabularOrientation.column
@@ -1436,27 +1438,35 @@ class MetaboliteSpeciesType(SpeciesType):
         verbose_name = 'Metabolite'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'identifiers', 'references', 'comments')
 
-    def get_structure(self, ph=7.95):
+    def get_structure(self):
         """ Get the structure
 
         Returns:
-            :obj:`str`: structure
+            :obj:`str`: InChI-encoded structure
 
         Raises:
             :obj:`ValueError`: if structure has not been provided
         """
-        if not self.properties.get_one(property='structure'):
+        prop = self.properties.get_one(property='structure')
+        if not prop:
             raise ValueError('The structure of {} has not been provided'.format(self.id))
+        return prop.get_value()
+        
+    def calc_structure(self, ph=7.4, major_tautomer=False, keep_hydrogens=False, dearomatize=False):
+        """ Get the major microspecies
 
-        mol = openbabel.OBMol()
-        conversion = openbabel.OBConversion()
-        conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
-        mol.CorrectForPH(ph)
-        conversion.SetOutFormat('inchi')
-        protonated_inchi = conversion.WriteString(mol)
+        Args:
+            pH (:obj:`float`, optional): pH, default is 7.4
+            major_tautomer (:obj:`bool`, optional): if :obj:`True`, use the major tautomeric in the calculation
+            keep_hydrogens (:obj:`bool`, optional): if :obj:`True`, keep explicity defined hydrogens
+            dearomatize (:obj:`bool`, optional): if :obj:`True`, dearomatize molecule
 
-        return protonated_inchi
+        Returns:
+            :obj:`str`: InChI-encoded structure
+        """
+        inchi = self.get_structure()
+        return get_major_micro_species(inchi, 'inchi', 'inchi', 
+            ph=ph, major_tautomer=major_tautomer, keep_hydrogens=keep_hydrogens, dearomatize=dearomatize)
 
     def to_openbabel_mol(self):
         """ Convert species type to an Open Babel molecule
@@ -1477,42 +1487,54 @@ class MetaboliteSpeciesType(SpeciesType):
 
         return mol
 
-    def get_empirical_formula(self, ph=7.95):
+    def get_empirical_formula(self):
         """ Get the empirical formula
 
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-        if self.properties.get_one(property='empirical_formula'):
-            return chem.EmpiricalFormula(self.properties.get_one(property='empirical_formula').get_value())
+        prop = self.properties.get_one(property='empirical_formula')
+        if prop:
+            return chem.EmpiricalFormula(prop.get_value())
 
-        mol = self.to_openbabel_mol()
+        return self.calc_empirical_formula()
+
+    def calc_empirical_formula(self):
+        """ Calculate the empirical formula
+
+        Returns:
+            :obj:`chem.EmpiricalFormula`: empirical formula
+        """
+        inchi = self.get_structure()
+        mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol,  self.properties.get_one(property='structure').get_value())
-        mol.CorrectForPH(ph)
-        conversion.SetOutFormat('inchi')
-        protontated_inchi = conversion.WriteString(mol)
-        protonated_formula = mol.GetFormula().rstrip('+-')
+        conversion.ReadString(mol,  inchi)
+        return OpenBabelUtils.get_formula(mol)
 
-        return chem.EmpiricalFormula(protonated_formula)
-
-    def get_charge(self, ph=7.95):
+    def get_charge(self):
         """ Get the charge
 
         Returns:
             :obj:`int`: charge
         """
-        if self.properties.get_one(property='charge'):
-            return self.properties.get_one(property='charge').get_value()
+        prop = self.properties.get_one(property='charge')
+        if prop:
+            return prop.get_value()
 
-        mol = self.to_openbabel_mol()
+        return self.calc_charge()
+
+    def calc_charge(self):
+        """ Calculate the charge
+
+        Returns:
+            :obj:`int`: charge
+        """
+        inchi = self.get_structure()
+        mol = openbabel.OBMol()
         conversion = openbabel.OBConversion()
         conversion.SetInFormat('inchi')
-        conversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
-        mol.CorrectForPH(ph)
-        conversion.SetOutFormat('inchi')
-
+        conversion.ReadString(mol,  inchi)
         return mol.GetTotalCharge()
 
     def get_mol_wt(self):
@@ -1524,17 +1546,22 @@ class MetaboliteSpeciesType(SpeciesType):
         Raises:
             :obj:`ValueError`: if there is not enough information to calculate molecular weight
         """
-        if self.properties.get_one(property='structure'):
-            mol = self.to_openbabel_mol()
-        elif self.properties.get_one(property='empirical_formula'):
-            return chem.EmpiricalFormula(self.properties.get_one(
-                property='empirical_formula').get_value()).get_molecular_weight()
+        prop = self.properties.get_one(property='empirical_formula')
+        if prop:
+            return chem.EmpiricalFormula(prop.get_value()).get_molecular_weight()
+
+        elif self.properties.get_one(property='structure'):
+            inchi = self.get_structure()
+            mol = openbabel.OBMol()
+            conversion = openbabel.OBConversion()
+            conversion.SetInFormat('inchi')
+            conversion.ReadString(mol,  inchi)
+            return mol.GetMolWt()
+        
         else:
             raise ValueError('Molecular weight cannot be calculated because no structure or '
                 'empirical formula has been provided for {}'.format(self.id))
-
-        return mol.GetMolWt()
-
+      
 
 class DnaSpeciesType(PolymerSpeciesType):
     """ Knowledge of a DNA species
