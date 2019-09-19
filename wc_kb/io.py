@@ -19,7 +19,7 @@ from . import util
 from wc_utils.util.string import indent_forest
 import Bio.SeqIO
 import Bio.SeqRecord
-import obj_model
+import obj_tables
 import os
 import shutil
 import wc_kb
@@ -71,7 +71,7 @@ EUKARYOTE_MODELS = (
     core.Experiment,
     core.Reference)
 
-class Writer(obj_model.io.Writer):
+class Writer(obj_tables.io.Writer):
     """ Write knowledge base to file(s) """
 
     def run(self, core_path, knowledge_base,
@@ -104,14 +104,14 @@ class Writer(obj_model.io.Writer):
             extra_entries (:obj:`int`, optional): additional entries to display
             data_repo_metadata (:obj:`bool`, optional): if :obj:`True`, try to write metadata information
                 about the file's Git repo; the repo must be current with origin, except for the file
-            schema_package (:obj:`str`, optional): the package which defines the `obj_model` schema
+            schema_package (:obj:`str`, optional): the package which defines the `obj_tables` schema
                 used by the file; if not :obj:`None`, try to write metadata information about the
                 the schema's Git repository: the repo must be current with origin
 
         Raises:
             :obj:`ValueError`: if any of the relationships with knowledge bases and cells are not set
         """
-        if issubclass(self.get_writer(core_path), obj_model.io.WorkbookWriter):
+        if issubclass(self.get_writer(core_path), obj_tables.io.WorkbookWriter):
             self.validate_implicit_relationships()
             self.validate_implicit_relationships_are_set(knowledge_base)
 
@@ -174,20 +174,20 @@ class Writer(obj_model.io.Writer):
             :obj:`Exception`: if the Excel serialization involves an unsupported implicit relationship
         """
         for name, attr in core.KnowledgeBase.Meta.attributes.items():
-            if isinstance(attr, obj_model.RelatedAttribute):
+            if isinstance(attr, obj_tables.RelatedAttribute):
                 raise Exception(
                     "Relationships from `KnowledgeBase` not supported: {}.{} to {}".format(
                         'KnowledgeBase', name, attr.related_class.__name__))
 
         for name, attr in core.KnowledgeBase.Meta.related_attributes.items():
-            if not isinstance(attr, obj_model.OneToOneAttribute):
+            if not isinstance(attr, obj_tables.OneToOneAttribute):
                 raise Exception(
                     "Relationships to `KnowledgeBase` that are not one-to-one are prohibited: {}.{} to {}".format(
                         attr.related_class.__name__, name, 'KnowledgeBase'))
 
         for name, attr in core.Cell.Meta.attributes.items():
-            if isinstance(attr, obj_model.RelatedAttribute):
-                if not isinstance(attr, obj_model.OneToOneAttribute):
+            if isinstance(attr, obj_tables.RelatedAttribute):
+                if not isinstance(attr, obj_tables.OneToOneAttribute):
                     raise Exception(
                         "Relationships from `Cell` to `KnowledgeBase` that are not one-to-one are prohibited: {}.{} to {}".format(
                             'Cell', name, 'KnowledgeBase'))
@@ -197,7 +197,7 @@ class Writer(obj_model.io.Writer):
                             'Cell', name, attr.related_class.__name__))
 
         for attr in core.Cell.Meta.related_attributes.values():
-            if not isinstance(attr, (obj_model.OneToOneAttribute, obj_model.ManyToOneAttribute)):
+            if not isinstance(attr, (obj_tables.OneToOneAttribute, obj_tables.ManyToOneAttribute)):
                 raise Exception(
                     "Relationships to `Cell` that are not one-to-one or many-to-one are prohibited: {}.{} to {}".format(
                         attr.related_class.__name__, attr.related_name, 'Cell'))
@@ -225,14 +225,14 @@ class Writer(obj_model.io.Writer):
 
         for obj in knowledge_base.get_related():
             for attr in obj.Meta.attributes.values():
-                if isinstance(attr, obj_model.RelatedAttribute) and attr.related_class == core.Cell:
+                if isinstance(attr, obj_tables.RelatedAttribute) and attr.related_class == core.Cell:
                     val = getattr(obj, attr.name)
                     if val is None or val != cell:
                         raise ValueError('{}.{} must be set to the instance of `Cell`'.format(
                             obj.__class__.__name__, attr.name))
 
 
-class Reader(obj_model.io.Reader):
+class Reader(obj_tables.io.Reader):
     """ Read knowledge base from file(s) """
 
     #@wc_utils.cache.memoize(filename_args=[1, 2])
@@ -273,7 +273,7 @@ class Reader(obj_model.io.Reader):
                     read_metadata (:obj:`bool`, optional): if :obj:`True`, read metadata models
 
                 Returns:
-                    :obj:`dict`: model objects grouped by `obj_model.Model` class
+                    :obj:`dict`: model objects grouped by `obj_tables.Model` class
 
                 Raises:
                     :obj:`ValueError`: if :obj:`core_path`
@@ -281,7 +281,7 @@ class Reader(obj_model.io.Reader):
                         * Defines multiple knowledge bases or cells
                         * Represents objects that cannot be linked to a knowledge base and/or cell
                 """
-                if issubclass(self.get_reader(core_path), obj_model.io.WorkbookReader):
+                if issubclass(self.get_reader(core_path), obj_tables.io.WorkbookReader):
                     Writer.validate_implicit_relationships()
 
                 if taxon == 'prokaryote':
@@ -292,7 +292,7 @@ class Reader(obj_model.io.Reader):
                     raise ValueError('Unsupported taxon "{}"'.format(taxon))
 
                 if read_metadata:
-                    models = list(models) + [obj_model.utils.DataRepoMetadata, obj_model.utils.SchemaRepoMetadata]
+                    models = list(models) + [obj_tables.utils.DataRepoMetadata, obj_tables.utils.SchemaRepoMetadata]
                     ignore_missing_sheets = True
                     ignore_sheet_order = True
 
@@ -356,7 +356,7 @@ class Reader(obj_model.io.Reader):
 
                 for model, model_objects in objects.items():
                     for attr in model.Meta.attributes.values():
-                        if isinstance(attr, obj_model.RelatedAttribute) and attr.related_class == core.Cell:
+                        if isinstance(attr, obj_tables.RelatedAttribute) and attr.related_class == core.Cell:
                             for model_obj in model_objects:
                                 setattr(model_obj, attr.name, cell)
 
@@ -373,7 +373,7 @@ class Reader(obj_model.io.Reader):
                     for cls_objs in objects.values():
                         objs.extend(cls_objs)
 
-                    errors = obj_model.Validator().validate(objs)
+                    errors = obj_tables.Validator().validate(objs)
                     if errors:
                         raise ValueError(
                             indent_forest(['The knowledge base cannot be loaded because it fails to validate:', [errors]]))
