@@ -1963,28 +1963,28 @@ class Evidence(KnowledgeBaseObject):
 
     """
 
-    cell = obj_model.ManyToOneAttribute('Cell', related_name='evidence')
-    time_0 = obj_model.ontology.OntologyAttribute(kbOnt,
+    cell = obj_tables.ManyToOneAttribute('Cell', related_name='evidence')
+    time_0 = obj_tables.ontology.OntologyAttribute(kbOnt,
                                                      terms=kbOnt['WC:time'].rchildren(),
                                                      none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
     identifiers = IdentifierAttribute(related_name='evidence')
-    references = obj_model.ManyToManyAttribute('Reference', related_name='evidence')
-    experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='evidence')
-    comments = obj_model.LongStringAttribute()
+    references = obj_tables.ManyToManyAttribute('Reference', related_name='evidence')
+    experiment = obj_tables.ManyToOneAttribute('Experiment', related_name ='evidence')
+    comments = obj_tables.LongStringAttribute()
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'cell', 'time_0',
             'identifiers', 'references', 'experiment', 'comments')
 
 
-class FloatValue(obj_model.Model):
+class FloatValue(obj_tables.Model):
     """ A float value
     Attributes:
         value (:obj:`float`): value
     """
     value = FloatAttribute()
 
-    # class Meta(obj_model.Model.Meta):
+    # class Meta(obj_tables.Model.Meta):
     #     attribute_order = ('species', 'coefficient')
     #     frozen_columns = 1
     #     tabular_orientation = TabularOrientation.cell
@@ -2010,7 +2010,7 @@ class TimeCourseAttribute(ManyToOneAttribute):
         return str([val for val in values])
         
 
-    def deserialize(self, value, decoded=None):
+    def deserialize(self, value, objects, decoded=None):
         """ Deserialize value
         Args:
             value (:obj:`str`): String representation
@@ -2019,17 +2019,25 @@ class TimeCourseAttribute(ManyToOneAttribute):
             :obj:`list` of :obj:`FloatValue`: list of FloatValues
         """
         if not value:
-            return ([])
+            return ([], None)
 
         lst = value.split(",")
         lst[0] = lst[0].lstrip('[')
         lst[-1] = lst[-1].rstrip(']')
-        lst1 = []
-        for item in lst:
-            item.strip(' ')
-            item = FloatValue(item)
-            lst1.append(item)
-        return lst1
+        objs = []
+        for obj in lst:
+            val = float(obj.strip(' '))
+            if self.related_class not in objects:
+                objects[self.related_class] = {}
+            serialized_value = str(val)
+     
+            if serialized_value in objects[self.related_class]:
+                obj = objects[self.related_class][serialized_value]
+            else:
+                obj = self.related_class(value=val)
+                objects[self.related_class][serialized_value] = obj
+            objs.append(obj)
+        return (objs, None)
         
 
 
@@ -2046,13 +2054,13 @@ class TimeCourse(KnowledgeBaseObject):
             times_unit (:obj:`Units`): unit of times
             comments(:obj:`str`): comments
     """
-    observable =  obj_model.ManyToOneAttribute(Observable, related_name='evidence') # Todo: change this to wc_rules pattern or similar at some point
-    property = obj_model.StringAttribute()
+    observable =  obj_tables.ManyToOneAttribute(Observable, related_name='evidence') # Todo: change this to wc_rules pattern or similar at some point
+    property = obj_tables.StringAttribute()
     values = TimeCourseAttribute()
-    values_unit = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    values_unit = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
     times = TimeCourseAttribute()
-    times_unit = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    comments = obj_model.LongStringAttribute()
+    times_unit = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    comments = obj_tables.LongStringAttribute()
     
 
 class PerturbationCourse(TimeCourse):
@@ -2068,7 +2076,7 @@ class PerturbationCourse(TimeCourse):
             times_unit (:obj:`Units`): unit of times
             comments(:obj:`str`): comments
     """
-    evidence = obj_model.ManyToOneAttribute('Evidence', related_name='perturbation_courses')
+    evidence = obj_tables.ManyToOneAttribute('Evidence', related_name='perturbation_courses')
 
 
 class TimeCourseMeasurement(TimeCourse):
@@ -2084,7 +2092,7 @@ class TimeCourseMeasurement(TimeCourse):
             times_unit (:obj:`Units`): unit of times
             comments(:obj:`str`): comments
     """
-    evidence = obj_model.ManyToOneAttribute('Evidence', related_name='time_course_measurements')
+    evidence = obj_tables.ManyToOneAttribute('Evidence', related_name='time_course_measurements')
 
 
 '''
@@ -2120,8 +2128,7 @@ class Evidence(KnowledgeBaseObject):
     experiment = obj_tables.ManyToOneAttribute('Experiment', related_name ='evidence')
     comments = obj_tables.LongStringAttribute()
 
-<<<<<<< HEAD
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
             'value_uncertainty', 'controlled_variables', 'time', 'time_units', 'time_0', 'time_bin', 
             'identifiers', 'references', 'experiment', 'comments')
@@ -2154,32 +2161,32 @@ class ControlledVariable(KnowledgeBaseObject): # This class is identical to the 
             evidence (:obj:`list` of :obj: `Evidence`): list of evidence
     """
 
-    cell = obj_model.ManyToOneAttribute('Cell', related_name='controlled_variable')
-    object   =  obj_model.StringAttribute()
-    observable =  obj_model.ManyToOneAttribute(Observable, related_name='controlled_variable') # Todo: change this to wc_rules pattern or similar at some point
-    property = obj_model.StringAttribute()
-    value = obj_model.FloatAttribute()
-    units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    value_uncertainty = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?    
-    time = obj_model.FloatAttribute() 
-    time_units = obj_model.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    time_0 = obj_model.ontology.OntologyAttribute(kbOnt,
+    cell = obj_tables.ManyToOneAttribute('Cell', related_name='controlled_variable')
+    object   =  obj_tables.StringAttribute()
+    observable =  obj_tables.ManyToOneAttribute(Observable, related_name='controlled_variable') # Todo: change this to wc_rules pattern or similar at some point
+    property = obj_tables.StringAttribute()
+    value = obj_tables.FloatAttribute()
+    units = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    value_uncertainty = obj_tables.FloatAttribute() # Todo: is float attribute the right thing here?    
+    time = obj_tables.FloatAttribute() 
+    time_units = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    time_0 = obj_tables.ontology.OntologyAttribute(kbOnt,
                                                      terms=kbOnt['WC:time'].rchildren(),
                                                      none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
-    time_bin = obj_model.FloatAttribute() # Todo: is float attribute the right thing here?
+    time_bin = obj_tables.FloatAttribute() # Todo: is float attribute the right thing here?
     identifiers = IdentifierAttribute(related_name='controlled_variable')
-    references = obj_model.ManyToManyAttribute('Reference', related_name='controlled_variable')
-    experiment = obj_model.ManyToOneAttribute('Experiment', related_name ='controlled_variable')
-    comments = obj_model.LongStringAttribute()
+    references = obj_tables.ManyToManyAttribute('Reference', related_name='controlled_variable')
+    experiment = obj_tables.ManyToOneAttribute('Experiment', related_name ='controlled_variable')
+    comments = obj_tables.LongStringAttribute()
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
             'value_uncertainty', 'time', 'time_units', 'time_0', 'time_bin', 
             'identifiers', 'references', 'experiment', 'comments')
         
 
 class ProbabilityDensityFunction(object):
-    # Todo: Think how to rewrite this class such that it inherits from `KnowledgeBaseObject` and uses obj_model.____Attributes() to define attributes.
+    # Todo: Think how to rewrite this class such that it inherits from `KnowledgeBaseObject` and uses obj_tables.____Attributes() to define attributes.
 
     """Probability density function for error characterisation of values
     

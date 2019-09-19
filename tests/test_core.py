@@ -12,7 +12,6 @@
 
 from wc_kb import core
 from wc_onto import onto as kbOnt
-import obj_model
 from wc_utils.util import chem
 from wc_utils.util.units import unit_registry
 from wc_utils.util.ontology import are_terms_equivalent
@@ -1448,7 +1447,7 @@ class TimeCourseTestCase(unittest.TestCase):
         #     tc1 = core.PerturbationCourse(comments=1)
 
         ### More complex negative tests
-        # Tode: How can I get these tests passing?
+        # Todo: How can I get these tests passing?
         # with self.assertRaises(ValueError): # `value` and `time` must be of same length
         #     tc1 = core.PerturbationCourse(id='tc1', value=[1, 2], time=[1, 2, 3], observable=observable1)
         # with self.assertRaises(ValueError): # time[i] must be < time[i+1]
@@ -1482,7 +1481,18 @@ class TimeCourseTestCase(unittest.TestCase):
 class FloatValueTestCase(unittest.TestCase):
 
     def test_float_value(self):
-        pass # Todo: continue here, then go to the next test class
+        ### Positive Tests
+        fv1 = core.FloatValue(value=1)
+        self.assertEqual(fv1.value, 1)
+        fv1 = core.FloatValue(value=1.1)
+        self.assertEqual(fv1.value, 1.1)
+        ### Negative Tests
+        # Todo: Why does FloatValue accept non floats?
+        # with self.assertRaises(ValueError):
+        #     met = core.MetaboliteSpeciesType(id='met')
+        #     species_type_coeff = core.SpeciesTypeCoefficient(species_type=met, coefficient='a')
+        #     fv1 = core.FloatValue(value='a')
+
 
 class TimeCourseAttributeTestCase(unittest.TestCase):
     def test_init(self):
@@ -1492,7 +1502,31 @@ class TimeCourseAttributeTestCase(unittest.TestCase):
         self.assertEqual(
             core.TimeCourseAttribute().serialize(values=[1, 2]), '[1, 2]')
 
-    def test_deserialize(self):    
-        self.assertEqual(
-            core.TimeCourseAttribute().deserialize(value='[1, 2]'), [core.FloatValue(1), core.FloatValue(2)])
+    def test_deserialize(self):
+        fv1 = core.FloatValue(value=1)
+        fv2 = core.FloatValue(value=2.2)
+
+        objects = {
+            core.FloatValue: {
+                '1': fv1,
+                '2.2': fv2
+            }
+        }
+
+        result = core.TimeCourseAttribute().deserialize(value='[1, 2.2]', objects=objects)  
+        self.assertEqual(result[1], None)
+        self.assertEqual(result[0][0].value, 1)
+        self.assertEqual(result[0][1].value, 2.2)
+
+        result = core.TimeCourseAttribute().deserialize(value='[ 1 ,  2.2 ]', objects=objects)
+        print(result)    
+        self.assertEqual(result[1], None)
+        self.assertEqual(result[0][0].value, 1)
+        self.assertEqual(result[0][1].value, 2.2)
+
+
+
+
+        # self.assertEqual(
+        #     core.TimeCourseAttribute().deserialize(value='[1]', objects=objects), [core.FloatValue(value=1), core.FloatValue(value=2)])
 
