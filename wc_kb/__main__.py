@@ -105,8 +105,7 @@ class DifferenceController(cement.Controller):
         Args:
             kb (:obj:`wc_utils.workbook.Workbook`): knowledge base
         """
-        if obj_tables.TOC_NAME in kb:
-            kb.pop(obj_tables.TOC_NAME)
+        kb.pop('!' + obj_tables.TOC_SHEET_NAME, None)
         for sheet in kb.values():
             for row in list(sheet):
                 if row and isinstance(row[0], str) and row[0].startswith('!!'):
