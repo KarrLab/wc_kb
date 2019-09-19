@@ -1418,24 +1418,23 @@ class TimeCourseTestCase(unittest.TestCase):
 
     def test_time_course(self):
         
-        tc1 = core.TimeCourse(id='tc1', observable=observable1, property = 'concentration',
-                values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1],
-                times_unit=time_units, comments='tc1 comment')
+        tc1 = core.TimeCourse(id='tc1', observable=self.observable1, property ='concentration',
+                values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1],
+                times_unit=self.time_units, comments='tc1 comment')
 
         self.assertEqual(tc1.id, 'tc1')
-        self.assertEqual(tc1.observable, observable1)
+        self.assertEqual(tc1.observable, self.observable1)
         self.assertEqual(tc1.property, 'concentration')
         self.assertEqual(tc1.values, [1, 1.1, 1])
-        self.assertEqual(tc1.values_unit, unit)
+        self.assertEqual(tc1.values_unit, self.unit)
         self.assertEqual(tc1.times, [0.5, 1])
-        self.assertEqual(tc1.times_unit, time_units)
+        self.assertEqual(tc1.times_unit, self.time_units)
         self.assertEqual(tc1.comments, 'tc1 comment')
-        self.assertEqual(tc1.evidence, evi1)
 
         ### Simple negative tests
         # Todo: How can I enforce that attributes of Perturbation course are of a certain type?
         # Why is this not implemented in other classes? E.g. I tried `ref1 = core.Reference(id=[1,2])`
-        # and did not get an error.
+        # and did not get an error complaining thad id must be a string.
         # with self.assertRaises(ValueError):
         #     tc1 = core.Perturbation course(id=[1,2])
         #     tc1 = core.PerturbationCourse(observable=1)
@@ -1455,27 +1454,26 @@ class TimeCourseTestCase(unittest.TestCase):
         # Todo: How to specify which attributes are optional?
 
     def test_perturbation_course(self):
-
         ### Positive tests
-        tcm1 = core.PerturbationCourse(id='pc1', observable=observable1, property = 'concentration',
-            values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1],
-            times_unit=time_units, comments='pc1 comment', evidence=evi1)
-        self.assertEqual(evi1.perturbation_courses, [pc1])
-        pc2 = core.PerturbationCourse(id='pc2', observable=observable2, property = 'concentration',
-            values = [1.1, 0, 1], values_unit=unit, times = [0.4, 0.9],
-            times_unit=time_units, comments='pc2 comment', evidence=evi1)
-        self.assertEqual(evi1.perturbation_courses, [pc1, pc2])
+        pc1 = core.PerturbationCourse(id='pc1', observable=self.observable1, property = 'concentration',
+            values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1],
+            times_unit=self.time_units, comments='pc1 comment', evidence=self.evi1)
+        self.assertEqual(self.evi1.perturbation_courses, [pc1])
+        pc2 = core.PerturbationCourse(id='pc2', observable=self.observable2, property = 'concentration',
+            values = [1.1, 0, 1], values_unit=self.unit, times = [0.4, 0.9],
+            times_unit=self.time_units, comments='pc2 comment', evidence=self.evi1)
+        self.assertEqual(self.evi1.perturbation_courses, [pc1, pc2])
 
     def test_time_course_measurement(self):
         ### Positive tests
-        tcm1 = core.TimeCourseMeasurement(id='tcm1', observable=observable1, property = 'concentration',
-            values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1],
-            times_unit=time_units, comments='tcm1 comment', evidence=evi1)
-        self.assertEqual(evi1.test_time_course_measurements, [tcm1])
-        tcm2 = core.TimeCourseMeasurement(id='tcm2', observable=observable2, property = 'concentration',
-            values = [1.1, 0, 1], values_unit=unit, times = [0.4, 0.9],
-            times_unit=time_units, comments='tcm2 comment', evidence=evi1)
-        self.assertEqual(evi1.test_time_course_measurements, [tcm1, tcm2])
+        tcm1 = core.TimeCourseMeasurement(id='tcm1', observable=self.observable1, property = 'concentration',
+            values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1],
+            times_unit=self.time_units, comments='tcm1 comment', evidence=self.evi1)
+        self.assertEqual(self.evi1.time_course_measurements, [tcm1])
+        tcm2 = core.TimeCourseMeasurement(id='tcm2', observable=self.observable2, property = 'concentration',
+            values = [1.1, 0, 1], values_unit=self.unit, times = [0.4, 0.9],
+            times_unit=self.time_units, comments='tcm2 comment', evidence=self.evi1)
+        self.assertEqual(self.evi1.time_course_measurements, [tcm1, tcm2])
 
 
 class FloatValueTestCase(unittest.TestCase):

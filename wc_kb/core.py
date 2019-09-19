@@ -2054,7 +2054,7 @@ class TimeCourse(KnowledgeBaseObject):
             times_unit (:obj:`Units`): unit of times
             comments(:obj:`str`): comments
     """
-    observable =  obj_tables.ManyToOneAttribute(Observable, related_name='evidence') # Todo: change this to wc_rules pattern or similar at some point
+    observable =  obj_tables.ManyToOneAttribute(Observable, related_name='time_courses') # Todo: change this to wc_rules pattern or similar at some point
     property = obj_tables.StringAttribute()
     values = TimeCourseAttribute()
     values_unit = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
