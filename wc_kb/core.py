@@ -34,7 +34,7 @@ import token
 from obj_tables import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
                        RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
                        OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
-                       InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
+                       InvalidModel, InvalidObject, InvalidAttribute, TableFormat)
 from obj_tables.expression import (ExpressionOneToOneAttribute, ExpressionManyToOneAttribute,
                                   ExpressionStaticTermMeta, ExpressionDynamicTermMeta,
                                   ExpressionExpressionTermMeta, Expression,
@@ -468,7 +468,7 @@ class Identifier(obj_tables.Model):
 
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('namespace', 'id')
-        table_format = TabularOrientation.cell
+        table_format = TableFormat.cell
         ordering = ('namespace', 'id')
 
     @staticmethod
@@ -590,7 +590,7 @@ class KnowledgeBase(KnowledgeBaseObject):
         description = 'Knowledge base'
         attribute_order = ('id', 'name', 'translation_table', 'version',
                            'url', 'branch', 'revision', 'wc_kb_version', 'comments')
-        table_format = obj_tables.TabularOrientation.column
+        table_format = obj_tables.TableFormat.column
 
 
 class Cell(KnowledgeBaseObject):
@@ -615,7 +615,7 @@ class Cell(KnowledgeBaseObject):
 
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'name', 'taxon', 'comments')
-        table_format = obj_tables.TabularOrientation.column
+        table_format = obj_tables.TableFormat.column
 
 
 class Reference(obj_tables.Model):
@@ -761,7 +761,7 @@ class Species(obj_tables.Model):
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'species_type', 'compartment')
         frozen_columns = 1
-        table_format = TabularOrientation.cell
+        table_format = TableFormat.cell
         unique_together = (('species_type', 'compartment', ), )
         ordering = ('species_type', 'compartment')
         expression_term_token_pattern = (token.NAME, token.LSQB, token.NAME, token.RSQB)
@@ -922,7 +922,7 @@ class SpeciesTypeCoefficient(obj_tables.Model):
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('species_type', 'coefficient')
         frozen_columns = 1
-        table_format = TabularOrientation.cell
+        table_format = TableFormat.cell
         ordering = ('species_type',)
 
     def serialize(self):
@@ -1031,7 +1031,7 @@ class SpeciesCoefficient(obj_tables.Model):
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('species', 'coefficient')
         frozen_columns = 1
-        table_format = TabularOrientation.cell
+        table_format = TableFormat.cell
         ordering = ('species',)
 
     def serialize(self, show_compartment=True, show_coefficient_sign=True):
@@ -1299,7 +1299,7 @@ class ObservableExpression(obj_tables.Model, Expression):
     observables = ManyToManyAttribute('Observable', related_name='observable_expressions')
 
     class Meta(obj_tables.Model.Meta, Expression.Meta):
-        table_format = TabularOrientation.cell
+        table_format = TableFormat.cell
         expression_term_models = ('Species', 'Observable')
         expression_is_linear = True
         expression_unit_registry = unit_registry
@@ -1778,7 +1778,7 @@ class RateLawExpression(obj_tables.Model, Expression):
 
     class Meta(obj_tables.Model.Meta, Expression.Meta):
         attribute_order = ('expression', 'parameters', 'species', 'observables')
-        table_format = TabularOrientation.cell
+        table_format = TableFormat.cell
         ordering = ('expression',)
         expression_term_models = ('Parameter', 'Species', 'Observable')
         expression_unit_registry = unit_registry

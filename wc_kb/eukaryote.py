@@ -229,7 +229,7 @@ class TranscriptionFactorRegulation(obj_tables.Model):
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('transcription_factor', 'direction')
         frozen_columns = 1
-        table_format = obj_tables.TabularOrientation.cell
+        table_format = obj_tables.TableFormat.cell
         ordering = ('transcription_factor', 'direction')
 
     @staticmethod
@@ -365,7 +365,7 @@ class GenericLocus(obj_tables.Model):
 
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('start', 'end')
-        table_format = obj_tables.TabularOrientation.cell
+        table_format = obj_tables.TableFormat.cell
         ordering = ('start', 'end')
 
     @staticmethod
