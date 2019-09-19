@@ -1951,7 +1951,6 @@ class Evidence(KnowledgeBaseObject):
         Attributes:
             id (:obj:`str`): identifier
             cell (:obj:`Cell`): cell
-            time_0 (:obj:`pronto): optional ontology term corresponding to time=0
             identifiers(:obj:`list` of :obj:`Identifier`): identifiers
             references (:obj:`list` of :obj:`Reference`): references
             experiment (:obj:`Experiment`): experiment
@@ -1964,16 +1963,13 @@ class Evidence(KnowledgeBaseObject):
     """
 
     cell = obj_tables.ManyToOneAttribute('Cell', related_name='evidence')
-    time_0 = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                                     terms=kbOnt['WC:time'].rchildren(),
-                                                     none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
     identifiers = IdentifierAttribute(related_name='evidence')
     references = obj_tables.ManyToManyAttribute('Reference', related_name='evidence')
     experiment = obj_tables.ManyToOneAttribute('Experiment', related_name ='evidence')
     comments = obj_tables.LongStringAttribute()
 
     class Meta(obj_tables.Model.Meta):
-        attribute_order = ('id', 'cell', 'time_0',
+        attribute_order = ('id', 'cell',
             'identifiers', 'references', 'experiment', 'comments')
 
 
@@ -2050,16 +2046,22 @@ class TimeCourse(KnowledgeBaseObject):
             property (:obj:`str`): property
             values (:obj:`list` of :obj:`float`): values
             values_units (:obj:`Units`): unit of values
+            time_0 (:obj:`pronto): optional ontology term corresponding to time=0
             times (:obj:`list` of :obj:`float`): times
             times_unit (:obj:`Units`): unit of times
+            times_are_points (:obj:`bool`): indicates whether an enty in time is point-like or bin-like
+                    with center at the indicated time.
             comments(:obj:`str`): comments
     """
     observable =  obj_tables.ManyToOneAttribute(Observable, related_name='time_courses') # Todo: change this to wc_rules pattern or similar at some point
     property = obj_tables.StringAttribute()
     values = TimeCourseAttribute()
     values_unit = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    time_0 = obj_tables.ontology.OntologyAttribute(kbOnt,
+        terms=kbOnt['WC:time'].rchildren(), none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
     times = TimeCourseAttribute()
     times_unit = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    times_are_points = BooleanAttribute()
     comments = obj_tables.LongStringAttribute()
     
 

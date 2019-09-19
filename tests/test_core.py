@@ -1299,7 +1299,7 @@ class EvidenceTestCase(unittest.TestCase):
         expr3 = core.ObservableExpression(expression='met3[c]', species=[species3])
         expr4 = core.ObservableExpression(expression='met4[c]', species=[species4])
         observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
-        observable2 = core.Observable(cell=cell, id='obs1', expression=expr2)
+        observable2 = core.Observable(cell=cell, id='obs2', expression=expr2)
         observable3 = core.Observable(cell=cell, id='obs3', expression=expr3)
         observable4 = core.Observable(cell=cell, id='obs4', expression=expr4)
         ref1=core.Reference(id='ref1')
@@ -1309,32 +1309,49 @@ class EvidenceTestCase(unittest.TestCase):
         time_units = unit_registry.parse_units('s')
         time_0 = kbOnt['WC:cell_division']
         
-        ### Positive tests (examplify typical time course experiment)
-        #
-        # inh = core.ControlledVariable(id='inh', observable=observable1,
-        #     value = [0, 1, 0], units=unit, value_uncertainty=pdf_n, time = [0, 0.5, 1],
-        #     time_units=time_units, time_0=time_0, time_bin=pdf_u, identifiers =[dbref],
-        #     references=[ref1], experiment=expe1, comments='inh comment')
-        # act = core.ControlledVariable(id='act', observable=observable2,
-        #     value = [0, 0, 1], units=unit, value_uncertainty=pdf_n, time = [0, 0.5, 1],
-        #     time_units=time_units, time_0=time_0, time_bin=pdf_u, identifiers =[dbref],
-        #     references=[ref1], experiment=expe1, comments='act comment')
-        evi1 = core.Evidence(id='evi1', cell=cell, time_0=time_0, identifiers =[dbref],
+        # Example measurement without notion of time
+        evi1 = core.Evidence(id='evi1', cell=cell, identifiers =[dbref],
             references=[ref1], experiment=expe1, comments='evidence1 comment')
-               
+        inhibitor = core.PerturbationCourse(id='inh', observable=observable1, property = 'concentration',
+            values = [1.1], values_unit=unit, comments='inh comment', evidence=evi1)
+        m1 = core.TimeCourseMeasurement(id='m1', observable=observable1, property = 'concentration',
+            values=[1], values_unit=unit, comments='m1 comment', evidence=evi1)
+              
         self.assertEqual(evi1.id, 'evi1')
         self.assertEqual(evi1.cell, cell)
-        
-        #  self.assertEqual(evi1.controlled_variables, [inh, act])
-        # self.assertEqual(evi1.controlled_variables, [act, inh])
-       
-        self.assertEqual(evi1.time_0, time_0)
-
         self.assertEqual(evi1.identifiers, [dbref])
         self.assertEqual(evi1.references, [ref1])
         self.assertEqual(evi1.experiment, expe1)
         self.assertEqual(evi1.comments, 'evidence1 comment')
+        self.assertEqual(evi1.perturbation_courses, [inhibitor])
+        self.assertEqual(evi1.time_course_measurements, [m1])
 
+
+        # Example time course measurement with perturbation
+        evi1 = core.Evidence(id='evi1', cell=cell, identifiers =[dbref],
+            references=[ref1], experiment=expe1, comments='evidence1 comment')
+        inhibitor = core.PerturbationCourse(id='inh', observable=observable1, property = 'concentration',
+            values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1], time_0=time_0,
+            times_unit=time_units, times_are_points=True, comments='pc1 comment', evidence=evi1)
+        activator = core.PerturbationCourse(id='act', observable=observable2, property = 'concentration',
+            values = [1.1, 0, 1], values_unit=unit, times = [0.4, 0.9], time_0=time_0,
+            times_unit=time_units, times_are_points=True, comments='pc2 comment', evidence=evi1)
+        tcm1 = core.TimeCourseMeasurement(id='tcm1', observable=observable1, property = 'concentration',
+            values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1], time_0=time_0,
+            times_unit=time_units, times_are_points=True, comments='tcm1 comment', evidence=evi1)
+        tcm2 = core.TimeCourseMeasurement(id='tcm2', observable=observable2, property = 'concentration',
+            values = [1.1, 0, 1], values_unit=unit, times = [0.4, 0.9], time_0=time_0,
+            times_unit=time_units, times_are_points=True, comments='tcm2 comment', evidence=evi1)
+              
+        self.assertEqual(evi1.id, 'evi1')
+        self.assertEqual(evi1.cell, cell)
+        self.assertEqual(evi1.identifiers, [dbref])
+        self.assertEqual(evi1.references, [ref1])
+        self.assertEqual(evi1.experiment, expe1)
+        self.assertEqual(evi1.comments, 'evidence1 comment')
+        self.assertEqual(evi1.perturbation_courses, [inhibitor, activator])
+        self.assertEqual(evi1.time_course_measurements, [tcm1, tcm2])
+        
         ### Example for (conditional) knockout; avoided a new class `Phenotype` by just using the `object` property of `Evidence`
         #
         # ccna2  = core.DnaSpeciesType(id='ccna2')
@@ -1417,10 +1434,9 @@ class TimeCourseTestCase(unittest.TestCase):
     evi1 = core.Evidence(id='evi1')
 
     def test_time_course(self):
-        
         tc1 = core.TimeCourse(id='tc1', observable=self.observable1, property ='concentration',
-                values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1],
-                times_unit=self.time_units, comments='tc1 comment')
+                values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1], time_0=self.time_0,
+                times_unit=self.time_units, times_are_points=True, comments='tc1 comment')
 
         self.assertEqual(tc1.id, 'tc1')
         self.assertEqual(tc1.observable, self.observable1)
@@ -1428,7 +1444,9 @@ class TimeCourseTestCase(unittest.TestCase):
         self.assertEqual(tc1.values, [1, 1.1, 1])
         self.assertEqual(tc1.values_unit, self.unit)
         self.assertEqual(tc1.times, [0.5, 1])
+        self.assertEqual(tc1.time_0, self.time_0)
         self.assertEqual(tc1.times_unit, self.time_units)
+        self.assertEqual(tc1.times_are_points, True)
         self.assertEqual(tc1.comments, 'tc1 comment')
 
         ### Simple negative tests
@@ -1443,6 +1461,7 @@ class TimeCourseTestCase(unittest.TestCase):
         #     tc1 = core.PerturbationCourse(values_unit='a')
         #     tc1 = core.PerturbationCourse(times=[1, 'a'])
         #     tc1 = core.PerturbationCourse(times_unit=unit_registry.parse_units('molar'))
+        #     tc1 = core.PerturbationCourse(times_are_points='a')
         #     tc1 = core.PerturbationCourse(comments=1)
 
         ### More complex negative tests
@@ -1456,23 +1475,23 @@ class TimeCourseTestCase(unittest.TestCase):
     def test_perturbation_course(self):
         ### Positive tests
         pc1 = core.PerturbationCourse(id='pc1', observable=self.observable1, property = 'concentration',
-            values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1],
-            times_unit=self.time_units, comments='pc1 comment', evidence=self.evi1)
+            values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1], time_0=self.time_0,
+            times_unit=self.time_units, times_are_points=True, comments='pc1 comment', evidence=self.evi1)
         self.assertEqual(self.evi1.perturbation_courses, [pc1])
         pc2 = core.PerturbationCourse(id='pc2', observable=self.observable2, property = 'concentration',
-            values = [1.1, 0, 1], values_unit=self.unit, times = [0.4, 0.9],
-            times_unit=self.time_units, comments='pc2 comment', evidence=self.evi1)
+            values = [1.1, 0, 1], values_unit=self.unit, times = [0.4, 0.9], time_0=self.time_0,
+            times_unit=self.time_units, times_are_points=True, comments='pc2 comment', evidence=self.evi1)
         self.assertEqual(self.evi1.perturbation_courses, [pc1, pc2])
 
     def test_time_course_measurement(self):
         ### Positive tests
         tcm1 = core.TimeCourseMeasurement(id='tcm1', observable=self.observable1, property = 'concentration',
-            values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1],
-            times_unit=self.time_units, comments='tcm1 comment', evidence=self.evi1)
+            values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1], time_0=self.time_0,
+            times_unit=self.time_units, times_are_points=True, comments='tcm1 comment', evidence=self.evi1)
         self.assertEqual(self.evi1.time_course_measurements, [tcm1])
         tcm2 = core.TimeCourseMeasurement(id='tcm2', observable=self.observable2, property = 'concentration',
-            values = [1.1, 0, 1], values_unit=self.unit, times = [0.4, 0.9],
-            times_unit=self.time_units, comments='tcm2 comment', evidence=self.evi1)
+            values = [1.1, 0, 1], values_unit=self.unit, times = [0.4, 0.9], time_0=self.time_0,
+            times_unit=self.time_units, times_are_points=True, comments='tcm2 comment', evidence=self.evi1)
         self.assertEqual(self.evi1.time_course_measurements, [tcm1, tcm2])
 
 
@@ -1493,6 +1512,7 @@ class FloatValueTestCase(unittest.TestCase):
 
 
 class TimeCourseAttributeTestCase(unittest.TestCase):
+    
     def test_init(self):
         tc1 = core.TimeCourseAttribute([1, 1.1, 1])
 
@@ -1521,10 +1541,3 @@ class TimeCourseAttributeTestCase(unittest.TestCase):
         self.assertEqual(result[1], None)
         self.assertEqual(result[0][0].value, 1)
         self.assertEqual(result[0][1].value, 2.2)
-
-
-
-
-        # self.assertEqual(
-        #     core.TimeCourseAttribute().deserialize(value='[1]', objects=objects), [core.FloatValue(value=1), core.FloatValue(value=2)])
-
