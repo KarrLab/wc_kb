@@ -2004,16 +2004,33 @@ class TimeCourseAttribute(ManyToOneAttribute):
         """
         super(TimeCourseAttribute, self).__init__(FloatValue, description=description)
 
-    def serialize(self, participants, encoded=None):
+    def serialize(self, values, encoded=None):
         """ 
         """
-        # return str([part.value for part in participants])
-        pass
+        return str([val for val in values])
+        
 
-    def deserialize(self, value, objects, decoded=None):
+    def deserialize(self, value, decoded=None):
+        """ Deserialize value
+        Args:
+            value (:obj:`str`): String representation
+            decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
+        Returns:
+            :obj:`list` of :obj:`FloatValue`: list of FloatValues
         """
-        """
-        pass
+        if not value:
+            return ([])
+
+        lst = value.split(",")
+        lst[0] = lst[0].lstrip('[')
+        lst[-1] = lst[-1].rstrip(']')
+        lst1 = []
+        for item in lst:
+            item.strip(' ')
+            item = FloatValue(item)
+            lst1.append(item)
+        return lst1
+        
 
 
 class TimeCourse(KnowledgeBaseObject):
@@ -2046,7 +2063,7 @@ class PerturbationCourse(TimeCourse):
             observable(:obj:`Obervable`) observable
             property (:obj:`str`): property
             values (:obj:`list` of :obj:`float`): values
-            values_units (:obj:`Units`): unit of values
+            values_unit (:obj:`Units`): unit of values
             times (:obj:`list` of :obj:`float`): times
             times_unit (:obj:`Units`): unit of times
             comments(:obj:`str`): comments

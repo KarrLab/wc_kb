@@ -1417,7 +1417,7 @@ class TimeCourseTestCase(unittest.TestCase):
     time_0 = kbOnt['WC:cell_division']
     evi1 = core.Evidence(id='evi1')
 
-    test_time_course(self):
+    def test_time_course(self):
         
         tc1 = core.TimeCourse(id='tc1', observable=observable1, property = 'concentration',
                 values = [1, 1.1, 1], values_unit=unit, times = [0.5, 1],
@@ -1435,6 +1435,8 @@ class TimeCourseTestCase(unittest.TestCase):
 
         ### Simple negative tests
         # Todo: How can I enforce that attributes of Perturbation course are of a certain type?
+        # Why is this not implemented in other classes? E.g. I tried `ref1 = core.Reference(id=[1,2])`
+        # and did not get an error.
         # with self.assertRaises(ValueError):
         #     tc1 = core.Perturbation course(id=[1,2])
         #     tc1 = core.PerturbationCourse(observable=1)
@@ -1446,7 +1448,7 @@ class TimeCourseTestCase(unittest.TestCase):
         #     tc1 = core.PerturbationCourse(comments=1)
 
         ### More complex negative tests
-        #
+        # Tode: How can I get these tests passing?
         # with self.assertRaises(ValueError): # `value` and `time` must be of same length
         #     tc1 = core.PerturbationCourse(id='tc1', value=[1, 2], time=[1, 2, 3], observable=observable1)
         # with self.assertRaises(ValueError): # time[i] must be < time[i+1]
@@ -1477,11 +1479,20 @@ class TimeCourseTestCase(unittest.TestCase):
         self.assertEqual(evi1.test_time_course_measurements, [tcm1, tcm2])
 
 
-    class FloatValueTestCase(unittest.TestCase):
+class FloatValueTestCase(unittest.TestCase):
 
-        def test_float_value(self):
+    def test_float_value(self):
+        pass # Todo: continue here, then go to the next test class
 
-    class TimeCourseAttributeTestCase(unittest.TestCase):
+class TimeCourseAttributeTestCase(unittest.TestCase):
+    def test_init(self):
+        tc1 = core.TimeCourseAttribute([1, 1.1, 1])
 
-        def test_init(self):
-            tc1 = core.TimeCourseAttribute([1, 1.1, 1])
+    def test_serialize(self):    
+        self.assertEqual(
+            core.TimeCourseAttribute().serialize(values=[1, 2]), '[1, 2]')
+
+    def test_deserialize(self):    
+        self.assertEqual(
+            core.TimeCourseAttribute().deserialize(value='[1, 2]'), [core.FloatValue(1), core.FloatValue(2)])
+
