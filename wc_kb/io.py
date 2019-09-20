@@ -238,7 +238,7 @@ class Reader(obj_tables.io.Reader):
     #@wc_utils.cache.memoize(filename_args=[1, 2])
     def run(self, core_path,
             seq_path='', rewrite_seq_path=True, taxon='prokaryote',
-            models=None, ignore_missing_sheets=None, ignore_extra_sheets=None, ignore_sheet_order=None,
+            models=None, ignore_missing_models=None, ignore_extra_models=None, ignore_sheet_order=None,
             include_all_attributes=False, ignore_missing_attributes=None, ignore_extra_attributes=None, ignore_attribute_order=None,
             group_objects_by_model=True, validate=True, read_metadata=False):
 
@@ -253,9 +253,9 @@ class Reader(obj_tables.io.Reader):
                     taxon (:obj:`str`, optional): type of model order to use
                     models (:obj:`types.TypeType` or :obj:`list` of :obj:`types.TypeType`, optional): type
                         of object to read or list of types of objects to read
-                    ignore_missing_sheets (:obj:`bool`, optional): if :obj:`False`, report an error if a worksheet/
+                    ignore_missing_models (:obj:`bool`, optional): if :obj:`False`, report an error if a worksheet/
                         file is missing for one or more models
-                    ignore_extra_sheets (:obj:`bool`, optional): if :obj:`True` and all `models` are found, ignore
+                    ignore_extra_models (:obj:`bool`, optional): if :obj:`True` and all `models` are found, ignore
                         other worksheets or files
                     ignore_sheet_order (:obj:`bool`, optional): if :obj:`True`, do not require the sheets to be provided
                         in the canonical order
@@ -293,14 +293,14 @@ class Reader(obj_tables.io.Reader):
 
                 if read_metadata:
                     models = list(models) + [obj_tables.utils.DataRepoMetadata, obj_tables.utils.SchemaRepoMetadata]
-                    ignore_missing_sheets = True
+                    ignore_missing_models = True
                     ignore_sheet_order = True
 
                 config = wc_kb.config.core.get_config()['wc_kb']['io']
-                if ignore_missing_sheets is None:
-                    ignore_missing_sheets = not config['strict']
-                if ignore_extra_sheets is None:
-                    ignore_extra_sheets = not config['strict']
+                if ignore_missing_models is None:
+                    ignore_missing_models = not config['strict']
+                if ignore_extra_models is None:
+                    ignore_extra_models = not config['strict']
                 if ignore_sheet_order is None:
                     ignore_sheet_order = not config['strict']
                 if ignore_missing_attributes is None:
@@ -312,8 +312,8 @@ class Reader(obj_tables.io.Reader):
 
                 # read core objects from file
                 objects = super(Reader, self).run(core_path, models=models,
-                                                  ignore_missing_sheets=ignore_missing_sheets,
-                                                  ignore_extra_sheets=ignore_extra_sheets,
+                                                  ignore_missing_models=ignore_missing_models,
+                                                  ignore_extra_models=ignore_extra_models,
                                                   ignore_sheet_order=ignore_sheet_order,
                                                   include_all_attributes=include_all_attributes,
                                                   ignore_missing_attributes=ignore_missing_attributes,
