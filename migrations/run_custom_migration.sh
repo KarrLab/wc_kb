@@ -13,6 +13,9 @@ ${cmd} eu ~/Documents/h1_hesc/tests/code/fixtures/eukaryote_core.xlsx
 ${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_pneumoniae_kb.xlsx
 ${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_pneumoniae_kb_old_version.xlsx
 ${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/network\ model/mycoplasma_pneumoniae_kb_wFunctions.xlsx
+${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_kb_wProcess.xlsx
+${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasmaPneumonia_KB.xlsx
+${cmd} pro ~/Documents/mycoplasma_pneumoniae/tests/fixtures/kb/min_model_kb.xlsx
 
 # wc_model_gen
 ${cmd} pro ~/Documents/wc_model_gen/tests/fixtures/min_model_kb.xlsx
