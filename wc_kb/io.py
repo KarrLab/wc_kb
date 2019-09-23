@@ -71,6 +71,7 @@ EUKARYOTE_MODELS = (
     core.Experiment,
     core.Reference)
 
+
 class Writer(obj_tables.io.Writer):
     """ Write knowledge base to file(s) """
 
@@ -78,6 +79,7 @@ class Writer(obj_tables.io.Writer):
             seq_path=None, rewrite_seq_path=True, taxon='prokaryote',
             models=None, get_related=True, include_all_attributes=False, validate=True,
             title=None, description=None, keywords=None, version=None, language=None, creator=None,
+            write_schema=False, write_toc=True,
             extra_entries=0, data_repo_metadata=False, schema_package=None):
         """ Write knowledge base to file(s)
 
@@ -101,6 +103,8 @@ class Writer(obj_tables.io.Writer):
             version (:obj:`str`, optional): version
             language (:obj:`str`, optional): language
             creator (:obj:`str`, optional): creator
+            write_schema (:obj:`bool`, optional): if :obj:`True`, include additional worksheet with schema
+            write_toc (:obj:`bool`, optional): if :obj:`True`, include additional worksheet with table of contents
             extra_entries (:obj:`int`, optional): additional entries to display
             data_repo_metadata (:obj:`bool`, optional): if :obj:`True`, try to write metadata information
                 about the file's Git repo; the repo must be current with origin, except for the file
@@ -157,7 +161,8 @@ class Writer(obj_tables.io.Writer):
         super(Writer, self).run(core_path, knowledge_base, models=models, get_related=get_related,
                                 include_all_attributes=include_all_attributes, validate=validate,
                                 title=title, description=description, version=version, language=language,
-                                creator=creator, extra_entries=extra_entries,
+                                creator=creator,
+                                write_schema=write_schema, write_toc=write_toc, extra_entries=extra_entries,
                                 data_repo_metadata=data_repo_metadata, schema_package=schema_package)
 
         # reset sequence paths
@@ -235,150 +240,148 @@ class Writer(obj_tables.io.Writer):
 class Reader(obj_tables.io.Reader):
     """ Read knowledge base from file(s) """
 
-    #@wc_utils.cache.memoize(filename_args=[1, 2])
+    # @wc_utils.cache.memoize(filename_args=[1, 2])
     def run(self, core_path,
             seq_path='', rewrite_seq_path=True, taxon='prokaryote',
             models=None, ignore_missing_models=None, ignore_extra_models=None, ignore_sheet_order=None,
             include_all_attributes=False, ignore_missing_attributes=None, ignore_extra_attributes=None, ignore_attribute_order=None,
             group_objects_by_model=True, validate=True, read_metadata=False):
+        """ Read knowledge base from file(s)
 
+        Args:
+            core_path (:obj:`str`): path to core knowledge base
+            seq_path (:obj:`str`): path to genome sequence
+            rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the knowledge base
+                will be updated to the provided seq_path
+            taxon (:obj:`str`, optional): type of model order to use
+            models (:obj:`types.TypeType` or :obj:`list` of :obj:`types.TypeType`, optional): type
+                of object to read or list of types of objects to read
+            ignore_missing_models (:obj:`bool`, optional): if :obj:`False`, report an error if a worksheet/
+                file is missing for one or more models
+            ignore_extra_models (:obj:`bool`, optional): if :obj:`True` and all `models` are found, ignore
+                other worksheets or files
+            ignore_sheet_order (:obj:`bool`, optional): if :obj:`True`, do not require the sheets to be provided
+                in the canonical order
+            include_all_attributes (:obj:`bool`, optional): if :obj:`True`, export all attributes including those
+                not explictly included in `Model.Meta.attribute_order`
+            ignore_missing_attributes (:obj:`bool`, optional): if :obj:`False`, report an error if a
+                worksheet/file doesn't contain all of attributes in a model in `models`
+            ignore_extra_attributes (:obj:`bool`, optional): if :obj:`True`, do not report errors if
+                attributes in the data are not in the model
+            ignore_attribute_order (:obj:`bool`): if :obj:`True`, do not require the attributes to be provided
+                in the canonical order
+            group_objects_by_model (:obj:`bool`, optional): if :obj:`True`, group decoded objects by their
+                types
+            validate (:obj:`bool`, optional): if :obj:`True`, validate the data
+            read_metadata (:obj:`bool`, optional): if :obj:`True`, read metadata models
 
-                """ Read knowledge base from file(s)
+        Returns:
+            :obj:`dict`: model objects grouped by `obj_tables.Model` class
 
-                Args:
-                    core_path (:obj:`str`): path to core knowledge base
-                    seq_path (:obj:`str`): path to genome sequence
-                    rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the knowledge base
-                        will be updated to the provided seq_path
-                    taxon (:obj:`str`, optional): type of model order to use
-                    models (:obj:`types.TypeType` or :obj:`list` of :obj:`types.TypeType`, optional): type
-                        of object to read or list of types of objects to read
-                    ignore_missing_models (:obj:`bool`, optional): if :obj:`False`, report an error if a worksheet/
-                        file is missing for one or more models
-                    ignore_extra_models (:obj:`bool`, optional): if :obj:`True` and all `models` are found, ignore
-                        other worksheets or files
-                    ignore_sheet_order (:obj:`bool`, optional): if :obj:`True`, do not require the sheets to be provided
-                        in the canonical order
-                    include_all_attributes (:obj:`bool`, optional): if :obj:`True`, export all attributes including those
-                        not explictly included in `Model.Meta.attribute_order`
-                    ignore_missing_attributes (:obj:`bool`, optional): if :obj:`False`, report an error if a
-                        worksheet/file doesn't contain all of attributes in a model in `models`
-                    ignore_extra_attributes (:obj:`bool`, optional): if :obj:`True`, do not report errors if
-                        attributes in the data are not in the model
-                    ignore_attribute_order (:obj:`bool`): if :obj:`True`, do not require the attributes to be provided
-                        in the canonical order
-                    group_objects_by_model (:obj:`bool`, optional): if :obj:`True`, group decoded objects by their
-                        types
-                    validate (:obj:`bool`, optional): if :obj:`True`, validate the data
-                    read_metadata (:obj:`bool`, optional): if :obj:`True`, read metadata models
+        Raises:
+            :obj:`ValueError`: if :obj:`core_path`
 
-                Returns:
-                    :obj:`dict`: model objects grouped by `obj_tables.Model` class
+                * Defines multiple knowledge bases or cells
+                * Represents objects that cannot be linked to a knowledge base and/or cell
+        """
+        if issubclass(self.get_reader(core_path), obj_tables.io.WorkbookReader):
+            Writer.validate_implicit_relationships()
 
-                Raises:
-                    :obj:`ValueError`: if :obj:`core_path`
+        if taxon == 'prokaryote':
+            models = PROKARYOTE_MODELS
+        elif taxon == 'eukaryote':
+            models = EUKARYOTE_MODELS
+        else:
+            raise ValueError('Unsupported taxon "{}"'.format(taxon))
 
-                        * Defines multiple knowledge bases or cells
-                        * Represents objects that cannot be linked to a knowledge base and/or cell
-                """
-                if issubclass(self.get_reader(core_path), obj_tables.io.WorkbookReader):
-                    Writer.validate_implicit_relationships()
+        if read_metadata:
+            models = list(models) + [obj_tables.utils.DataRepoMetadata, obj_tables.utils.SchemaRepoMetadata]
+            ignore_missing_models = True
+            ignore_sheet_order = True
 
-                if taxon == 'prokaryote':
-                    models = PROKARYOTE_MODELS
-                elif taxon == 'eukaryote':
-                    models = EUKARYOTE_MODELS
-                else:
-                    raise ValueError('Unsupported taxon "{}"'.format(taxon))
+        config = wc_kb.config.core.get_config()['wc_kb']['io']
+        if ignore_missing_models is None:
+            ignore_missing_models = not config['strict']
+        if ignore_extra_models is None:
+            ignore_extra_models = not config['strict']
+        if ignore_sheet_order is None:
+            ignore_sheet_order = not config['strict']
+        if ignore_missing_attributes is None:
+            ignore_missing_attributes = not config['strict']
+        if ignore_extra_attributes is None:
+            ignore_extra_attributes = not config['strict']
+        if ignore_attribute_order is None:
+            ignore_attribute_order = not config['strict']
 
-                if read_metadata:
-                    models = list(models) + [obj_tables.utils.DataRepoMetadata, obj_tables.utils.SchemaRepoMetadata]
-                    ignore_missing_models = True
-                    ignore_sheet_order = True
+        # read core objects from file
+        objects = super(Reader, self).run(core_path, models=models,
+                                          ignore_missing_models=ignore_missing_models,
+                                          ignore_extra_models=ignore_extra_models,
+                                          ignore_sheet_order=ignore_sheet_order,
+                                          include_all_attributes=include_all_attributes,
+                                          ignore_missing_attributes=ignore_missing_attributes,
+                                          ignore_extra_attributes=ignore_extra_attributes,
+                                          ignore_attribute_order=ignore_attribute_order,
+                                          group_objects_by_model=group_objects_by_model,
+                                          validate=False)
 
-                config = wc_kb.config.core.get_config()['wc_kb']['io']
-                if ignore_missing_models is None:
-                    ignore_missing_models = not config['strict']
-                if ignore_extra_models is None:
-                    ignore_extra_models = not config['strict']
-                if ignore_sheet_order is None:
-                    ignore_sheet_order = not config['strict']
-                if ignore_missing_attributes is None:
-                    ignore_missing_attributes = not config['strict']
-                if ignore_extra_attributes is None:
-                    ignore_extra_attributes = not config['strict']
-                if ignore_attribute_order is None:
-                    ignore_attribute_order = not config['strict']
+        # Check if sequence pathes are consistent
+        for idx, chromosome in enumerate(objects[wc_kb.core.DnaSpeciesType]):
 
-                # read core objects from file
-                objects = super(Reader, self).run(core_path, models=models,
-                                                  ignore_missing_models=ignore_missing_models,
-                                                  ignore_extra_models=ignore_extra_models,
-                                                  ignore_sheet_order=ignore_sheet_order,
-                                                  include_all_attributes=include_all_attributes,
-                                                  ignore_missing_attributes=ignore_missing_attributes,
-                                                  ignore_extra_attributes=ignore_extra_attributes,
-                                                  ignore_attribute_order=ignore_attribute_order,
-                                                  group_objects_by_model=group_objects_by_model,
-                                                  validate=False)
+            if (chromosome.sequence_path is None) or (chromosome.sequence_path == ''):
 
-                # Check if sequence pathes are consistent
-                for idx, chromosome in enumerate(objects[wc_kb.core.DnaSpeciesType]):
+                chromosome.sequence_path = seq_path  # Set seq_path to be what is provided to wc_kb.io.Reader()
+                if idx != 0:
+                    warnings.warn('Same sequence file is associated with mulitple chromosomes, '
+                                  'make sure seq file is formatted accordingly!')
 
-                    if (chromosome.sequence_path is None) or (chromosome.sequence_path==''):
+            else:
 
-                        chromosome.sequence_path = seq_path # Set seq_path to be what is provided to wc_kb.io.Reader()
-                        if idx !=0:
-                            warnings.warn('Same sequence file is associated with mulitple chromosomes, make sure seq file is formatted accordingly!')
-
-                    else:
-
-                        if chromosome.sequence_path != seq_path:
-                            warnings.warn('Sequence path ({}) provided in KB file ({}) is different from \
+                if chromosome.sequence_path != seq_path:
+                    warnings.warn('Sequence path ({}) provided in KB file ({}) is different from \
                                            seq_path provided to wc_kb.io.Reader ({}).'.format(chromosome.sequence_path, core_path, seq_path))
 
+        # check that file has 1 knowledge base
+        if len(objects[core.KnowledgeBase]) != 1:
+            raise ValueError('"{}" should define one knowledge base'.format(core_path))
+        kb = objects[core.KnowledgeBase][0]
 
-                # check that file has 1 knowledge base
-                if len(objects[core.KnowledgeBase]) != 1:
-                    raise ValueError('"{}" should define one knowledge base'.format(core_path))
-                kb = objects[core.KnowledgeBase][0]
+        # check that file has 0 or 1 cells
+        if not objects[core.Cell]:
+            cell = None
+        elif len(objects[core.Cell]) == 1:
+            cell = objects[core.Cell][0]
+        else:
+            raise ValueError('"{}" should define zero or one cells'.format(core_path))
 
-                # check that file has 0 or 1 cells
-                if not objects[core.Cell]:
-                    cell = None
-                elif len(objects[core.Cell]) == 1:
-                    cell = objects[core.Cell][0]
-                else:
-                    raise ValueError('"{}" should define zero or one cells'.format(core_path))
+        # add implict relationships to `KnowledgeBase` and `Cell`
+        kb.cell = cell
 
-                # add implict relationships to `KnowledgeBase` and `Cell`
-                kb.cell = cell
+        for model, model_objects in objects.items():
+            for attr in model.Meta.attributes.values():
+                if isinstance(attr, obj_tables.RelatedAttribute) and attr.related_class == core.Cell:
+                    for model_obj in model_objects:
+                        setattr(model_obj, attr.name, cell)
 
-                for model, model_objects in objects.items():
-                    for attr in model.Meta.attributes.values():
-                        if isinstance(attr, obj_tables.RelatedAttribute) and attr.related_class == core.Cell:
-                            for model_obj in model_objects:
-                                setattr(model_obj, attr.name, cell)
+        # link path to genome sequence to the DNA species types if rewrite_seq_path is True
+        if rewrite_seq_path:
+            for dna in Bio.SeqIO.parse(seq_path, "fasta"):
+                species_type = kb.cell.species_types.get_one(id=dna.id)
+                species_type.sequence_path = seq_path
 
-                # link path to genome sequence to the DNA species types if rewrite_seq_path is True
-                if rewrite_seq_path:
-                    for dna in Bio.SeqIO.parse(seq_path, "fasta"):
-                        species_type = kb.cell.species_types.get_one(id=dna.id)
-                        species_type.sequence_path = seq_path
+        # validate
+        config = wc_kb.config.core.get_config()['wc_kb']['io']
+        if (validate is not None and validate) or (validate is None and config['validate']):
+            objs = []
+            for cls_objs in objects.values():
+                objs.extend(cls_objs)
 
-                # validate
-                config = wc_kb.config.core.get_config()['wc_kb']['io']
-                if (validate is not None and validate) or (validate is None and config['validate']):
-                    objs = []
-                    for cls_objs in objects.values():
-                        objs.extend(cls_objs)
+            errors = obj_tables.Validator().validate(objs)
+            if errors:
+                raise ValueError(
+                    indent_forest(['The knowledge base cannot be loaded because it fails to validate:', [errors]]))
 
-                    errors = obj_tables.Validator().validate(objs)
-                    if errors:
-                        raise ValueError(
-                            indent_forest(['The knowledge base cannot be loaded because it fails to validate:', [errors]]))
-
-                return objects
+        return objects
 
 
 def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True):
@@ -400,12 +403,15 @@ def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True)
     Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path, data_repo_metadata=False)
 
 
-def create_template(core_path, seq_path, extra_entries=10, data_repo_metadata=True):
+def create_template(core_path, seq_path, write_schema=False, write_toc=True,
+                    extra_entries=10, data_repo_metadata=True):
     """ Create file with knowledge base template, including row and column headings
 
     Args:
         core_path (:obj:`str`): path to save template of core knowledge base
         seq_path (:obj:`str`): path to save genome sequence
+        write_schema (:obj:`bool`, optional): if :obj:`True`, include additional worksheet with schema
+        write_toc (:obj:`bool`, optional): if :obj:`True`, include additional worksheet with table of contents
         extra_entries (:obj:`int`, optional): additional entries to display
         data_repo_metadata (:obj:`bool`, optional): if :obj:`True`, try to write metadata information
             about the file's Git repo
@@ -413,5 +419,6 @@ def create_template(core_path, seq_path, extra_entries=10, data_repo_metadata=Tr
     kb = core.KnowledgeBase(
         id='template', name='Template', version=wc_kb.__version__)
     Writer().run(core_path, kb, seq_path=seq_path,
+                 write_schema=write_schema, write_toc=write_toc,
                  extra_entries=extra_entries,
                  data_repo_metadata=data_repo_metadata)
