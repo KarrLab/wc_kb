@@ -41,6 +41,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
                                   none=True)
 
     class Meta(obj_tables.Model.Meta):
+        verbose_name = 'RNA'
         verbose_name_plural = 'RNAs'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'start', 'end', 'proteins', 'identifiers', 'references', 'comments')
 
@@ -154,6 +155,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_tables.Model.Meta):
         verbose_name = 'Protein'
+        verbose_name_plural = 'Proteins'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'identifiers', 'references', 'comments')
 
     def get_seq(self, cds=True):
@@ -269,7 +271,8 @@ class TranscriptionUnitLocus(core.PolymerLocus):
     #                              none=True)
 
     class Meta(obj_tables.Model.Meta):
-        verbose_name = 'Transcription units'
+        verbose_name = 'Transcription unit'
+        verbose_name_plural = 'Transcription units'
         attribute_order = ('id', 'name', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
                            'rnas', 'genes', 'identifiers', 'references', 'comments')
 
@@ -319,5 +322,6 @@ class GeneLocus(core.PolymerLocus):
 
     class Meta(obj_tables.Model.Meta):
         verbose_name = 'Gene'
+        verbose_name_plural = 'Genes'
         attribute_order = ('id', 'name', 'synonyms', 'symbol', 'polymer',  'start', 'end', 'cog', 'homologs',
                            'is_essential', 'proteins', 'evidence', 'identifiers', 'references', 'comments')

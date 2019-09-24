@@ -208,6 +208,7 @@ class GeneLocus(core.PolymerLocus):
 
     class Meta(obj_tables.Model.Meta):
         verbose_name = 'Gene'
+        verbose_name_plural = 'Genes'
         attribute_order = ('id', 'name', 'synonyms', 'symbol', 'homologs', 'polymer', 'strand', 'start',
                            'end', 'identifiers', 'references', 'comments')
 
@@ -229,7 +230,7 @@ class TranscriptionFactorRegulation(obj_tables.Model):
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('transcription_factor', 'direction')
         frozen_columns = 1
-        table_format = obj_tables.TabularOrientation.cell
+        table_format = obj_tables.TableFormat.cell
         ordering = ('transcription_factor', 'direction')
 
     @staticmethod
@@ -365,7 +366,7 @@ class GenericLocus(obj_tables.Model):
 
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('start', 'end')
-        table_format = obj_tables.TabularOrientation.cell
+        table_format = obj_tables.TableFormat.cell
         ordering = ('start', 'end')
 
     @staticmethod
@@ -412,6 +413,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_tables.Model.Meta):
         verbose_name = 'Transcript'
+        verbose_name_plural = 'Transcripts'
         attribute_order = ('id', 'name', 'gene', 'exons', 'type', 'identifiers', 'references', 'comments')
 
     def get_seq(self):
@@ -508,6 +510,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     class Meta(obj_tables.Model.Meta):
         verbose_name = 'Protein'
+        verbose_name_plural = 'Proteins'
         attribute_order = ('id', 'name', 'uniprot', 'transcript', 'coding_regions', 
                            'identifiers', 'references', 'comments')
 
