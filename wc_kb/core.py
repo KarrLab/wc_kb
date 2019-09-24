@@ -1973,345 +1973,153 @@ class Evidence(KnowledgeBaseObject):
             'identifiers', 'references', 'experiment', 'comments')
 
 
-class FloatValue(obj_tables.Model):
-    """ A float value
-    Attributes:
-        value (:obj:`float`): value
-    """
-    value = FloatAttribute()
-
-    # class Meta(obj_tables.Model.Meta):
-    #     attribute_order = ('species', 'coefficient')
-    #     frozen_columns = 1
-    #     tabular_orientation = TabularOrientation.cell
-    #     ordering = ('species',)
+from obj_tables import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
+                       RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
+                       OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
+                       InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
+from wc_utils.util.units import unit_registry
+import obj_tables
+import pint
 
 
 class TimeCourseAttribute(ManyToOneAttribute):
-    """ Reaction participants """
-
     def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
             related_name (:obj:`str`, optional): name of related attribute on `related_class`
             verbose_name (:obj:`str`, optional): verbose name
             verbose_related_name (:obj:`str`, optional): verbose related name
-            help (:obj:`str`, optional): help message
+            description (:obj:`str`, optional): description
         """
-        super(TimeCourseAttribute, self).__init__(FloatValue, description=description)
+        super(TimeCourseAttribute, self).__init__('TimeCourseMeasurement', related_name=related_name,
+                                                           verbose_name=verbose_name,
+                                                           verbose_related_name=verbose_related_name,
+                                                           description=description)
 
-    def serialize(self, values, encoded=None):
-        """ 
+    def serialize(self, time_course, encoded=None):
+        """ Serialize related object
+        Args:
+            time_course (:obj:`list` of :obj:`TimeCourse`): Python representation of time course
+            encoded (:obj:`dict`, optional): dictionary of objects that have already been encoded
+        Returns:
+            :obj:`str`: simple Python representation
         """
-        return str([val for val in values])
-        
+        if not time_course:
+            return ''
+        else:
+            return ', '.join(measurement.serialize() for measurement in time_course)
 
     def deserialize(self, value, objects, decoded=None):
         """ Deserialize value
         Args:
             value (:obj:`str`): String representation
+            objects (:obj:`dict`): dictionary of objects, grouped by model
             decoded (:obj:`dict`, optional): dictionary of objects that have already been decoded
         Returns:
-            :obj:`list` of :obj:`FloatValue`: list of FloatValues
-        """
+            :obj:`tuple` of :obj:`list` of :obj:`TimeCourseMeasurement`, :obj:`InvalidAttribute` or :obj:`None`: :obj:`tuple` of cleaned value
+                and cleaning error
+        """        
         if not value:
             return ([], None)
 
-        lst = value.split(",")
-        lst[0] = lst[0].lstrip('[')
-        lst[-1] = lst[-1].rstrip(']')
+        local_pat = r'([-+]?\d+[\.]?\d+\s\w+)'
+        global_pat = r'({}) *\: *({})'.format(local_pat, local_pat)
+        list_pat = global_pat + r'( *, *{})*'.format(global_pat) 
+
+        if not re.match(list_pat, value, flags=re.I):
+            return (None, InvalidAttribute(self, ['Incorrectly formatted list of time course measurements: {}'.format(value)]))
+
         objs = []
-        for obj in lst:
-            val = float(obj.strip(' '))
+        errors = []        
+        for pat_match in re.findall(global_pat, value, flags=re.I):
+            
+            time = float(pat_match[0].split(' ')[0])
+            time_unit = pat_match[0].split(' ')[1]
+            try:
+                unit_value = unit_registry.parse_units(time_unit)
+            except pint.UndefinedUnitError:
+                errors.append(InvalidAttribute(self, ['Invalid time unit {}'.format(time_unit)]))
+            
+            value = float(pat_match[2].split(' ')[0])
+            value_unit = pat_match[2].split(' ')[1]            
+            try:
+                unit_value = unit_registry.parse_units(value_unit)
+            except pint.UndefinedUnitError:
+                errors.append(InvalidAttribute(self, ['Invalid value unit {}'.format(value_unit)]))
+
             if self.related_class not in objects:
                 objects[self.related_class] = {}
-            serialized_value = str(val)
-     
+            serialized_value = self.related_class()._serialize(
+                time=float(time), time_unit=unit_registry.parse_units(time_unit),
+                value=float(value), value_unit=unit_registry.parse_units(value_unit))
             if serialized_value in objects[self.related_class]:
                 obj = objects[self.related_class][serialized_value]
             else:
-                obj = self.related_class(value=val)
+                obj = self.related_class(time=float(time), time_unit=unit_registry.parse_units(time_unit),
+                    value=float(value), value_unit=unit_registry.parse_units(value_unit))
                 objects[self.related_class][serialized_value] = obj
             objs.append(obj)
+        
+        if errors:
+            return (None, InvalidAttribute(self, errors))
         return (objs, None)
         
 
+class TimeCourseMeasurement(obj_tables.Model):
+    time = FloatAttribute() # this already exist in obj_tables
+    time_unit = obj_tables.units.UnitAttribute(unit_registry, choices=(unit_registry.parse_units('s'),),
+                    default=unit_registry.parse_units('s'))
+    value = FloatAttribute() # this already exist in obj_tables
+    value_unit = obj_tables.units.UnitAttribute(unit_registry, none=True)   
+    
+
+    class Meta(obj_tables.Model.Meta):
+        attribute_order = ('time', 'time_unit', 'value', 'value_unit')
+        table_format = TabularOrientation.cell
+        ordering = ('time', 'time_unit', 'value', 'value_unit')
+
+    @staticmethod
+    def _serialize(namespace, id):
+        """ Generate string representation
+        
+        Args:
+            value (:obj:`float`): values
+            value_units (:obj:`Units`): unit of value
+            time (:obj:`float`): time
+            time_unit (:obj:`Units`): unit of time
+        
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return '{} {} : {} {}'.format(time, time_unit, value, value_unit)
+
+    def serialize(self):
+        """ Generate string representation
+        Returns:
+            :obj:`str`: value of primary attribute
+        """
+        return self._serialize(self.time, self.time_unit, self.value, self.value_unit)
+
+
+class PerturbationCourse(KnowledgeBaseObject):
+    """
+        observable (:obj:`Observable`): observable 
+        time_course (:obj:`list` of :obj:`TimeCourse`): time course
+        
+    """
+    observable = ManyToOneAttribute('Observable', related_name='perturbation_course_measurements')
+    time_course = TimeCourseAttribute('TimeCourseMeasurement', related_name='perturbation_course')
+
 
 class TimeCourse(KnowledgeBaseObject):
-    """ Represents a variable that changes over time
-
-        Attributes:
-            id (:obj:`str`): identifier
-            observable(:obj:`Obervable`) observable
-            property (:obj:`str`): property
-            values (:obj:`list` of :obj:`float`): values
-            values_units (:obj:`Units`): unit of values
-            time_0 (:obj:`pronto): optional ontology term corresponding to time=0
-            times (:obj:`list` of :obj:`float`): times
-            times_unit (:obj:`Units`): unit of times
-            times_are_points (:obj:`bool`): indicates whether an enty in time is point-like or bin-like
-                    with center at the indicated time.
-            comments(:obj:`str`): comments
     """
-    observable =  obj_tables.ManyToOneAttribute(Observable, related_name='time_courses') # Todo: change this to wc_rules pattern or similar at some point
-    property = obj_tables.StringAttribute()
-    values = TimeCourseAttribute()
-    values_unit = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    time_0 = obj_tables.ontology.OntologyAttribute(kbOnt,
-        terms=kbOnt['WC:time'].rchildren(), none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
-    times = TimeCourseAttribute()
-    times_unit = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    times_are_points = BooleanAttribute()
-    comments = obj_tables.LongStringAttribute()
-    
-
-class PerturbationCourse(TimeCourse):
-    """ Represents a variable that changes over time
-
-        Attributes:
-            id (:obj:`str`): identifier
-            observable(:obj:`Obervable`) observable
-            property (:obj:`str`): property
-            values (:obj:`list` of :obj:`float`): values
-            values_unit (:obj:`Units`): unit of values
-            times (:obj:`list` of :obj:`float`): times
-            times_unit (:obj:`Units`): unit of times
-            comments(:obj:`str`): comments
+        observable (:obj:`Observable`): observable 
+        time_course (:obj:`list` of :obj:`TimeCourse`): time course
+        
     """
-    evidence = obj_tables.ManyToOneAttribute('Evidence', related_name='perturbation_courses')
+    observable = ManyToOneAttribute('Observable', related_name='perturbation_course_measurements')
+    time_course = TimeCourseAttribute('TimeCourseMeasurement', related_name='time_course')        
 
-
-class TimeCourseMeasurement(TimeCourse):
-    """ Represents a variable that changes over time
-
-        Attributes:
-            id (:obj:`str`): identifier
-            observable(:obj:`Obervable`) observable
-            property (:obj:`str`): property
-            values (:obj:`list` of :obj:`float`): values
-            values_units (:obj:`Units`): unit of values
-            times (:obj:`list` of :obj:`float`): times
-            times_unit (:obj:`Units`): unit of times
-            comments(:obj:`str`): comments
-    """
-    evidence = obj_tables.ManyToOneAttribute('Evidence', related_name='time_course_measurements')
-
-
-'''
-class Evidence(KnowledgeBaseObject):
-    """ Represents the measurement / observation of a property
-
-        Attributes:
-            id (:obj:`str`): identifier
-            cell (:obj:`Cell`): cell
-            object (:obj:`str`): object
-        #     observable (:obj:`Observable`): observable
-            property (:obj:`str`): property
-            value (:obj:`float`): value
-            units (:obj:`Units`): units
-        #    value_uncertainty (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other if combined errors affected the measurement)
-        #    controlled_variables (:obj:`list` of :obj:`ControlledVariable`): controlled variables / perturbation course 
-        #    time (:obj:`list` of :obj:`float`): time points of measurement / observation
-        #    time_units (:obj:`Units`): time units
-        #    time_0 (:obj:`pronto): optional ontology term corresponding to time=0
-        #    time_bin (:obj:`tuple` of :obj: `method`): pdf in np.random (to be convolved with each other if combined errors affected the measurement)
-            identifiers(:obj:`list` of :obj:`Identifier`): identifiers
-            references (:obj:`list` of :obj:`Reference`): references
-            experiment (:obj:`Experiment`): experiment
-            comments(:obj:`str`): comments
-   
-    cell = obj_tables.ManyToOneAttribute('Cell', related_name='evidence')
-    object   =  obj_tables.StringAttribute()
-    property = obj_tables.StringAttribute()
-    value = obj_tables.FloatAttribute()
-    units = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    identifiers = IdentifierAttribute(related_name='evidence')
-    references = obj_tables.ManyToManyAttribute('Reference', related_name='evidence')
-    experiment = obj_tables.ManyToOneAttribute('Experiment', related_name ='evidence')
-    comments = obj_tables.LongStringAttribute()
-
-    class Meta(obj_tables.Model.Meta):
-        attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
-            'value_uncertainty', 'controlled_variables', 'time', 'time_units', 'time_0', 'time_bin', 
-            'identifiers', 'references', 'experiment', 'comments')
-
-
-class ControlledVariable(KnowledgeBaseObject): # This class is identical to the class `Evidence` except that the `controlled_variable` attribute is replaced with the related_attribute `evidence`.
-    # Todo: How to encfore consistency between instances of `ControlledVariable` and instances of `Evidence` wrt several of their attributes? Just by deleting these attributes from `ControlledVariables`?
-
-    """ Represents variables / perturbation courses that are controlled during an experiment.
-
-        Attributes:
-            id (:obj:`str`): identifier
-            cell (:obj:`Cell`): cell
-            object (:obj:`str`): object
-            observable (:obj:`Observable`): observable
-            property (:obj:`str`): property
-            value (:obj:`float`): value
-            units (:obj:`Units`): units
-            value_uncertainty (:obj:`tuple` of :obj: `method`): a (tuple of) pdf in np.random (to be convolved with each other if combined errors affected the measurement)
-            time (:obj:`list` of :obj:`float`): time points of measurement / observation
-            time_units (:obj:`Units`): time units
-            time_0 (:obj:`pronto): optional ontology term corresponding to time=0
-            time_bin (:obj:`tuple` of :obj: `method`): pdf in np.random (to be convolved with each other if combined errors affected the measurement)
-            identifiers(:obj:`list` of :obj:`Identifier`): identifiers
-            references (:obj:`list` of :obj:`Reference`): references
-            experiment (:obj:`Experiment`): experiment
-            comments(:obj:`str`): comments
-
-        Related attributes:
-            evidence (:obj:`list` of :obj: `Evidence`): list of evidence
-    """
-
-    cell = obj_tables.ManyToOneAttribute('Cell', related_name='controlled_variable')
-    object   =  obj_tables.StringAttribute()
-    observable =  obj_tables.ManyToOneAttribute(Observable, related_name='controlled_variable') # Todo: change this to wc_rules pattern or similar at some point
-    property = obj_tables.StringAttribute()
-    value = obj_tables.FloatAttribute()
-    units = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    value_uncertainty = obj_tables.FloatAttribute() # Todo: is float attribute the right thing here?    
-    time = obj_tables.FloatAttribute() 
-    time_units = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
-    time_0 = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                                     terms=kbOnt['WC:time'].rchildren(),
-                                                     none=True) # Todo: how to avoid allowing ambiguous children of `WC:time`, such as `WC:perturbation`
-    time_bin = obj_tables.FloatAttribute() # Todo: is float attribute the right thing here?
-    identifiers = IdentifierAttribute(related_name='controlled_variable')
-    references = obj_tables.ManyToManyAttribute('Reference', related_name='controlled_variable')
-    experiment = obj_tables.ManyToOneAttribute('Experiment', related_name ='controlled_variable')
-    comments = obj_tables.LongStringAttribute()
-
-    class Meta(obj_tables.Model.Meta):
-        attribute_order = ('id', 'cell', 'object', 'observable', 'property', 'value', 'units', 
-            'value_uncertainty', 'time', 'time_units', 'time_0', 'time_bin', 
-            'identifiers', 'references', 'experiment', 'comments')
-        
-
-class ProbabilityDensityFunction(object):
-    # Todo: Think how to rewrite this class such that it inherits from `KnowledgeBaseObject` and uses obj_tables.____Attributes() to define attributes.
-
-    """Probability density function for error characterisation of values
-    
-    Attributes:
-        pdf_type (:obj:`method`): np.random method
-        kwargs (:obj:`dict): dict with keyword arguments to be passed to np.random method
-        multiplicative (:obj:`bool`): ProbabilityDensityFunction is to be multiplied with value if `True`, added if `False`.
-    """
-    
-    def __init__(self, pdf_type, kwargs, multiplicative):
-        """
-        Args:
-            pdf_type (:obj:`method`): np.random method
-            kwargs (:obj:`dict): dict with keyword arguments to be passed to np.random method
-            multiplicative (:obj:`bool`): ProbabilityDensityFunction is to be multiplied with value if `True`, added if `False`.
-        """
-
-        self.pdf_type = pdf_type
-        self.kwargs = kwargs
-        self.multiplicative = multiplicative
-        # self.args = args
-        self.validate()
-    class Meta(obj_tables.Model.Meta):
-        attribute_order = ('id', 'cell', 'object', 'property', 'value', 'units', 'experiment', 'identifiers', 'references', 'comments')
-
-    @property
-    def pdf_type(self):
-        """ Get the pdf_type
-        
-        Returns:
-            :obj:`method`: np.random method
-        """
-        return self._pdf_type
-    
-    @pdf_type.setter
-    def pdf_type(self, value):
-        """ Set pdf_type
-        
-        Args:
-            value (:obj:`method`): np.random method
-        
-        Raises:
-            ValueError: if pdf_type is not np.random method
-        """
-        if not callable(value) or not re.search(' of mtrand.RandomState object at ', str(value)):
-            raise ValueError('First argument `pdf_type` has to be a `np.random` method')
-        self._pdf_type = value
-
-    @property
-    def kwargs(self):
-        """Get the kwargs
-        
-        Returns:
-            :obj:`dict: kwargs
-        """
-        return self._kwargs
-
-    @kwargs.setter
-    def kwargs(self, value):
-        """Set the kwargs
-        
-        Args:
-            value (:obj:`dict`): keyword arguments to be passed to np.random method
-        
-        Raises:
-            ValueError: if kwargs is not a `dict`
-        """
-        if not isinstance(value, dict):
-            raise ValueError('`kwargs` must be of type `dict`')
-        self._kwargs = value
-
-    @property
-    def multiplicative(self):
-        """ Get multiplicative
-        
-        Returns:
-            :obj:`bool`: multiplicative
-        """
-        return self._multiplicative
-    
-    @multiplicative.setter
-    def multiplicative(self, value):
-        """ Set multiplicative
-        
-        Args:
-            value (:obj:`bool`): multiplicative
-        
-        Raises:
-            ValueError: if multiplicative not of type `bool`
-        """
-        if not isinstance(value, bool):
-            raise ValueError('multiplicative must be of type `bool`.')
-        self._multiplicative = value
-
-    # @property
-    # def args(self):
-    #     """Get args
-        
-    #     Returns:
-    #         :obj:`tuple`: args
-    #     """
-    #     return self._args
-    
-    # @args.setter
-    # def args(self, value):
-    #     """Set args
-        
-    #     Args:
-    #         value (:obj:`tuple`): args
-        
-    #     Raises:
-    #         ValueError: if not tuple
-    #     """
-    #     if not isinstance(value, tuple):
-    #         raise ValueError('`args` must be a tuple')
-    #     self._args = value
-
-
-    def validate(self):
-        """ Checks if pdf_type and kwargs define a probability density function
-        """
-        val = self.pdf_type(**self.kwargs)
-'''
 
 class Experiment(KnowledgeBaseObject):
     """ Represents an experiment in which a property was measured
