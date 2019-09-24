@@ -7,7 +7,7 @@
 :License: MIT
 """
 
-from obj_model import utils
+from obj_tables import utils
 from test.support import EnvironmentVarGuard
 from wc_kb import core, prokaryote
 from wc_kb import io
@@ -15,7 +15,7 @@ from wc_utils.util.git import GitHubRepoForTests
 import Bio.Seq
 import Bio.SeqRecord
 import filecmp
-import obj_model.io
+import obj_tables.io
 import os
 import random
 import shutil
@@ -198,8 +198,8 @@ class TestIO(unittest.TestCase):
 
         wb = wc_utils.workbook.io.read(core_path)
 
-        row = wb['KB'].pop(0)
-        wb['KB'].insert(1, row)
+        row = wb['!KB'].pop(4)
+        wb['!KB'].insert(5, row)
         wc_utils.workbook.io.write(core_path, wb)
 
         reader = io.Reader()
@@ -215,7 +215,7 @@ class TestIO(unittest.TestCase):
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -224,7 +224,7 @@ class TestIO(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
             io.Reader().run(core_path, seq_path=seq_path)
 
-        obj_model.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
         with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
             io.Reader().run(core_path, seq_path=seq_path)
 
@@ -233,7 +233,7 @@ class TestIO(unittest.TestCase):
         kb2 = core.KnowledgeBase(id='kb2', name='kb2', version='0.0.1')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb1, kb2], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [kb1, kb2], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -247,7 +247,7 @@ class TestIO(unittest.TestCase):
         dna = core.DnaSpeciesType(id='chr')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, dna], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [kb, dna], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -261,7 +261,7 @@ class TestIO(unittest.TestCase):
         cell2 = core.Cell(id='cell2', name='cell2')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_model.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -303,8 +303,8 @@ class TestIO(unittest.TestCase):
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         wb = wc_utils.workbook.io.read(path_core_1)
-        row = wb['KB'].pop(0)
-        wb['KB'].insert(1, row)
+        row = wb['!KB'].pop(4)
+        wb['!KB'].insert(5, row)
         wc_utils.workbook.io.write(path_core_1, wb)
 
         with self.assertRaisesRegex(ValueError, "The model cannot be loaded because"):
@@ -329,18 +329,18 @@ class TestIO(unittest.TestCase):
         kb = io.Reader().run(path_core, seq_path=path_seq)[core.KnowledgeBase][0]
 
     def test_validate_implicit_relationships(self):
-        class TestModel(obj_model.Model):
-            id = obj_model.StringAttribute(primary=True, unique=True)
+        class TestModel(obj_tables.Model):
+            id = obj_tables.StringAttribute(primary=True, unique=True)
 
         try:
-            core.KnowledgeBase.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='a')
+            core.KnowledgeBase.Meta.attributes['test'] = obj_tables.OneToOneAttribute(TestModel, related_name='a')
             with self.assertRaisesRegex(Exception, 'Relationships from `KnowledgeBase` not supported:'):
                 io.Writer.validate_implicit_relationships()
         finally:
             core.KnowledgeBase.Meta.attributes.pop('test')
 
         try:
-            core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(core.Cell, related_name='c')
+            core.KnowledgeBase.Meta.related_attributes['test'] = obj_tables.OneToManyAttribute(core.Cell, related_name='c')
             with self.assertRaisesRegex(Exception,
                                         'Relationships to `KnowledgeBase` that are not one-to-one are prohibited'):
                 io.Writer.validate_implicit_relationships()
@@ -348,7 +348,7 @@ class TestIO(unittest.TestCase):
             core.KnowledgeBase.Meta.related_attributes.pop('test')
 
         try:
-            core.Cell.Meta.attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='c')
+            core.Cell.Meta.attributes['test'] = obj_tables.OneToManyAttribute(TestModel, related_name='c')
             with self.assertRaisesRegex(Exception,
                                         'Relationships from `Cell` to `KnowledgeBase` that are not one-to-one are prohibited:'):
                 io.Writer.validate_implicit_relationships()
@@ -356,7 +356,7 @@ class TestIO(unittest.TestCase):
             core.Cell.Meta.attributes.pop('test')
 
         try:
-            core.Cell.Meta.attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='d')
+            core.Cell.Meta.attributes['test'] = obj_tables.OneToOneAttribute(TestModel, related_name='d')
             with self.assertRaisesRegex(Exception,
                                         'Relationships from `Cell` to classes other than `KnowledgeBase` are prohibited:'):
                 io.Writer.validate_implicit_relationships()
@@ -364,7 +364,7 @@ class TestIO(unittest.TestCase):
             core.Cell.Meta.attributes.pop('test')
 
         try:
-            core.Cell.Meta.related_attributes['test'] = obj_model.OneToManyAttribute(TestModel, related_name='d')
+            core.Cell.Meta.related_attributes['test'] = obj_tables.OneToManyAttribute(TestModel, related_name='d')
             with self.assertRaisesRegex(Exception,
                                         'Relationships to `Cell` that are not one-to-one or many-to-one are prohibited: '):
                 io.Writer.validate_implicit_relationships()
@@ -372,7 +372,7 @@ class TestIO(unittest.TestCase):
             core.Cell.Meta.related_attributes.pop('test')
 
         try:
-            core.KnowledgeBase.Meta.related_attributes['test'] = obj_model.OneToOneAttribute(TestModel, related_name='b')
+            core.KnowledgeBase.Meta.related_attributes['test'] = obj_tables.OneToOneAttribute(TestModel, related_name='b')
             with self.assertRaisesRegex(Exception,
                                         'Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited'):
                 io.Writer.validate_implicit_relationships()

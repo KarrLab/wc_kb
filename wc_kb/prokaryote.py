@@ -13,7 +13,7 @@
 from wc_kb import core
 from wc_onto import onto as kbOnt
 from wc_utils.util import chem
-import obj_model
+import obj_tables
 
 
 #####################
@@ -31,16 +31,17 @@ class RnaSpeciesType(core.PolymerSpeciesType):
         proteins (:obj:`list` of :obj:`ProteinSpeciesType`): protein(s)
     """
 
-    start = obj_model.IntegerAttribute()
-    end = obj_model.IntegerAttribute()
-    proteins = obj_model.OneToManyAttribute('ProteinSpeciesType', related_name='rnas')
-    coordinate = obj_model.IntegerAttribute()
-    length = obj_model.IntegerAttribute()
-    type = obj_model.ontology.OntologyAttribute(kbOnt,
+    start = obj_tables.IntegerAttribute()
+    end = obj_tables.IntegerAttribute()
+    proteins = obj_tables.OneToManyAttribute('ProteinSpeciesType', related_name='rnas')
+    coordinate = obj_tables.IntegerAttribute()
+    length = obj_tables.IntegerAttribute()
+    type = obj_tables.ontology.OntologyAttribute(kbOnt,
                                   terms=kbOnt['WC:RNA'].rchildren(),
                                   none=True)
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
+        verbose_name = 'RNA'
         verbose_name_plural = 'RNAs'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'start', 'end', 'proteins', 'identifiers', 'references', 'comments')
 
@@ -147,13 +148,14 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         rna (:obj:`RnaSpeciesType`): rna
     """
 
-    unit = obj_model.StringAttribute()
-    type = obj_model.ontology.OntologyAttribute(kbOnt,
+    unit = obj_tables.StringAttribute()
+    type = obj_tables.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['WC:protein'].rchildren(),
                                   none=True)
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         verbose_name = 'Protein'
+        verbose_name_plural = 'Proteins'
         attribute_order = ('id', 'name', 'synonyms', 'type', 'identifiers', 'references', 'comments')
 
     def get_seq(self, cds=True):
@@ -260,16 +262,17 @@ class TranscriptionUnitLocus(core.PolymerLocus):
         genes (:obj:`list` of :obj:`GeneLocus`): genes
     """
 
-    pribnow_start = obj_model.IntegerAttribute()
-    pribnow_end = obj_model.IntegerAttribute()
-    genes = obj_model.OneToManyAttribute('GeneLocus', related_name='transcription_units')
-    rnas = obj_model.ManyToManyAttribute('RnaSpeciesType', related_name='transcription_units')
-    #type = obj_model.ontology.OntologyAttribute(kbOnt,
+    pribnow_start = obj_tables.IntegerAttribute()
+    pribnow_end = obj_tables.IntegerAttribute()
+    genes = obj_tables.OneToManyAttribute('GeneLocus', related_name='transcription_units')
+    rnas = obj_tables.ManyToManyAttribute('RnaSpeciesType', related_name='transcription_units')
+    #type = obj_tables.ontology.OntologyAttribute(kbOnt,
     #                              terms = kbOnt['WC:gene'].rchildren(),
     #                              none=True)
 
-    class Meta(obj_model.Model.Meta):
-        verbose_name = 'Transcription units'
+    class Meta(obj_tables.Model.Meta):
+        verbose_name = 'Transcription unit'
+        verbose_name_plural = 'Transcription units'
         attribute_order = ('id', 'name', 'polymer', 'strand', 'pribnow_start', 'pribnow_end', 'start', 'end',
                            'rnas', 'genes', 'identifiers', 'references', 'comments')
 
@@ -306,18 +309,19 @@ class GeneLocus(core.PolymerLocus):
         proteins (:obj:`list` of :obj:`ProteinSpeciesType`): protein
     """
 
-    symbol = obj_model.StringAttribute()
-    start = obj_model.IntegerAttribute()
-    end = obj_model.IntegerAttribute()
-    is_essential = obj_model.BooleanAttribute()
-    proteins = obj_model.OneToOneAttribute(ProteinSpeciesType, related_name='gene')
-    homologs = obj_model.LongStringAttribute()
-    evidence = obj_model.OneToManyAttribute(core.Evidence, related_name='genes')
-    cog = obj_model.ontology.OntologyAttribute(kbOnt,
+    symbol = obj_tables.StringAttribute()
+    start = obj_tables.IntegerAttribute()
+    end = obj_tables.IntegerAttribute()
+    is_essential = obj_tables.BooleanAttribute()
+    proteins = obj_tables.OneToOneAttribute(ProteinSpeciesType, related_name='gene')
+    homologs = obj_tables.LongStringAttribute()
+    evidence = obj_tables.OneToManyAttribute(core.Evidence, related_name='genes')
+    cog = obj_tables.ontology.OntologyAttribute(kbOnt,
                                   terms = kbOnt['WC:COG'].rchildren(),
                                   none=True)
 
-    class Meta(obj_model.Model.Meta):
+    class Meta(obj_tables.Model.Meta):
         verbose_name = 'Gene'
+        verbose_name_plural = 'Genes'
         attribute_order = ('id', 'name', 'synonyms', 'symbol', 'polymer',  'start', 'end', 'cog', 'homologs',
                            'is_essential', 'proteins', 'evidence', 'identifiers', 'references', 'comments')

@@ -1,6 +1,6 @@
 biopython
 cement >= 3.0.0
-obj_model
+obj_tables
 openbabel
 pyfaidx
 setuptools

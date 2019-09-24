@@ -9,7 +9,9 @@
 from wc_kb import core
 from wc_kb import io
 import cement
+import obj_tables
 import wc_kb
+import wc_utils.workbook
 import wc_utils.workbook.io
 
 
@@ -69,6 +71,8 @@ class DifferenceController(cement.Controller):
             (['seq_path_2'], dict(type=str, help='Path to FASTA-formatted genome sequence for second knowledge base')),
             (['--compare-files'], dict(dest='compare_files', default=False, action='store_true',
                                        help='If true, compare knowledge bases; otherwise compare files directly')),
+            (['--compare-metadata-in-files'], dict(dest='compare_metadata_in_files', default=False, action='store_true',
+                                                   help='If true, compare metadata (tables of contents, header rows)')),
         ]
 
     @cement.ex(hide=True)
@@ -78,6 +82,10 @@ class DifferenceController(cement.Controller):
         if args.compare_files:
             kb1 = wc_utils.workbook.io.read(args.core_path_1)
             kb2 = wc_utils.workbook.io.read(args.core_path_2)
+            if not args.compare_metadata_in_files:
+                self.remove_metadata(kb1)
+                self.remove_metadata(kb2)
+
             diff = kb1.difference(kb2)
 
         else:
@@ -89,6 +97,21 @@ class DifferenceController(cement.Controller):
             print(diff)
         else:
             print('Knowledge bases are identical')
+
+    @staticmethod
+    def remove_metadata(kb):
+        """ Remove metadata from Knowledge base
+
+        Args:
+            kb (:obj:`wc_utils.workbook.Workbook`): knowledge base
+        """
+        kb.pop('!' + obj_tables.TOC_SHEET_NAME, None)
+        for sheet in kb.values():
+            for row in list(sheet):
+                if row and isinstance(row[0], str) and row[0].startswith('!!'):
+                    sheet.remove(row)
+                else:
+                    break
 
 
 class NormalizeController(cement.Controller):
@@ -159,9 +182,9 @@ class CreateTemplateController(cement.Controller):
         stacked_type = 'nested'
         arguments = [
             (['path_core'], dict(metavar='path-core', type=str,
-                help='Path to save a template of the core of a knowledge base')),
+                                 help='Path to save a template of the core of a knowledge base')),
             (['path_seq'], dict(metavar='path-seq', type=str,
-                help='Path to save a template of the genome sequence of a knowledge base')),
+                                help='Path to save a template of the genome sequence of a knowledge base')),
             (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
                                                     'the Git repo containing `path-core`'))),
