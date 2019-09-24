@@ -554,7 +554,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
         seq = self.get_seq(table=table, cds=cds)
-        l = len(seq.strip('*'))    
+        l = len(seq) - seq.count('*')    
 
         n_a = seq.count('A')  # Ala: Alanine (C3 H7 N O2)
         n_r = seq.count('R')  # Arg: Arginine (C6 H14 N4 O2)
