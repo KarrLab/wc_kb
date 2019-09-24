@@ -1474,7 +1474,7 @@ class TimeCourseTestCase(unittest.TestCase):
 
     def test_perturbation_course(self):
         ### Positive tests
-        pc1 = core.PerturbationCourse(id='pc1', observable=self.observable1, property = 'concentration',
+        pc1 = core.PerturbationCourse(id='pc1', observable=self.observable1,
             values = [1, 1.1, 1], values_unit=self.unit, times = [0.5, 1], time_0=self.time_0,
             times_unit=self.time_units, times_are_points=True, comments='pc1 comment', evidence=self.evi1)
         self.assertEqual(self.evi1.perturbation_courses, [pc1])
@@ -1495,14 +1495,17 @@ class TimeCourseTestCase(unittest.TestCase):
         self.assertEqual(self.evi1.time_course_measurements, [tcm1, tcm2])
 
 
-class FloatValueTestCase(unittest.TestCase):
+class TimeCourseMeasurementTestCase(unittest.TestCase):
 
-    def test_float_value(self):
+    def test_time_course_measurement(self):
         ### Positive Tests
-        fv1 = core.FloatValue(value=1)
-        self.assertEqual(fv1.value, 1)
-        fv1 = core.FloatValue(value=1.1)
-        self.assertEqual(fv1.value, 1.1)
+        tcm1 = core.TimeCourseMeasurement(time=1, time_unit='s', value=1,  value_unit='M')
+        time = core.FloatValue(value=1)
+        self.assertEqual(tcm1.time, 1)
+        self.assertEqual(tcm1.time_unit, 's')
+        self.assertEqual(tcm1.value, 1)
+        self.assertEqual(tcm1.value_unit, 'M')
+
         ### Negative Tests
         # Todo: Why does FloatValue accept non floats?
         # with self.assertRaises(ValueError):
