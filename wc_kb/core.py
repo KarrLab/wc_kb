@@ -1440,16 +1440,21 @@ class MetaboliteSpeciesType(SpeciesType):
         """ Get the structure
 
         Returns:
-            :obj:`str`: InChI-encoded structure
+            :obj:`str`: InChI or SMILES structure
 
         Raises:
             :obj:`ValueError`: if structure has not been provided
         """
-        prop = self.properties.get_one(property='structure')
-        if not prop:
-            raise ValueError('The structure of {} has not been provided'.format(self.id))
-        return prop.get_value()
-        
+        inchi_str = self.properties.get_one(property='inchi_structure')
+        if inchi_str:
+            return inchi_str.get_value()
+        else:    
+            smiles_str = self.properties.get_one(property='smiles_structure')
+            if smiles_str:
+                return smiles_str.get_value()
+            else:
+                raise ValueError('The structure of {} has not been provided'.format(self.id))
+                
     def calc_structure(self, ph=7.4, major_tautomer=False, keep_hydrogens=False, dearomatize=False):
         """ Get the major microspecies
 
@@ -1462,26 +1467,26 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`str`: InChI-encoded structure
         """
-        inchi = self.get_structure()
-        return get_major_micro_species(inchi, 'inchi', 'inchi', 
-            ph=ph, major_tautomer=major_tautomer, keep_hydrogens=keep_hydrogens, dearomatize=dearomatize)
+        structure_str = self.get_structure()
+        if 'InChI=' in structure_str:
+            return get_major_micro_species(structure_str, 'inchi', 'inchi', 
+                ph=ph, major_tautomer=major_tautomer, keep_hydrogens=keep_hydrogens, dearomatize=dearomatize)
+        else:
+            return get_major_micro_species(structure_str, 'smiles', 'smiles', 
+                ph=ph, major_tautomer=major_tautomer, keep_hydrogens=keep_hydrogens, dearomatize=dearomatize)    
 
     def to_openbabel_mol(self):
         """ Convert species type to an Open Babel molecule
 
         Returns:
             :obj:`openbabel.OBMol`: Open Babel molecule
-
-        Raises:
-            :obj:`ValueError`: if structure has not been provided
         """
-        if not self.properties.get_one(property='structure'):
-            raise ValueError('The structure of {} has not been provided'.format(self.id))
-
+        structure_str = self.get_structure()
+        structure_type = 'inchi' if 'InChI=' in structure_str else 'smi'
         mol = openbabel.OBMol()
         obConversion = openbabel.OBConversion()
-        obConversion.SetInFormat('inchi')
-        obConversion.ReadString(mol, self.properties.get_one(property='structure').get_value())
+        obConversion.SetInFormat(structure_type)
+        obConversion.ReadString(mol, structure_str)
 
         return mol
 
@@ -1503,11 +1508,7 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-        inchi = self.get_structure()
-        mol = openbabel.OBMol()
-        conversion = openbabel.OBConversion()
-        conversion.SetInFormat('inchi')
-        conversion.ReadString(mol,  inchi)
+        mol = self.to_openbabel_mol()
         return OpenBabelUtils.get_formula(mol)
 
     def get_charge(self):
@@ -1528,11 +1529,7 @@ class MetaboliteSpeciesType(SpeciesType):
         Returns:
             :obj:`int`: charge
         """
-        inchi = self.get_structure()
-        mol = openbabel.OBMol()
-        conversion = openbabel.OBConversion()
-        conversion.SetInFormat('inchi')
-        conversion.ReadString(mol,  inchi)
+        mol = self.to_openbabel_mol()
         return mol.GetTotalCharge()
 
     def get_mol_wt(self):
@@ -1548,12 +1545,9 @@ class MetaboliteSpeciesType(SpeciesType):
         if prop:
             return chem.EmpiricalFormula(prop.get_value()).get_molecular_weight()
 
-        elif self.properties.get_one(property='structure'):
-            inchi = self.get_structure()
-            mol = openbabel.OBMol()
-            conversion = openbabel.OBConversion()
-            conversion.SetInFormat('inchi')
-            conversion.ReadString(mol,  inchi)
+        elif self.properties.get_one(property='inchi_structure') or \
+          self.properties.get_one(property='smiles_structure'):
+            mol = self.to_openbabel_mol()
             return mol.GetMolWt()
         
         else:

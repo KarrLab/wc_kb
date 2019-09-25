@@ -516,7 +516,7 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
 
     def test_get_structure(self):
         speciesTypeProperties = core.SpeciesTypeProperty(
-            property = 'structure',
+            property = 'inchi_structure',
             value_type = kbOnt['WC:string'],
             value = (
                 'InChI=1S'
@@ -528,6 +528,16 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
                 '/s1'))
         met = core.MetaboliteSpeciesType(properties = [speciesTypeProperties])
         self.assertEqual(met.calc_structure(), speciesTypeProperties.value)
+        self.assertEqual(met.calc_empirical_formula(),
+                         chem.EmpiricalFormula('C10H12N5O7P'))
+        self.assertEqual(met.calc_charge(), -2)
+        self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
+
+        speciesTypeProperties = core.SpeciesTypeProperty(
+            property = 'smiles_structure',
+            value_type = kbOnt['WC:string'],
+            value = ('[H]O[C@@]1([H])[C@@]([H])(O[C@]([H])(C([H])([H])OP([O-])([O-])=O)[C@@]1([H])O[H])N1C([H])=NC2=C(N=C([H])N=C12)N([H])[H]'))
+        met = core.MetaboliteSpeciesType(properties = [speciesTypeProperties])
         self.assertEqual(met.calc_empirical_formula(),
                          chem.EmpiricalFormula('C10H12N5O7P'))
         self.assertEqual(met.calc_charge(), -2)
@@ -708,11 +718,11 @@ class ComplexSpeciesTypeTestCase(unittest.TestCase):
         self.complex2  = core.ComplexSpeciesType()
 
         speciesProps1 = core.SpeciesTypeProperty(
-            property = 'structure',
+            property = 'inchi_structure',
             value = 'InChI=1S/C8H7NO3/c10-6-1-4-5(2-7(6)11)9-3-8(4)12/h1-2,8-9,12H,3H2',
             value_type = kbOnt['WC:string'])
         speciesProps2 = core.SpeciesTypeProperty(
-            property = 'structure',
+            property = 'inchi_structure',
             value = 'InChI=1S/Zn/q+2',
             value_type = kbOnt['WC:string'])
 
