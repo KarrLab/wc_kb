@@ -379,6 +379,7 @@ class TestIO(unittest.TestCase):
         finally:
             core.KnowledgeBase.Meta.related_attributes.pop('test')
 
+    @unittest.skip('Assertions need to be uncommented')
     def test_seq_path_consistency(self):
         pass
 
@@ -387,3 +388,20 @@ class TestIO(unittest.TestCase):
         #kb = io.Reader().run(core_path, seq_path=self.seq_path)[core.KnowledgeBase][0]
         #core_path = os.path.join(self.dir, 'core2.xlsx')
         #seq_path = os.path.join(self.dir, 'seq2.fna')
+
+    def test_read_flat_list_of_objects(self):
+        core_path = os.path.join(self.dir, 'core.xlsx')
+
+        writer = io.Writer()
+        writer.run(core_path, self.kb, data_repo_metadata=False)
+
+        reader = io.Reader()
+
+        objs = reader.run(core_path, seq_path=self.seq_path)
+        self.assertIsInstance(objs, dict)
+
+        objs = reader.run(core_path, seq_path=self.seq_path, 
+                          group_objects_by_model=False)
+        self.assertIsInstance(objs, list)
+        kb = next(obj for obj in objs if isinstance(obj, core.KnowledgeBase))
+        self.assertTrue(kb.is_equal(self.kb))

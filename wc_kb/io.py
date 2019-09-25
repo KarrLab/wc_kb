@@ -322,7 +322,7 @@ class Reader(obj_tables.io.Reader):
                                           ignore_missing_attributes=ignore_missing_attributes,
                                           ignore_extra_attributes=ignore_extra_attributes,
                                           ignore_attribute_order=ignore_attribute_order,
-                                          group_objects_by_model=group_objects_by_model,
+                                          group_objects_by_model=True,
                                           validate=False)
 
         # Check if sequence pathes are consistent
@@ -380,6 +380,13 @@ class Reader(obj_tables.io.Reader):
             if errors:
                 raise ValueError(
                     indent_forest(['The knowledge base cannot be loaded because it fails to validate:', [errors]]))
+
+        # if `group_objects_by_model` is False, flatten objects into list
+        if not group_objects_by_model:
+            flat_objects = []
+            for model_objs in objects.values():
+                flat_objects.extend(list(model_objs))
+            objects = flat_objects
 
         return objects
 
