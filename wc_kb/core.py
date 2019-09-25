@@ -2202,7 +2202,7 @@ class PerturbationCourse(KnowledgeBaseObject):
     time_course = TimeCourseAttribute(related_name='perturbation_courses')
 
     class Meta(obj_tables.Model.Meta):
-        attribute_order = ('observable', 'time_course')
+        attribute_order = ('id', 'observable', 'time_course')
 
 
 class TimeCourse(KnowledgeBaseObject):
@@ -2215,8 +2215,8 @@ class TimeCourse(KnowledgeBaseObject):
     time_course = TimeCourseAttribute(related_name='time_courses')        
 
     class Meta(obj_tables.Model.Meta):
-        attribute_order = ('observable', 'time_course')
-        
+        attribute_order = ('id', 'observable', 'time_course')
+
 
 class Experiment(KnowledgeBaseObject):
     """ Represents an experiment in which a property was measured
