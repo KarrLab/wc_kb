@@ -1947,30 +1947,32 @@ class ChromosomeFeature(PolymerLocus):
 
 class Evidence(KnowledgeBaseObject):
     """ Represents the measurement / observation of a property
-
         Attributes:
             id (:obj:`str`): identifier
             cell (:obj:`Cell`): cell
+            object (:obj:`str`): object
+            property (:obj:`str`): property
+            value (:obj:`float`): value
+            units (:obj:`Units`): units
             identifiers(:obj:`list` of :obj:`Identifier`): identifiers
             references (:obj:`list` of :obj:`Reference`): references
             experiment (:obj:`Experiment`): experiment
             comments(:obj:`str`): comments
-
-        RelatedAttributes:
-            perturbation_courses (:obj:`list` of :obj:`time_series): perturbation courses
-            time_course_measurements (:obj:`list` of :obj:`time_series`): time course measurements
-
+        Related attributes:
     """
 
     cell = obj_tables.ManyToOneAttribute('Cell', related_name='evidence')
+    object   =  obj_tables.StringAttribute()
+    property = obj_tables.StringAttribute()
+    value = obj_tables.FloatAttribute()
+    units = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
     identifiers = IdentifierAttribute(related_name='evidence')
     references = obj_tables.ManyToManyAttribute('Reference', related_name='evidence')
     experiment = obj_tables.ManyToOneAttribute('Experiment', related_name ='evidence')
     comments = obj_tables.LongStringAttribute()
 
     class Meta(obj_tables.Model.Meta):
-        attribute_order = ('id', 'cell',
-            'identifiers', 'references', 'experiment', 'comments')
+        attribute_order = ('id', 'cell', 'object', 'property', 'value', 'units', 'experiment', 'identifiers', 'references', 'comments')
 
 
 from obj_tables import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
