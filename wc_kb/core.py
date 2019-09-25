@@ -1445,15 +1445,11 @@ class MetaboliteSpeciesType(SpeciesType):
         Raises:
             :obj:`ValueError`: if structure has not been provided
         """
-        inchi_str = self.properties.get_one(property='inchi_structure')
-        if inchi_str:
-            return inchi_str.get_value()
+        structure = self.properties.get_one(property='structure')
+        if structure:
+            return structure.get_value()            
         else:    
-            smiles_str = self.properties.get_one(property='smiles_structure')
-            if smiles_str:
-                return smiles_str.get_value()
-            else:
-                raise ValueError('The structure of {} has not been provided'.format(self.id))
+            raise ValueError('The structure of {} has not been provided'.format(self.id))
                 
     def calc_structure(self, ph=7.4, major_tautomer=False, keep_hydrogens=False, dearomatize=False):
         """ Get the major microspecies
@@ -1545,8 +1541,7 @@ class MetaboliteSpeciesType(SpeciesType):
         if prop:
             return chem.EmpiricalFormula(prop.get_value()).get_molecular_weight()
 
-        elif self.properties.get_one(property='inchi_structure') or \
-          self.properties.get_one(property='smiles_structure'):
+        elif self.properties.get_one(property='structure'):
             mol = self.to_openbabel_mol()
             return mol.GetMolWt()
         
