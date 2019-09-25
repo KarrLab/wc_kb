@@ -46,6 +46,8 @@ PROKARYOTE_MODELS = (
     core.RateLaw,
     core.Parameter,
     core.Evidence,
+    core.TimeCourse,
+    core.Experiment,
     core.Experiment,
     core.Reference)
 
@@ -68,6 +70,8 @@ EUKARYOTE_MODELS = (
     core.RateLaw,
     core.Parameter,
     core.Evidence,
+    core.PerturbationCourse,
+    core.TimeCourse,
     core.Experiment,
     core.Reference)
 
