@@ -1495,52 +1495,141 @@ class TimeCourseTestCase(unittest.TestCase):
         self.assertEqual(self.evi1.time_course_measurements, [tcm1, tcm2])
 
 
+class TimeCourseAttributeTestCase(unittest.TestCase):
+
+    cell  = core.Cell()
+    comp1 = core.Compartment(id='c')
+    met1a  = core.MetaboliteSpeciesType(id='met1a')
+    met1b  = core.MetaboliteSpeciesType(id='met1b')
+    met2  = core.MetaboliteSpeciesType(id='met2')
+    species1a = core.Species(species_type=met1a, compartment=comp1)
+    species1b = core.Species(species_type=met1b, compartment=comp1)
+    species2 = core.Species(species_type=met2, compartment=comp1)
+    expr1 = core.ObservableExpression(expression='met1a[c] + met1b[c]', species=[species1a, species1b])
+    expr2 = core.ObservableExpression(expression='met2[c]', species=[species2])
+    observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
+    observable2 = core.Observable(cell=cell, id='obs1', expression=expr2)
+    tcm1 = core.TimeCourseMeasurement(time=1, time_unit='s', value=1,  value_unit='M')
+    tcm2 = core.TimeCourseMeasurement(time=1.5, time_unit='s', value=1.5,  value_unit='M')
+    
+    def test_init(self):
+        ### Positive Tests
+        pc1 = core.PerturbationCourse(observable=self.observable1, time_course=[self.tcm1, self.tcm2])
+        pc2 = core.PerturbationCourse(observable=self.observable2, time_course=[self.tcm1, self.tcm2])
+        self.assertEqual(pc1.time_course, [self.tcm1, self.tcm2])
+        self.assertEqual(self.tcm1.perturbation_courses, [pc1, pc2])
+
+        tc1 = core.TimeCourse(observable=self.observable1, time_course=[self.tcm1, self.tcm2])
+        tc2 = core.TimeCourse(observable=self.observable2, time_course=[self.tcm1, self.tcm2])
+        self.assertEqual(tc1.time_course, [self.tcm1, self.tcm2])
+        self.assertEqual(self.tcm1.time_courses, [tc1, tc2])
+
+    def test_serialize(self):    
+        self.assertEqual(
+            core.TimeCourseAttribute().serialize(time_course=[self.tcm1, self.tcm2]), '1 s: 1 M, 1.5 s: 1.5 M')
+
+    def test_deserialize(self):
+
+        objects = {
+            # core.TimeCourseMeasurement: {
+            #     '1 s: 1 M': self.tcm1,
+            #     '1.5 s: 1.5 M': self.tcm2
+            # }
+        }
+
+        result = core.TimeCourseAttribute().deserialize(value='1 s: 1 M, 1.5 s: 1.5 M', objects=objects)  
+        self.assertEqual(result[1], None)
+        self.assertEqual(result[0][0].time, 1)
+        self.assertEqual(result[0][0].time_unit, unit_registry.parse_units('s'))
+        self.assertEqual(result[0][0].value, 1)
+        self.assertEqual(result[0][0].value_unit, unit_registry.parse_units('molar'))
+        self.assertEqual(result[0][1].time, 1.5)
+        self.assertEqual(result[0][1].time_unit, unit_registry.parse_units('s'))
+        self.assertEqual(result[0][1].value, 1.5)
+        self.assertEqual(result[0][1].value_unit, unit_registry.parse_units('molar'))
+
 class TimeCourseMeasurementTestCase(unittest.TestCase):
 
-    def test_time_course_measurement(self):
-        ### Positive Tests
+    def test_init(self):
         tcm1 = core.TimeCourseMeasurement(time=1, time_unit='s', value=1,  value_unit='M')
-        time = core.FloatValue(value=1)
+        ### Positive Tests
         self.assertEqual(tcm1.time, 1)
         self.assertEqual(tcm1.time_unit, 's')
         self.assertEqual(tcm1.value, 1)
         self.assertEqual(tcm1.value_unit, 'M')
+        tcm1.time = 1.1
+        tcm1.value = 1.1
+        tcm1.value_unit = 'mM'
+        self.assertEqual(tcm1.time, 1.1)
+        self.assertEqual(tcm1.value, 1.1)
+        self.assertEqual(tcm1.value_unit, 'mM')
 
-        ### Negative Tests
-        # Todo: Why does FloatValue accept non floats?
-        # with self.assertRaises(ValueError):
-        #     met = core.MetaboliteSpeciesType(id='met')
-        #     species_type_coeff = core.SpeciesTypeCoefficient(species_type=met, coefficient='a')
-        #     fv1 = core.FloatValue(value='a')
+        ### Negative Tests # Todo: get these raising an error
+        tcm1.time = 'a'
+        self.assertEqual(tcm1.time, 'a')
+        tcm1.time_unit = 'M'
+        tcm1.value = 'a'
+        tcm1.value_unit = [1, 2]
+        self.assertEqual(tcm1.value_unit, [1, 2])
+
+    def test_serialize(self):
+        tcm1 = core.TimeCourseMeasurement(time=1.1, time_unit='s', value=1,  value_unit='M')
+        self.assertEqual(tcm1.serialize(), '1.1 s: 1 M')
 
 
-class TimeCourseAttributeTestCase(unittest.TestCase):
+class Perturbation_Time_CourseTestCase(unittest.TestCase):
+
+    cell  = core.Cell()
+    comp1 = core.Compartment(id='c')
+    met1a  = core.MetaboliteSpeciesType(id='met1a')
+    met1b  = core.MetaboliteSpeciesType(id='met1b')
+    met2  = core.MetaboliteSpeciesType(id='met2')
+    species1a = core.Species(species_type=met1a, compartment=comp1)
+    species1b = core.Species(species_type=met1b, compartment=comp1)
+    species2 = core.Species(species_type=met2, compartment=comp1)
+    expr1 = core.ObservableExpression(expression='met1a[c] + met1b[c]', species=[species1a, species1b])
+    expr2 = core.ObservableExpression(expression='met2[c]', species=[species2])
+    observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
+    observable2 = core.Observable(cell=cell, id='obs1', expression=expr2)
+    tcm1 = core.TimeCourseMeasurement(time=1, time_unit='s', value=1,  value_unit='M')
+    tcm2 = core.TimeCourseMeasurement(time=1.5, time_unit='s', value=1.5,  value_unit='M')
+    tcm3 = core.TimeCourseMeasurement(time=1.5, time_unit='min', value=1.5,  value_unit='M')
+    tcm4 = core.TimeCourseMeasurement(time=1.5, time_unit='s', value=1.5,  value_unit='mM')
     
-    def test_init(self):
-        tc1 = core.TimeCourseAttribute([1, 1.1, 1])
+    def test_perturbation_course_init(self):
+        ### Positive Tests
+        pc1 = core.PerturbationCourse(observable=self.observable1, time_course=[self.tcm1, self.tcm2])
+        pc2 = core.PerturbationCourse(observable=self.observable2, time_course=[self.tcm1, self.tcm2])
+        self.assertEqual(pc1.observable, self.observable1)
+        self.assertEqual(pc1.time_course, [self.tcm1, self.tcm2])
+        self.assertEqual(self.tcm1.perturbation_courses, [pc1, pc2]) # Linking on TimeCourseMeasurement to 2 perturbation courses does not make sense but can (and has to) be tolerated, I think.
+        
+        ### Negative Tests
+        with self.assertRaises(AttributeError):
+            pc1 = core.PerturbationCourse(observable='a', time_course=[self.tcm1, self.tcm2])
+        with self.assertRaises(AttributeError):
+            pc1 = core.PerturbationCourse(observable=self.observable1, time_course=[1, 2])
+        # Decreasing time
+        pc1 = core.PerturbationCourse(observable=self.observable1, time_course=[self.tcm2, self.tcm1])
+        # Inconsistent units
+        pc1 = core.PerturbationCourse(observable=self.observable1, time_course=[self.tcm1, self.tcm3])
+        pc1 = core.PerturbationCourse(observable=self.observable1, time_course=[self.tcm1, self.tcm4])
 
-    def test_serialize(self):    
-        self.assertEqual(
-            core.TimeCourseAttribute().serialize(values=[1, 2]), '[1, 2]')
-
-    def test_deserialize(self):
-        fv1 = core.FloatValue(value=1)
-        fv2 = core.FloatValue(value=2.2)
-
-        objects = {
-            core.FloatValue: {
-                '1': fv1,
-                '2.2': fv2
-            }
-        }
-
-        result = core.TimeCourseAttribute().deserialize(value='[1, 2.2]', objects=objects)  
-        self.assertEqual(result[1], None)
-        self.assertEqual(result[0][0].value, 1)
-        self.assertEqual(result[0][1].value, 2.2)
-
-        result = core.TimeCourseAttribute().deserialize(value='[ 1 ,  2.2 ]', objects=objects)
-        print(result)    
-        self.assertEqual(result[1], None)
-        self.assertEqual(result[0][0].value, 1)
-        self.assertEqual(result[0][1].value, 2.2)
+    def test_time_course_init(self):
+        ### Positive Tests
+        tc1 = core.TimeCourse(observable=self.observable1, time_course=[self.tcm1, self.tcm2])
+        tc2 = core.TimeCourse(observable=self.observable2, time_course=[self.tcm1, self.tcm2])
+        self.assertEqual(tc1.observable, self.observable1)
+        self.assertEqual(tc1.time_course, [self.tcm1, self.tcm2])
+        self.assertEqual(self.tcm1.time_courses, [tc1, tc2]) # Linking on TimeCourseMeasurement to 2 perturbation courses does not make sense but can (and has to) be tolerated, I think.
+        
+        ### Negative Tests
+        with self.assertRaises(AttributeError):
+            tc1 = core.TimeCourse(observable='a', time_course=[self.tcm1, self.tcm2])
+        with self.assertRaises(AttributeError):
+            tc1 = core.TimeCourse(observable=self.observable1, time_course=[1, 2])
+        # Decreasing time
+        tc1 = core.TimeCourse(observable=self.observable1, time_course=[self.tcm2, self.tcm1])
+        # Inconsistent units
+        tc1 = core.TimeCourse(observable=self.observable1, time_course=[self.tcm1, self.tcm3])
+        tc1 = core.TimeCourse(observable=self.observable1, time_course=[self.tcm1, self.tcm4])

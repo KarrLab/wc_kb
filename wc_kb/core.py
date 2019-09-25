@@ -1976,13 +1976,13 @@ class Evidence(KnowledgeBaseObject):
 from obj_tables import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
                        RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
                        OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
-                       InvalidModel, InvalidObject, InvalidAttribute, TabularOrientation)
+                       InvalidModel, InvalidObject, InvalidAttribute, TableFormat)
 from wc_utils.util.units import unit_registry
 import obj_tables
 import pint
 
 
-class TimeCourseAttribute(ManyToOneAttribute):
+class TimeCourseAttribute(ManyToManyAttribute):
     def __init__(self, related_name='', verbose_name='', verbose_related_name='', description=''):
         """
         Args:
@@ -1991,10 +1991,83 @@ class TimeCourseAttribute(ManyToOneAttribute):
             verbose_related_name (:obj:`str`, optional): verbose related name
             description (:obj:`str`, optional): description
         """
-        super(TimeCourseAttribute, self).__init__('TimeCourseMeasurement', related_name=related_name,
+        super(TimeCourseAttribute, self).__init__(TimeCourseMeasurement,
+                                                           related_name=related_name,
                                                            verbose_name=verbose_name,
                                                            verbose_related_name=verbose_related_name,
                                                            description=description)
+
+
+    '''    
+    def append(self, value, propagate=True):
+        """ Add value to list
+        Args:
+            value (:obj:`object`): value
+            propagate (:obj:`bool`, optional): propagate change to related attribute
+        Returns:
+            :obj:`RelatedManager`: self
+        """
+        print('inside append')
+        if value in self:
+            return self
+
+        super(ManyToManyRelatedManager, self).append(value)
+        if propagate:
+            if self.related:
+                getattr(value, self.attribute.name).append(
+                    self.object, propagate=False)
+            else:
+                getattr(value, self.attribute.related_name).append(
+                    self.object, propagate=False)
+        '''
+
+
+    def validate(self, obj, value):
+        """ Determine if `value` is a valid value of the attribute
+        Args:
+            obj (:obj:`Model`): object being validated
+            value (:obj:`list` of :obj:`Model`): value of attribute to validate
+        Returns:
+            :obj:`InvalidAttribute` or None: None if attribute is valid, other return list of errors as an instance of `InvalidAttribute`
+        """
+        errors = []
+
+        if not isinstance(value, list):
+            errors.append('Value must be a `list`')
+        elif len(value) < self.min_related:
+            errors.append(
+                'There must be at least {} related values'.format(self.min_related))
+        elif len(value) > self.max_related:
+            errors.append(
+                'There cannot be more than {} related values'.format(self.max_related))
+        else:
+            for v in value:
+                print(v)
+                if not isinstance(v, self.related_class):
+                    errors.append('Value must be a `list` of "{:s}"'.format(
+                        self.related_class.__name__))
+
+                elif self.related_name:
+                    related_v = getattr(v, self.related_name)
+                    if not isinstance(related_v, self.related_manager):
+                        errors.append(
+                            'Related value must be a `{}`'.format(self.related_manager.__name__)
+                        )  # pragma: no cover # unreachable due to above error checking
+                    if obj not in related_v:
+                        errors.append('Object must be in related values')
+        
+        if not errors:
+            if not all(x.time<=y.time for x, y in zip(value, value[1:])):
+                errors.append('Time values must be non-decreasing')
+            elif not len(set([v.time_unit for v in value])) == 1:
+                errors.append('Time units must be identical')
+            elif not len(set([v.value_unit for v in value])) == 1:
+                errors.append('Value units must be identical')
+
+        if errors:
+            return InvalidAttribute(self, errors)
+        return None
+
 
     def serialize(self, time_course, encoded=None):
         """ Serialize related object
@@ -2022,9 +2095,12 @@ class TimeCourseAttribute(ManyToOneAttribute):
         if not value:
             return ([], None)
 
-        local_pat = r'([-+]?\d+[\.]?\d+\s\w+)'
+        local_pat = r'([-+]?\d+(?:[\.]\d+)?\s\w+)'
         global_pat = r'({}) *\: *({})'.format(local_pat, local_pat)
         list_pat = global_pat + r'( *, *{})*'.format(global_pat) 
+
+        print(value)
+        print(global_pat)
 
         if not re.match(list_pat, value, flags=re.I):
             return (None, InvalidAttribute(self, ['Incorrectly formatted list of time course measurements: {}'.format(value)]))
@@ -2032,7 +2108,8 @@ class TimeCourseAttribute(ManyToOneAttribute):
         objs = []
         errors = []        
         for pat_match in re.findall(global_pat, value, flags=re.I):
-            
+
+            print(pat_match)
             time = float(pat_match[0].split(' ')[0])
             time_unit = pat_match[0].split(' ')[1]
             try:
@@ -2066,6 +2143,18 @@ class TimeCourseAttribute(ManyToOneAttribute):
         
 
 class TimeCourseMeasurement(obj_tables.Model):
+    """ Represents a measurement or perturbation at a specified time
+
+        Attributes:
+            time (:obj:`float`): time
+            time_unit (:obj:`Units`): unit of time
+            value (:obj:`float`): values
+            value_units (:obj:`Units`): unit of value
+
+        Related attributes:
+            time_courses (:obj:`list` of :obj:`TimeCourse`): time courses
+            perturbation_courses (:obj:`list` of :obj:`PerturbationCourse`): perturbation courses
+    """
     time = FloatAttribute() # this already exist in obj_tables
     time_unit = obj_tables.units.UnitAttribute(unit_registry, choices=(unit_registry.parse_units('s'),),
                     default=unit_registry.parse_units('s'))
@@ -2075,23 +2164,23 @@ class TimeCourseMeasurement(obj_tables.Model):
 
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('time', 'time_unit', 'value', 'value_unit')
-        table_format = TabularOrientation.cell
+        table_format = TableFormat.cell
         ordering = ('time', 'time_unit', 'value', 'value_unit')
 
     @staticmethod
-    def _serialize(namespace, id):
+    def _serialize(time, time_unit, value, value_unit):
         """ Generate string representation
         
         Args:
-            value (:obj:`float`): values
-            value_units (:obj:`Units`): unit of value
             time (:obj:`float`): time
             time_unit (:obj:`Units`): unit of time
-        
+            value (:obj:`float`): values
+            value_units (:obj:`Units`): unit of value
+
         Returns:
             :obj:`str`: value of primary attribute
         """
-        return '{} {} : {} {}'.format(time, time_unit, value, value_unit)
+        return '{} {}: {} {}'.format(time, time_unit, value, value_unit)
 
     def serialize(self):
         """ Generate string representation
@@ -2104,21 +2193,21 @@ class TimeCourseMeasurement(obj_tables.Model):
 class PerturbationCourse(KnowledgeBaseObject):
     """
         observable (:obj:`Observable`): observable 
-        time_course (:obj:`list` of :obj:`TimeCourse`): time course
+        time_course (:obj:`list` of :obj:`TimeCourseMeasurement`): time course
         
     """
     observable = ManyToOneAttribute('Observable', related_name='perturbation_course_measurements')
-    time_course = TimeCourseAttribute('TimeCourseMeasurement', related_name='perturbation_course')
+    time_course = TimeCourseAttribute(related_name='perturbation_courses')
 
 
 class TimeCourse(KnowledgeBaseObject):
     """
         observable (:obj:`Observable`): observable 
-        time_course (:obj:`list` of :obj:`TimeCourse`): time course
+        time_course (:obj:`list` of :obj:`TimeCourseMeasurement`): time course
         
     """
-    observable = ManyToOneAttribute('Observable', related_name='perturbation_course_measurements')
-    time_course = TimeCourseAttribute('TimeCourseMeasurement', related_name='time_course')        
+    observable = ManyToOneAttribute('Observable', related_name='time_course_measurements')
+    time_course = TimeCourseAttribute(related_name='time_courses')        
 
 
 class Experiment(KnowledgeBaseObject):
