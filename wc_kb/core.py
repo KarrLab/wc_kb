@@ -1990,7 +1990,7 @@ class TimeCourseEvidence(Evidence):
 
     """
     print('reading_object_tce')
-    object_tce = obj_tables.ManyToOneAttribute(KnowledgeBaseObject, related_name='time_course_evidences')
+    object_tce = obj_tables.ManyToOneAttribute('Observable', related_name='time_course_evidences') # Todo: this
     values_tce = obj_tables.obj_math.NumpyArrayAttribute()
     values_unit_tce = obj_tables.units.UnitAttribute(unit_registry, none=False)
     times = obj_tables.obj_math.NumpyArrayAttribute()
@@ -2002,7 +2002,37 @@ class TimeCourseEvidence(Evidence):
             'values_unit_tce', 'times', 'times_unit', 'experiment', 'identifiers',
             'references', 'comments')
 
-
+    # This validation is currently obsololete, as I cannot set object_tce to any KnowledgeBaseObject:
+    # Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited: KnowledgeBaseObject.time_course_evidences to KnowledgeBase
+    
+    '''def validate(self):
+                    """ Determine if the object is valid
+                    Returns:
+                        :obj:`InvalidObject` or None: `None` if the object is valid,
+                            otherwise return a list of errors as an instance of `InvalidObject`
+                    """
+                    errors = []
+            
+                    # attributes
+                    for attr_name, attr in self.Meta.attributes.items():
+                        error = attr.validate(self, getattr(self, attr_name))
+                        if error:
+                            errors.append(error)
+            
+                    # related attributes
+                    for attr_name, attr in self.Meta.related_attributes.items():
+                        if attr.related_name:
+                            error = attr.related_validate(self, getattr(self, attr.related_name))
+                            if error:
+                                errors.append(error)
+                        # Specifically checking if obcect_tce is instance of `Species` or `Observable`
+                        if attr_name == 'object_tce':
+                            if not (isinstance(attr, Species) or isinstance(attr, Observable)):
+                                errors.append('{} must be wc_kb.core.Species or wc_kb.core.Observable'.format(attr_name))
+            
+                    if errors:
+                        return InvalidObject(self, errors)
+                    return None'''
 
 
 class Experiment(KnowledgeBaseObject):
