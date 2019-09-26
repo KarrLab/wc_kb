@@ -2002,9 +2002,11 @@ class TimeCourseEvidence(Evidence):
             'values_unit_tce', 'times', 'times_unit', 'experiment', 'identifiers',
             'references', 'comments')
 
-    # This validation is currently obsololete, as I cannot set object_tce to any KnowledgeBaseObject:
+    # This validation is partially obsololete, as I cannot set object_tce to any KnowledgeBaseObject:
     # Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited: KnowledgeBaseObject.time_course_evidences to KnowledgeBase
-    
+    # obj_tables.ManyToOneAttribute has no method that returns its length or shape (see below)
+    # obj_tables.ManyToOneAttribute can read in strings such as 1, 2, blah
+    # In this specifice case we should allow only floats and np.nans in obj_tables.ManyToOneAttribute.
     '''def validate(self):
                     """ Determine if the object is valid
                     Returns:
@@ -2029,6 +2031,11 @@ class TimeCourseEvidence(Evidence):
                         if attr_name == 'object_tce':
                             if not (isinstance(attr, Species) or isinstance(attr, Observable)):
                                 errors.append('{} must be wc_kb.core.Species or wc_kb.core.Observable'.format(attr_name))
+            
+                    # Checking if wc_kb.core.values_tce and wc_kb.core.times are of same length
+                    print(self.Meta.attributes['times'].__dir__())
+                    if not len(self.Meta.attributes['times'].deserialize) != len(self.Meta.attributes['values_tce']):
+                        errors.append('wc_kb.core.values_tce and wc_kb.core.times must be of same length')
             
                     if errors:
                         return InvalidObject(self, errors)
@@ -2076,6 +2083,59 @@ class Experiment(KnowledgeBaseObject):
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'experiment_design', 'measurement_technology', 'analysis_type', 'species', 'genetic_variant', 'external_media',
                            'temperature', 'temperature_units', 'ph', 'identifiers', 'references', 'comments')
+
+class TimeCourseExperiment(Experiment):
+    """ Represents an experiment in which a property was measured
+
+        Attributes:
+            id (:obj:`str`): identifier
+            species (:obj:`str`): species
+            genetic_variant (:obj:`str`): genetic_variant
+            external_media (:obj:`str`): external_media
+            temperature (:obj:`float`): temperature
+            temperature_units (:obj:`Units`): temperature_units
+            ph (:obj:`float`): pH
+            times (:obj:`ndarray`): time
+            times_unit (:obj:`Units`): units
+            objects_tce (:obj:`list` of :obj:`Observable`): list of observables that were perturbed
+            objects_tce_units (:obj:`list` of :obj:`Units`): list of units of observables
+            experiment_design_tce (:obj:`str`): experimental design
+            measurement_technology (:obj:`str`): measurement technology
+            analysis_type (:obj:`str`): analysis type
+            identifiers(:obj:`list` of :obj:`Identifier`): identifiers
+            references (:obj:`list` of :obj:`Reference`): references
+            comments(:obj:`str`): comments
+
+        Related attributes:
+    """
+
+    species = obj_tables.StringAttribute()
+    genetic_variant = obj_tables.StringAttribute()
+    external_media  = obj_tables.StringAttribute()
+    temperature = obj_tables.FloatAttribute()
+    temperature_units = obj_tables.units.UnitAttribute(unit_registry,
+                        choices=(unit_registry.parse_units('F'),
+                                 unit_registry.parse_units('C'),
+                                 unit_registry.parse_units('K')),
+                        default= unit_registry.parse_units('C'))
+    ph = obj_tables.FloatAttribute()
+    objects_tce = ManyToManyAttribute('Observable', related_name='time_course_experiments')
+    objects_tce_units = obj_tables.units.UnitAttribute(unit_registry, 
+        choices=(unit_registry.parse_units('s'),), none=False) # Todo: allow this to be a list or ndarray attribute
+    times = obj_tables.obj_math.NumpyArrayAttribute()
+    times_unit = obj_tables.units.UnitAttribute(unit_registry, 
+        choices=(unit_registry.parse_units('s'),), none=False)
+    experiment_design_tce = obj_tables.obj_math.NumpyArrayAttribute()
+    measurement_technology = obj_tables.StringAttribute()
+    analysis_type = obj_tables.StringAttribute()
+    identifiers = IdentifierAttribute(related_name='experiments')
+    references = obj_tables.ManyToManyAttribute('Reference', related_name='experiment')
+    comments = obj_tables.LongStringAttribute()
+
+    class Meta(obj_tables.Model.Meta):
+        attribute_order = ('id', 'experiment_design', 'measurement_technology', 'analysis_type', 'species', 'genetic_variant', 'external_media',
+                           'temperature', 'temperature_units', 'ph', 'identifiers', 'references', 'comments')
+
 
 
 class SpeciesTypeProperty(KnowledgeBaseObject):
