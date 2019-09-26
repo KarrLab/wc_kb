@@ -532,6 +532,16 @@ class MetaboliteSpeciesTypeTestCase(unittest.TestCase):
                          chem.EmpiricalFormula('C10H12N5O7P'))
         self.assertEqual(met.calc_charge(), -2)
         self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
+
+        speciesTypeProperties = core.SpeciesTypeProperty(
+            property = 'structure',
+            value_type = kbOnt['WC:string'],
+            value = ('[H]O[C@@]1([H])[C@@]([H])(O[C@]([H])(C([H])([H])OP([O-])([O-])=O)[C@@]1([H])O[H])N1C([H])=NC2=C(N=C([H])N=C12)N([H])[H]'))
+        met = core.MetaboliteSpeciesType(properties = [speciesTypeProperties])
+        self.assertEqual(met.calc_empirical_formula(),
+                         chem.EmpiricalFormula('C10H12N5O7P'))
+        self.assertEqual(met.calc_charge(), -2)
+        self.assertAlmostEqual(met.get_mol_wt(), 345.20530, places=4)
         
 class ReactionAndRelatedClassesTestCase(unittest.TestCase):
 

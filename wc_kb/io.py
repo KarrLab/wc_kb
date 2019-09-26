@@ -337,7 +337,7 @@ class Reader(obj_tables.io.Reader):
 
                 chromosome.sequence_path = seq_path  # Set seq_path to be what is provided to wc_kb.io.Reader()
                 if idx != 0:
-                    warnings.warn('Same sequence file is associated with mulitple chromosomes, '
+                    warnings.warn('Same sequence file is associated with multiple chromosomes, '
                                   'make sure seq file is formatted accordingly!')
 
             else:
