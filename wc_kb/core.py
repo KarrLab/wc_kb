@@ -501,6 +501,9 @@ class KnowledgeBaseObject(obj_tables.Model):
         name (:obj:`str`): name
         synonyms (:obj:`str`): synonyms
         comments (:obj:`str`): comments
+
+    Related Attributes:
+        time_course_evidences (:obj:`list` of :obj:`TimeCourseEvidence): list of wc_core.TimeCourseEvidence
     """
 
     id = obj_tables.StringAttribute(primary=True, unique=True)
@@ -1963,6 +1966,43 @@ class Evidence(KnowledgeBaseObject):
 
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'cell', 'object', 'property', 'value', 'units', 'experiment', 'identifiers', 'references', 'comments')
+
+
+class TimeCourseEvidence(Evidence):
+    """ Represents the measurement / observation of a property. Supports time resolved
+    and non-time resolved data.
+
+    Attributes:
+        id (:obj:`str`): identifier
+        cell (:obj:`Cell`): cell
+        object_tce (:obj:`KnowledgeBaseObject`): object
+        property (:obj:`str`): property
+        value_tce (:obj:`float`): value
+        values_unit_tce (:obj:`Units`): units
+        times (:obj:`ndarray`): time
+        times_unit (:obj:`Units`): units
+        identifiers(:obj:`list` of :obj:`Identifier`): identifiers
+        references (:obj:`list` of :obj:`Reference`): references
+        experiment (:obj:`Experiment`): experiment
+        comments(:obj:`str`): comments
+
+    Related attributes:
+
+    """
+    print('reading_object_tce')
+    object_tce = obj_tables.ManyToOneAttribute(KnowledgeBaseObject, related_name='time_course_evidences')
+    values_tce = obj_tables.obj_math.NumpyArrayAttribute()
+    values_unit_tce = obj_tables.units.UnitAttribute(unit_registry, none=False)
+    times = obj_tables.obj_math.NumpyArrayAttribute()
+    times_unit = obj_tables.units.UnitAttribute(unit_registry, 
+        choices=(unit_registry.parse_units('s'),), none=False)
+
+    class Meta(obj_tables.Model.Meta):
+        attribute_order = ('id', 'cell', 'object_tce', 'property', 'values_tce',
+            'values_unit_tce', 'times', 'times_unit', 'experiment', 'identifiers',
+            'references', 'comments')
+
+
 
 
 class Experiment(KnowledgeBaseObject):
