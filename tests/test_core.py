@@ -1411,7 +1411,7 @@ class EvidenceTestCase(unittest.TestCase):
         # Todo: Do we need to enforce `id`, `value`, `property` and `units` and either of `observable` or `object`
 
 
-class TimeCourseTestCase(unittest.TestCase):
+'''class TimeCourseTestCase(unittest.TestCase):
     
     cell  = core.Cell()
     comp1 = core.Compartment(id='c')
@@ -1493,7 +1493,7 @@ class TimeCourseTestCase(unittest.TestCase):
             values = [1.1, 0, 1], values_unit=self.unit, times = [0.4, 0.9], time_0=self.time_0,
             times_unit=self.time_units, times_are_points=True, comments='tcm2 comment', evidence=self.evi1)
         self.assertEqual(self.evi1.time_course_measurements, [tcm1, tcm2])
-
+'''
 
 class TimeCourseAttributeTestCase(unittest.TestCase):
 

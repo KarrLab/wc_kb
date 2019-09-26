@@ -46,6 +46,7 @@ PROKARYOTE_MODELS = (
     core.RateLaw,
     core.Parameter,
     core.Evidence,
+    core.PerturbationCourse,
     core.TimeCourse,
     core.Experiment,
     core.Experiment,
