@@ -1288,3 +1288,38 @@ class TimeCourseEvidenceTestCase(unittest.TestCase):
         self.assertEqual(tce1.references, [self.ref1])
         self.assertEqual(tce1.experiment, self.expe1)
         self.assertEqual(tce1.comments, 'tc1 comment')
+
+
+class TimeCourseExperimentTestCase(unittest.TestCase):
+    
+    cell  = core.Cell()
+    comp1 = core.Compartment(id='c')
+    met1a  = core.MetaboliteSpeciesType(id='met1a')
+    met1b  = core.MetaboliteSpeciesType(id='met1b')
+    met2  = core.MetaboliteSpeciesType(id='met2')
+    species1a = core.Species(species_type=met1a, compartment=comp1)
+    species1b = core.Species(species_type=met1b, compartment=comp1)
+    species2 = core.Species(species_type=met2, compartment=comp1)
+    expr1 = core.ObservableExpression(expression='met1a[c] + met1b[c]', species=[species1a, species1b])
+    expr2 = core.ObservableExpression(expression='met2[c]', species=[species2])
+    observable1 = core.Observable(cell=cell, id='obs1', expression=expr1)
+    observable2 = core.Observable(cell=cell, id='obs1', expression=expr2)
+    ref1=core.Reference(id='ref1')
+    expe1 = core.Experiment(id='expe1', references = [ref1], comments = 'expe comment')
+    dbref = core.Identifier(id='dbref1')
+
+    def test_time_course(self):
+        tce1 = core.TimeCourseEvidence(id='tce1', objects_tce=[self.observable1, self.observable2], 
+                objects_tce_units=unit_registry.parse_units('molar'), times=numpy.array([0, 0.5, 1]),
+                times_unit=unit_registry.parse_units('s'),
+                experiment_design_tce=numpy.array([1.1, numpy.nan, 2], [0, 0, 0.5]))
+
+        self.assertEqual(tce1.id, 'tce1')
+        self.assertEqual(tce1.objects_tce, [self.observable1, self.observable2])
+        self.assertEqual(tce1.objects_tce_units, unit_registry.parse_units('molar'))
+        self.assertTrue(numpy.allclose(tce1.times, numpy.array([0, 0.5, 1]),
+            rtol=0, atol=0, equal_nan=True))
+        self.assertEqual(tce1.times_unit, unit_registry.parse_units('s'))
+        self.assertTrue(numpy.allclose(tce1.experiment_design,
+            numpy.array([1.1, numpy.nan, 2], [0, 0, 0.5]),
+            rtol=0, atol=0, equal_nan=True))

@@ -2063,7 +2063,7 @@ class Experiment(KnowledgeBaseObject):
         Related attributes:
     """
 
-    species = obj_tables.StringAttribute()
+    species = obj_tables.StringAttribute() # Todo: Is this a molecular species or a core.Cell?
     genetic_variant = obj_tables.StringAttribute()
     external_media  = obj_tables.StringAttribute()
     temperature	= obj_tables.FloatAttribute()
@@ -2119,7 +2119,7 @@ class TimeCourseExperiment(Experiment):
                                  unit_registry.parse_units('K')),
                         default= unit_registry.parse_units('C'))
     ph = obj_tables.FloatAttribute()
-    objects_tce = ManyToManyAttribute('Observable', related_name='time_course_experiments')
+    objects_tce = ManyToManyAttribute('Observable', related_name='time_course_experiments') # Todo: make sure this list is ordered
     objects_tce_units = obj_tables.units.UnitAttribute(unit_registry, 
         choices=(unit_registry.parse_units('s'),), none=False) # Todo: allow this to be a list or ndarray attribute
     times = obj_tables.obj_math.NumpyArrayAttribute()
@@ -2133,10 +2133,10 @@ class TimeCourseExperiment(Experiment):
     comments = obj_tables.LongStringAttribute()
 
     class Meta(obj_tables.Model.Meta):
-        attribute_order = ('id', 'experiment_design', 'measurement_technology', 'analysis_type', 'species', 'genetic_variant', 'external_media',
-                           'temperature', 'temperature_units', 'ph', 'identifiers', 'references', 'comments')
-
-
+        attribute_order = ('id', 'times', 'times_unit', 'objects_tce', 'objects_tce_units',
+            'experiment_design', 'measurement_technology', 'analysis_type', 'species',
+            'genetic_variant', 'external_media', 'temperature', 'temperature_units', 'ph',
+            'identifiers', 'references', 'comments')
 
 class SpeciesTypeProperty(KnowledgeBaseObject):
     """ Knowledge of the properties of species types
