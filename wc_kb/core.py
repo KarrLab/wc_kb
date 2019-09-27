@@ -2099,7 +2099,7 @@ class TimeCourseExperiment(Experiment):
             times_unit (:obj:`Units`): units
             objects_tce (:obj:`list` of :obj:`Observable`): list of observables that were perturbed
             objects_tce_units (:obj:`list` of :obj:`Units`): list of units of observables
-            experiment_design_tce (:obj:`str`): experimental design
+            experiment_design_tce (:obj:`ndarray`): objects_tce x times ndarray of perturbation courses
             measurement_technology (:obj:`str`): measurement technology
             analysis_type (:obj:`str`): analysis type
             identifiers(:obj:`list` of :obj:`Identifier`): identifiers
@@ -2109,16 +2109,6 @@ class TimeCourseExperiment(Experiment):
         Related attributes:
     """
 
-    species = obj_tables.StringAttribute()
-    genetic_variant = obj_tables.StringAttribute()
-    external_media  = obj_tables.StringAttribute()
-    temperature = obj_tables.FloatAttribute()
-    temperature_units = obj_tables.units.UnitAttribute(unit_registry,
-                        choices=(unit_registry.parse_units('F'),
-                                 unit_registry.parse_units('C'),
-                                 unit_registry.parse_units('K')),
-                        default= unit_registry.parse_units('C'))
-    ph = obj_tables.FloatAttribute()
     objects_tce = ManyToManyAttribute('Observable', related_name='time_course_experiments') # Todo: make sure this list is ordered
     objects_tce_units = obj_tables.units.UnitAttribute(unit_registry, 
         choices=(unit_registry.parse_units('s'),), none=False) # Todo: allow this to be a list or ndarray attribute
@@ -2126,15 +2116,11 @@ class TimeCourseExperiment(Experiment):
     times_unit = obj_tables.units.UnitAttribute(unit_registry, 
         choices=(unit_registry.parse_units('s'),), none=False)
     experiment_design_tce = obj_tables.obj_math.NumpyArrayAttribute()
-    measurement_technology = obj_tables.StringAttribute()
-    analysis_type = obj_tables.StringAttribute()
-    identifiers = IdentifierAttribute(related_name='experiments')
-    references = obj_tables.ManyToManyAttribute('Reference', related_name='experiment')
-    comments = obj_tables.LongStringAttribute()
+    
 
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'times', 'times_unit', 'objects_tce', 'objects_tce_units',
-            'experiment_design', 'measurement_technology', 'analysis_type', 'species',
+            'experiment_design_tce', 'measurement_technology', 'analysis_type', 'species',
             'genetic_variant', 'external_media', 'temperature', 'temperature_units', 'ph',
             'identifiers', 'references', 'comments')
 

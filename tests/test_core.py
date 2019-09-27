@@ -1309,10 +1309,10 @@ class TimeCourseExperimentTestCase(unittest.TestCase):
     dbref = core.Identifier(id='dbref1')
 
     def test_time_course(self):
-        tce1 = core.TimeCourseEvidence(id='tce1', objects_tce=[self.observable1, self.observable2], 
+        tce1 = core.TimeCourseExperiment(id='tce1', objects_tce=[self.observable1, self.observable2], 
                 objects_tce_units=unit_registry.parse_units('molar'), times=numpy.array([0, 0.5, 1]),
                 times_unit=unit_registry.parse_units('s'),
-                experiment_design_tce=numpy.array([1.1, numpy.nan, 2], [0, 0, 0.5]))
+                experiment_design_tce=numpy.array([[1.1, numpy.nan, 2], [0, 0, 0.5]]))
 
         self.assertEqual(tce1.id, 'tce1')
         self.assertEqual(tce1.objects_tce, [self.observable1, self.observable2])
@@ -1320,6 +1320,6 @@ class TimeCourseExperimentTestCase(unittest.TestCase):
         self.assertTrue(numpy.allclose(tce1.times, numpy.array([0, 0.5, 1]),
             rtol=0, atol=0, equal_nan=True))
         self.assertEqual(tce1.times_unit, unit_registry.parse_units('s'))
-        self.assertTrue(numpy.allclose(tce1.experiment_design,
-            numpy.array([1.1, numpy.nan, 2], [0, 0, 0.5]),
+        self.assertTrue(numpy.allclose(tce1.experiment_design_tce,
+            numpy.array([[1.1, numpy.nan, 2], [0, 0, 0.5]]),
             rtol=0, atol=0, equal_nan=True))
