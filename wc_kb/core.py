@@ -1343,6 +1343,8 @@ class Observable(KnowledgeBaseObject):
     Related attributes:
         observable_expressions (:obj:`list` of :obj:`ObservableExpression`): observable expressions
         rate_law_expressions (:obj:`list` of :obj:`RateLawExpression`): rate law expressions
+        time_course_evidences (:obj:`list` of :obj:`TimeCourseEvidence`): time course evidences
+        time_course_experiments (:obj:`list` of :obj:`TimeCourseExperiment`): time course experiments
     """
 
     cell = ManyToOneAttribute(Cell, related_name='observables')
@@ -2007,39 +2009,38 @@ class TimeCourseEvidence(Evidence):
     # obj_tables.ManyToOneAttribute has no method that returns its length or shape (see below)
     # obj_tables.ManyToOneAttribute can read in strings such as 1, 2, blah
     # In this specifice case we should allow only floats and np.nans in obj_tables.ManyToOneAttribute.
-    '''def validate(self):
-                    """ Determine if the object is valid
-                    Returns:
-                        :obj:`InvalidObject` or None: `None` if the object is valid,
-                            otherwise return a list of errors as an instance of `InvalidObject`
-                    """
-                    errors = []
-            
-                    # attributes
-                    for attr_name, attr in self.Meta.attributes.items():
-                        error = attr.validate(self, getattr(self, attr_name))
-                        if error:
-                            errors.append(error)
-            
-                    # related attributes
-                    for attr_name, attr in self.Meta.related_attributes.items():
-                        if attr.related_name:
-                            error = attr.related_validate(self, getattr(self, attr.related_name))
-                            if error:
-                                errors.append(error)
-                        # Specifically checking if obcect_tce is instance of `Species` or `Observable`
-                        if attr_name == 'object_tce':
-                            if not (isinstance(attr, Species) or isinstance(attr, Observable)):
-                                errors.append('{} must be wc_kb.core.Species or wc_kb.core.Observable'.format(attr_name))
-            
-                    # Checking if wc_kb.core.values_tce and wc_kb.core.times are of same length
-                    print(self.Meta.attributes['times'].__dir__())
-                    if not len(self.Meta.attributes['times'].deserialize) != len(self.Meta.attributes['values_tce']):
-                        errors.append('wc_kb.core.values_tce and wc_kb.core.times must be of same length')
-            
-                    if errors:
-                        return InvalidObject(self, errors)
-                    return None'''
+    def validate(self):
+        """ Determine if the object is valid
+        Returns:
+            :obj:`InvalidObject` or None: `None` if the object is valid,
+                otherwise return a list of errors as an instance of `InvalidObject`
+        """
+        errors = []
+
+        # attributes
+        for attr_name, attr in self.Meta.attributes.items():
+            error = attr.validate(self, getattr(self, attr_name))
+            if error:
+                errors.append(error)
+
+        # related attributes
+        for attr_name, attr in self.Meta.related_attributes.items():
+            if attr.related_name:
+                error = attr.related_validate(self, getattr(self, attr.related_name))
+                if error:
+                    errors.append(error)
+            # Specifically checking if obcect_tce is instance of `Species` or `Observable`
+            if attr_name == 'object_tce':
+                if not (isinstance(attr, Species) or isinstance(attr, Observable)):
+                    errors.append('{} must be wc_kb.core.Species or wc_kb.core.Observable'.format(attr_name))
+
+        # Checking if wc_kb.core.values_tce and wc_kb.core.times are of same length
+        # if not (self.Meta.attributes['times'].shape) != (self.Meta.attributes['values_tce'].get_default().shape):
+        #     errors.append('wc_kb.core.values_tce and wc_kb.core.times must be of same length')
+
+        if errors:
+            return InvalidObject(self, errors)
+        return None
 
 
 class Experiment(KnowledgeBaseObject):
@@ -2063,7 +2064,7 @@ class Experiment(KnowledgeBaseObject):
         Related attributes:
     """
 
-    species = obj_tables.StringAttribute() # Todo: Is this a molecular species or a core.Cell?
+    species = obj_tables.StringAttribute() # Todo: Why is this not a core.Cell?
     genetic_variant = obj_tables.StringAttribute()
     external_media  = obj_tables.StringAttribute()
     temperature	= obj_tables.FloatAttribute()
@@ -2110,8 +2111,7 @@ class TimeCourseExperiment(Experiment):
     """
 
     objects_tce = ManyToManyAttribute('Observable', related_name='time_course_experiments') # Todo: make sure this list is ordered
-    objects_tce_units = obj_tables.units.UnitAttribute(unit_registry, 
-        choices=(unit_registry.parse_units('s'),), none=False) # Todo: allow this to be a list or ndarray attribute
+    objects_tce_units = obj_tables.units.UnitAttribute(unit_registry, none=False) # Todo: allow this to be a list or ndarray attribute
     times = obj_tables.obj_math.NumpyArrayAttribute()
     times_unit = obj_tables.units.UnitAttribute(unit_registry, 
         choices=(unit_registry.parse_units('s'),), none=False)

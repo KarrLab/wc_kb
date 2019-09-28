@@ -48,6 +48,7 @@ PROKARYOTE_MODELS = (
     core.Evidence,
     core.TimeCourseEvidence,
     core.Experiment,
+    core.TimeCourseExperiment,
     core.Reference)
 
 EUKARYOTE_MODELS = (
@@ -71,6 +72,7 @@ EUKARYOTE_MODELS = (
     core.Evidence,
     core.TimeCourseEvidence,
     core.Experiment,
+    core.TimeCourseExperiment,
     core.Reference)
 
 
