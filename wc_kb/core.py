@@ -1977,12 +1977,12 @@ class TimeCourseEvidence(Evidence):
     Attributes:
         id (:obj:`str`): identifier
         cell (:obj:`Cell`): cell
-        object_tce (:obj:`KnowledgeBaseObject`): object
+        object_tce (:obj:`Observable`): time course evidence object 
         property (:obj:`str`): property
-        value_tce (:obj:`float`): value
-        values_unit_tce (:obj:`Units`): units
+        value_tce (:obj:`ndarray`): time course evidence value
+        values_unit_tce (:obj:`Units`): time course evidence object units
         times (:obj:`ndarray`): time
-        times_unit (:obj:`Units`): units
+        times_unit (:obj:`Units`): time units
         identifiers(:obj:`list` of :obj:`Identifier`): identifiers
         references (:obj:`list` of :obj:`Reference`): references
         experiment (:obj:`Experiment`): experiment
@@ -1992,7 +1992,7 @@ class TimeCourseEvidence(Evidence):
 
     """
     print('reading_object_tce')
-    object_tce = obj_tables.ManyToOneAttribute('Observable', related_name='time_course_evidences') # Todo: this
+    object_tce = obj_tables.ManyToOneAttribute('Observable', related_name='time_course_evidences') # Todo: object_tce should replace object here. Also other KB objects should be allowed.
     values_tce = obj_tables.obj_math.NumpyArrayAttribute()
     values_unit_tce = obj_tables.units.UnitAttribute(unit_registry, none=False)
     times = obj_tables.obj_math.NumpyArrayAttribute()
@@ -2007,8 +2007,6 @@ class TimeCourseEvidence(Evidence):
     # This validation is partially obsololete, as I cannot set object_tce to any KnowledgeBaseObject:
     # Relationships to `KnowledgeBase` from classes other than `Cell` are prohibited: KnowledgeBaseObject.time_course_evidences to KnowledgeBase
     # obj_tables.ManyToOneAttribute has no method that returns its length or shape (see below)
-    # obj_tables.ManyToOneAttribute can read in strings such as 1, 2, blah
-    # In this specifice case we should allow only floats and np.nans in obj_tables.ManyToOneAttribute.
     def validate(self):
         """ Determine if the object is valid
         Returns:
@@ -2097,7 +2095,7 @@ class TimeCourseExperiment(Experiment):
             temperature_units (:obj:`Units`): temperature_units
             ph (:obj:`float`): pH
             times (:obj:`ndarray`): time
-            times_unit (:obj:`Units`): units
+            times_unit (:obj:`Units`): times unit
             objects_tce (:obj:`list` of :obj:`Observable`): list of observables that were perturbed
             objects_tce_units (:obj:`list` of :obj:`Units`): list of units of observables
             experiment_design_tce (:obj:`ndarray`): objects_tce x times ndarray of perturbation courses
@@ -2117,12 +2115,12 @@ class TimeCourseExperiment(Experiment):
         choices=(unit_registry.parse_units('s'),), none=False)
     experiment_design_tce = obj_tables.obj_math.NumpyArrayAttribute()
     
-
     class Meta(obj_tables.Model.Meta):
         attribute_order = ('id', 'times', 'times_unit', 'objects_tce', 'objects_tce_units',
             'experiment_design_tce', 'measurement_technology', 'analysis_type', 'species',
             'genetic_variant', 'external_media', 'temperature', 'temperature_units', 'ph',
             'identifiers', 'references', 'comments')
+
 
 class SpeciesTypeProperty(KnowledgeBaseObject):
     """ Knowledge of the properties of species types
