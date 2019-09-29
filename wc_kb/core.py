@@ -2020,6 +2020,10 @@ class TimeCourseEvidence(Evidence):
             error = attr.validate(self, getattr(self, attr_name))
             if error:
                 errors.append(error)
+            # Specifically checking if obcect_tce is instance of `Species` or `Observable`
+            # if attr_name == 'object_tce':
+            #     if not (isinstance(attr, Species) or isinstance(attr, Observable)):
+            #         errors.append('{} must be wc_kb.core.Species or wc_kb.core.Observable'.format(attr_name))
 
         # related attributes
         for attr_name, attr in self.Meta.related_attributes.items():
@@ -2027,11 +2031,11 @@ class TimeCourseEvidence(Evidence):
                 error = attr.related_validate(self, getattr(self, attr.related_name))
                 if error:
                     errors.append(error)
-            # Specifically checking if obcect_tce is instance of `Species` or `Observable`
-            if attr_name == 'object_tce':
-                if not (isinstance(attr, Species) or isinstance(attr, Observable)):
-                    errors.append('{} must be wc_kb.core.Species or wc_kb.core.Observable'.format(attr_name))
-
+                    
+        print(self.Meta.attributes['values_tce'].__dir__())
+        print(self.Meta.attributes['values_tce'].get_default())
+        print(self.Meta.attributes['values_tce'].default)
+        print(self.Meta.attributes['values_tce'].default_cleaned_value)
         # Checking if wc_kb.core.values_tce and wc_kb.core.times are of same length
         # if not (self.Meta.attributes['times'].shape) != (self.Meta.attributes['values_tce'].get_default().shape):
         #     errors.append('wc_kb.core.values_tce and wc_kb.core.times must be of same length')
