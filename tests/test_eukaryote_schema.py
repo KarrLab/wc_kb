@@ -156,6 +156,11 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(transcript5.get_empirical_formula(),
                          chem.EmpiricalFormula('C20H23N10O13P2'))
 
+        # Test using input sequence
+        test_trans = eukaryote.TranscriptSpeciesType()
+        self.assertEqual(test_trans.get_empirical_formula(seq_input=Bio.Seq.Seq('AA')),
+                         chem.EmpiricalFormula('C20H23N10O13P2'))
+
     def test_get_charge(self):
         dna1 = core.DnaSpeciesType(id='dna5', sequence_path=self.sequence_path)
 
@@ -169,6 +174,10 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         exon2_2 = eukaryote.GenericLocus(start=4, end=4)
         transcript2 = eukaryote.TranscriptSpeciesType(gene=gene2, exons=[exon2_1, exon2_2])
         self.assertEqual(transcript2.get_charge(), -3)
+
+        # Test using input sequence
+        test_trans = eukaryote.TranscriptSpeciesType()
+        self.assertEqual(test_trans.get_charge(seq_input=Bio.Seq.Seq('CG')), -3)
 
     def test_get_mol_wt(self):
         dna1 = core.DnaSpeciesType(id='dna6', sequence_path=self.sequence_path)
@@ -194,6 +203,13 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
             + Bio.SeqUtils.molecular_weight(transcript3.get_seq()) \
             - (transcript3.get_len() + 1) * mendeleev.element('H').atomic_weight
         self.assertAlmostEqual(transcript3.get_mol_wt(), exp_mol_wt, places=1)
+
+        # Test using input sequence
+        test_trans = eukaryote.TranscriptSpeciesType()
+        exp_mol_wt = \
+            + Bio.SeqUtils.molecular_weight(transcript1.get_seq()) \
+            - (transcript1.get_len() + 1) * mendeleev.element('H').atomic_weight
+        self.assertAlmostEqual(test_trans.get_mol_wt(seq_input=Bio.Seq.Seq('A')), exp_mol_wt, places=1)
 
 
 class ProteinSpeciesTypeTestCase(unittest.TestCase):
@@ -257,16 +273,32 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(self.prot2.get_empirical_formula(),
                          chem.EmpiricalFormula('C53H91N11O11S1'))
 
+        # Test using input sequence
+        test_prot = eukaryote.ProteinSpeciesType()
+        self.assertEqual(test_prot.get_empirical_formula(seq_input=Bio.Seq.Seq('MKVLINKNEL')),
+                         chem.EmpiricalFormula('C53H96N14O15S1'))
+        self.assertEqual(test_prot.get_empirical_formula(seq_input=Bio.Seq.Seq('MKKFLLTPL')),
+                         chem.EmpiricalFormula('C53H91N11O11S1'))
+
     def test_get_mol_wt(self):
         # Default translation table used is 1 (standard)
         self.assertAlmostEqual(self.prot1.get_mol_wt(), 1201.49, delta=0.3)
         self.assertAlmostEqual(self.prot2.get_mol_wt(), 1090.43, delta=0.3)
+
+        # Test using input sequence
+        test_prot = eukaryote.ProteinSpeciesType()
+        self.assertAlmostEqual(test_prot.get_mol_wt(seq_input=Bio.Seq.Seq('MKVLINKNEL')), 1201.49, delta=0.3)
+        self.assertAlmostEqual(test_prot.get_mol_wt(seq_input=Bio.Seq.Seq('MKKFLLTPL')), 1090.43, delta=0.3)
 
     def test_get_charge(self):
         # Default translation table used is 1 (standard)
         self.assertEqual(self.prot1.get_charge(), 1)
         self.assertEqual(self.prot2.get_charge(), 2)
 
+        # Test using input sequence
+        test_prot = eukaryote.ProteinSpeciesType()
+        self.assertEqual(test_prot.get_charge(seq_input=Bio.Seq.Seq('MKVLINKNEL')), 1)
+        self.assertEqual(test_prot.get_charge(seq_input=Bio.Seq.Seq('MKKFLLTPL')), 2)
 
 class ComplexSpeciesTypeTestCase(unittest.TestCase):
     def test_ComplexSpeciesType(self):

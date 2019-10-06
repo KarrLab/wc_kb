@@ -439,7 +439,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
 
         return spliced_dna_seq.transcribe()
 
-    def get_empirical_formula(self):
+    def get_empirical_formula(self, seq_input=None):
         """ Get the empirical formula for a transcript (spliced RNA) species with
 
         * 5' monophosphate
@@ -447,10 +447,18 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
 
         :math:`N_A * AMP + N_C * CMP + N_G * GMP + N_U * UMP - (L-1) * OH`
 
+        Args:
+            seq_input (:obj:`Bio.Seq.Seq`, optional): if provided, the method will use it
+                instead of reading from fasta file to reduce IO operation 
+
         Returns:
            :obj:`chem.EmpiricalFormula`: empirical formula
         """
-        seq = self.get_seq()
+        if seq_input:
+            seq = seq_input
+        else:    
+            seq = self.get_seq()
+        
         n_a = seq.count('A')
         n_c = seq.count('C')
         n_g = seq.count('G')
@@ -466,7 +474,7 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
 
         return formula
 
-    def get_charge(self):
+    def get_charge(self, seq_input=None):
         """ Get the charge for a transcript (spliced RNA) species with
 
         * 5' monophosphate
@@ -474,21 +482,36 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
 
         :math:`-L - 1`
 
+        Args:
+            seq_input (:obj:`Bio.Seq.Seq`, optional): if provided, the method will use it
+                instead of reading from fasta file to reduce IO operation
+
         Returns:
            :obj:`int`: charge
         """
-        return -self.get_len() - 1
+        if seq_input:
+            length = len(seq_input)
+        else:
+            length = len(self.get_seq())    
+        return -length - 1
 
-    def get_mol_wt(self):
+    def get_mol_wt(self, seq_input=None):
         """ Get the molecular weight for a transcript (spliced RNA) species with
 
         * 5' monophosphate
         * Deprotonated phosphate oxygens
 
+        Args:
+            seq_input (:obj:`Bio.Seq.Seq`, optional): if provided, the method will use it
+                instead of reading from fasta file to reduce IO operation        
+
         Returns:
             :obj:`float`: molecular weight (Da)
         """
-        return self.get_empirical_formula().get_molecular_weight()
+        if seq_input:
+            return self.get_empirical_formula(seq_input=seq_input).get_molecular_weight()
+        else:
+            return self.get_empirical_formula().get_molecular_weight()
 
 
 class ProteinSpeciesType(core.PolymerSpeciesType):
@@ -542,18 +565,23 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
         return spliced_dna_seq.transcribe().translate(table=table, cds=cds)
 
-    def get_empirical_formula(self, table=1, cds=True):
+    def get_empirical_formula(self, table=1, cds=True, seq_input=None):
         """ Get the empirical formula
 
         Args:
             table (:obj:`int`, optional): NCBI identifier for translation table
                                         (default = standard table)
             cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
+            seq_input (:obj:`Bio.Seq.Seq`, optional): if provided, the method will use it
+                instead of reading from fasta file to reduce IO operation
 
         Returns:
             :obj:`chem.EmpiricalFormula`: empirical formula
         """
-        seq = self.get_seq(table=table, cds=cds)
+        if seq_input:
+            seq = seq_input
+        else:    
+            seq = self.get_seq(table=table, cds=cds)
         l = len(seq) - seq.count('*')    
 
         n_a = seq.count('A')  # Ala: Alanine (C3 H7 N O2)
@@ -605,18 +633,23 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         formula.S = n_c + n_m
         return formula
 
-    def get_charge(self, table=1, cds=True):
+    def get_charge(self, table=1, cds=True, seq_input=None):
         """ Get the charge at physiological pH
 
         Args:
             table (:obj:`int`, optional): NCBI identifier for translation table
                                         (default = standard table)
             cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
+            seq_input (:obj:`Bio.Seq.Seq`, optional): if provided, the method will use it
+                instead of reading from fasta file to reduce IO operation
 
         Returns:
             :obj:`int`: charge
         """
-        seq = self.get_seq(table=table, cds=cds)
+        if seq_input:
+            seq = seq_input
+        else:    
+            seq = self.get_seq(table=table, cds=cds)
 
         n_r = seq.count('R')
         n_h = seq.count('H')
@@ -626,15 +659,20 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
         return (n_r + n_h + n_k) - (n_d + n_e)
 
-    def get_mol_wt(self, table=1, cds=True):
+    def get_mol_wt(self, table=1, cds=True, seq_input=None):
         """ Get the molecular weight
 
         Args:
             table (:obj:`int`, optional): NCBI identifier for translation table
                                         (default = standard table)
             cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
+            seq_input (:obj:`Bio.Seq.Seq`, optional): if provided, the method will use it
+                instead of reading from fasta file to reduce IO operation
 
         Returns:
             :obj:`float`: molecular weight
         """
-        return self.get_empirical_formula(table=table, cds=cds).get_molecular_weight()
+        if seq_input:
+            return self.get_empirical_formula(table=table, cds=cds, seq_input=seq_input).get_molecular_weight()
+        else:    
+            return self.get_empirical_formula(table=table, cds=cds).get_molecular_weight()
