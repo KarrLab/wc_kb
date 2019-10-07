@@ -70,7 +70,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         self.sequence_path = os.path.join(self.tmp_dirname, 'test_seq.fasta')
         with open(self.sequence_path, 'w') as f:
             f.write('>dna1\nACGTACGTACGTACGTTTT\n'
-                    '>dna2\nACTGAGTTACGTACGTTTT\n'
+                    '>dna2\nAcTGAGTTACGTACGTTTT\n'
                     '>dna3\nACGT\n'
                     '>dna4\nATAT\n'
                     '>dna5\nAAAA\n'
@@ -121,7 +121,7 @@ class TranscriptSpeciesTypeTestCase(unittest.TestCase):
         transcript2 = eukaryote.TranscriptSpeciesType(
             gene=gene2, exons=[exon2_1, exon2_2])
 
-        self.assertEqual(transcript1.get_seq(), 'ACUGUU')
+        self.assertEqual(transcript1.get_seq(), 'AcUGUU')
         self.assertEqual(transcript2.get_seq(), 'ACGGUAACUC')
 
     def test_get_empirical_formula(self):

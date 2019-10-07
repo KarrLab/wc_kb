@@ -459,10 +459,10 @@ class TranscriptSpeciesType(core.PolymerSpeciesType):
         else:    
             seq = self.get_seq()
         
-        n_a = seq.count('A')
-        n_c = seq.count('C')
-        n_g = seq.count('G')
-        n_u = seq.count('U')
+        n_a = seq.upper().count('A')
+        n_c = seq.upper().count('C')
+        n_g = seq.upper().count('G')
+        n_u = seq.upper().count('U')
         l = len(seq)
 
         formula = chem.EmpiricalFormula()
