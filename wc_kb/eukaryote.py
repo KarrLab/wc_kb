@@ -608,29 +608,38 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         n_y = seq.count('Y')  # Tyr: Tyrosine (C9 H11 N O3)
         n_v = seq.count('V')  # Val: Valine (C5 H11 N O2)
 
+        n_u = seq.count('U')  # Selcys: Selenocysteine (C3 H7 N O2 Se)
+
         formula = chem.EmpiricalFormula()
 
         formula.C = 3 * n_a + 6 * n_r + 4 * n_n + 4 * n_d + 3 * n_c + \
             5 * n_q + 5 * n_e + 2 * n_g + 6 * n_h + 6 * n_i + \
             6 * n_l + 6 * n_k + 5 * n_m + 9 * n_f + 5 * n_p + \
-            3 * n_s + 4 * n_t + 11 * n_w + 9 * n_y + 5 * n_v
+            3 * n_s + 4 * n_t + 11 * n_w + 9 * n_y + 5 * n_v + \
+            3 * n_u
 
         formula.H = 7 * n_a + 14 * n_r + 8 * n_n + 7 * n_d + 7 * n_c + \
             10 * n_q + 9 * n_e + 5 * n_g + 9 * n_h + 13 * n_i + \
             13 * n_l + 14 * n_k + 11 * n_m + 11 * n_f + 9 * n_p + \
-            7 * n_s + 9 * n_t + 12 * n_w + 11 * n_y + 11 * n_v - 2 * (l - 1)
+            7 * n_s + 9 * n_t + 12 * n_w + 11 * n_y + 11 * n_v + \
+            7 * n_u - 2 * (l - 1)
 
         formula.N = 1 * n_a + 4 * n_r + 2 * n_n + 1 * n_d + 1 * n_c + \
             2 * n_q + 1 * n_e + 1 * n_g + 3 * n_h + 1 * n_i + \
             1 * n_l + 2 * n_k + 1 * n_m + 1 * n_f + 1 * n_p + \
-            1 * n_s + 1 * n_t + 2 * n_w + 1 * n_y + 1 * n_v
+            1 * n_s + 1 * n_t + 2 * n_w + 1 * n_y + 1 * n_v + \
+            1 * n_u
 
         formula.O = 2 * n_a + 2 * n_r + 3 * n_n + 4 * n_d + 2 * n_c + \
             3 * n_q + 4 * n_e + 2 * n_g + 2 * n_h + 2 * n_i + \
             2 * n_l + 2 * n_k + 2 * n_m + 2 * n_f + 2 * n_p + \
-            3 * n_s + 3 * n_t + 2 * n_w + 3 * n_y + 2 * n_v - (l - 1)
+            3 * n_s + 3 * n_t + 2 * n_w + 3 * n_y + 2 * n_v + \
+            2 * n_u - (l - 1)
 
         formula.S = n_c + n_m
+
+        formula.Se = n_u
+        
         return formula
 
     def get_charge(self, table=1, cds=True, seq_input=None):
