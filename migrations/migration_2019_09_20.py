@@ -1,9 +1,7 @@
 # Migration from original obj_model format to obj_tables SBtab-like format
 
-import argparse
 import obj_tables
 import openpyxl
-import os.path
 import warnings
 import wc_kb.io
 
@@ -28,7 +26,7 @@ def transform(filename, taxon):
         first_cell = ws.cell(1, 1).value
         if not (isinstance(first_cell, str) and first_cell.startswith('!!')):
             ws.insert_rows(1, amount=1)
-        ws.cell(1, 1).value = "!!ObjTables TableType='{}' ObjTablesVersion='{}'".format(
+        ws.cell(1, 1).value = "!!ObjTables Type='{}' ObjTablesVersion='{}'".format(
             obj_tables.SCHEMA_TABLE_TYPE, obj_tables.__version__)
         ws.cell(2, 1).value = '!Table'
         ws.cell(2, 2).value = '!Description'
@@ -55,7 +53,7 @@ def transform(filename, taxon):
             continue
         ws = wb['!' + sheet_name]
         ws.insert_rows(1, amount=1)
-        ws.cell(1, 1).value = "!!ObjTables TableType='Data' ModelId='{}' ObjTablesVersion='{}'".format(
+        ws.cell(1, 1).value = "!!ObjTables Type='Data' Id='{}' ObjTablesVersion='{}'".format(
             model.__name__, obj_tables.__version__)
 
         n_head_rows = 1
@@ -86,12 +84,3 @@ def transform(filename, taxon):
     wb.save(filename)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Migrate a wc-lang-encoded file.')    
-    parser.add_argument('taxon', type=str,
-                        help='"pro" or "eu"')
-    parser.add_argument('paths', metavar='path', type=str, nargs='+',
-                        help='Path to a wc-lang-encoded file')
-    args = parser.parse_args()
-    for path in args.paths:
-        transform(path, args.taxon)

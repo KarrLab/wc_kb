@@ -1,21 +1,46 @@
-cmd='python3.6 migrations/2019_09_20.py'
-cmd='wc-kb validate'
+""" Migration of WC-KB-encoded files
 
-# wc_kb
-${cmd} pro ~/Documents/wc_kb/tests/fixtures/prokaryote_core.xlsx
-${cmd} eu ~/Documents/wc_kb/tests/fixtures/eukaryote_core.xlsx
+:Author: Jonathan Karr <karr@mssm.edu>
+:Date: 2019-10-10
+:Copyright: 2019, Karr Lab
+:License: MIT
+"""
 
-# h1_hesc
-${cmd} eu ~/Documents/h1_hesc/h1_hesc/kb_gen/core.xlsx
-${cmd} eu ~/Documents/h1_hesc/tests/code/fixtures/eukaryote_core.xlsx
+import os.path
+import sys
+import warnings
+import wc_lang.io
+sys.path.insert(0, 'migrations')
+import migration_2019_10_10
 
-# mycoplasma_pneumoniae
-${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_pneumoniae_kb.xlsx
-${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_pneumoniae_kb_old_version.xlsx
-${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/network\ model/mycoplasma_pneumoniae_kb_wFunctions.xlsx
-${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_kb_wProcess.xlsx
-${cmd} pro ~/Documents/mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasmaPneumonia_KB.xlsx
-${cmd} pro ~/Documents/mycoplasma_pneumoniae/tests/fixtures/kb/min_model_kb.xlsx
+base_dir = os.path.expanduser('~/Documents')
 
-# wc_model_gen
-${cmd} pro ~/Documents/wc_model_gen/tests/fixtures/min_model_kb.xlsx
+paths = [
+    # wc_kb
+    {'taxon': 'pro', 'path': 'wc_kb/tests/fixtures/prokaryote_core.xlsx'},
+    {'taxon': 'eu', 'path': 'wc_kb/tests/fixtures/eukaryote_core.xlsx'},
+
+    # h1_hesc
+    {'taxon': 'eu', 'path': 'h1_hesc/h1_hesc/kb_gen/core.xlsx'},
+    {'taxon': 'eu', 'path': 'h1_hesc/tests/code/fixtures/eukaryote_core.xlsx'},
+
+    # mycoplasma_pneumoniae
+    {'taxon': 'pro', 'path': 'mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_pneumoniae_kb.xlsx'},
+    {'taxon': 'pro', 'path': 'mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_pneumoniae_kb_old_version.xlsx'},
+    {'taxon': 'pro', 'path': 'mycoplasma_pneumoniae/mycoplasma_pneumoniae/network model/mycoplasma_pneumoniae_kb_wFunctions.xlsx'},
+    {'taxon': 'pro', 'path': 'mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_kb_wProcess.xlsx'},
+    {'taxon': 'pro', 'path': 'mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasmaPneumonia_KB.xlsx'},
+    {'taxon': 'pro', 'path': 'mycoplasma_pneumoniae/tests/fixtures/kb/min_model_kb.xlsx'},
+
+    # wc_model_gen
+    {'taxon': 'pro', 'path': 'wc_model_gen/tests/fixtures/min_model_kb.xlsx'},
+]
+
+
+for i_path, path in enumerate(paths):
+    print('Migrating path {} of {}: {}'.format(i_path + 1, len(paths), path['path']))
+
+    abs_path = os.path.join(base_dir, path['path'])
+
+    # migrate
+    migration_2019_10_10.transform(abs_path, path['taxon'])

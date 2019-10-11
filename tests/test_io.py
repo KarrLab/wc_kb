@@ -198,8 +198,8 @@ class TestIO(unittest.TestCase):
 
         wb = wc_utils.workbook.io.read(core_path)
 
-        row = wb['!KB'].pop(4)
-        wb['!KB'].insert(5, row)
+        row = wb['!!KB'].pop(4)
+        wb['!!KB'].insert(5, row)
         wc_utils.workbook.io.write(core_path, wb)
 
         reader = io.Reader()
@@ -303,8 +303,8 @@ class TestIO(unittest.TestCase):
         self.assertTrue(filecmp.cmp(path_seq_1, self.seq_path, shallow=False))
 
         wb = wc_utils.workbook.io.read(path_core_1)
-        row = wb['!KB'].pop(4)
-        wb['!KB'].insert(5, row)
+        row = wb['!!KB'].pop(4)
+        wb['!!KB'].insert(5, row)
         wc_utils.workbook.io.write(path_core_1, wb)
 
         with self.assertRaisesRegex(ValueError, "The model cannot be loaded because"):

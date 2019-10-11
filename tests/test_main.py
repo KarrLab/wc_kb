@@ -115,7 +115,7 @@ class TestCli(unittest.TestCase):
                                     filename_core_3, filename_seq_3,
                                     '--compare-files']) as app:
                 app.run()
-            diff = 'Sheet !KB:\n  Row 8:\n    Cell B: 0.0.0 != 0.0.1'
+            diff = 'Sheet !!KB:\n  Row 8:\n    Cell B: 0.0.0 != 0.0.1'
             #diff = 'Sheet KBnowledge base:\n  Row 11:\n    Cell B: 0.0.0 != 0.0.1'
             self.assertEqual(capturer.get_text(), diff)
 
