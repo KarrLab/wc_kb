@@ -203,7 +203,7 @@ class TestIO(unittest.TestCase):
         wc_utils.workbook.io.write(core_path, wb)
 
         reader = io.Reader()
-        with self.assertRaisesRegex(ValueError, "The model cannot be loaded because"):
+        with self.assertRaisesRegex(ValueError, "cannot be loaded because"):
             reader.run(core_path, seq_path=self.seq_path)
         env = EnvironmentVarGuard()
         env.set('CONFIG__DOT__wc_kb__DOT__io__DOT__strict', '0')
@@ -307,7 +307,7 @@ class TestIO(unittest.TestCase):
         wb['!!KB'].insert(5, row)
         wc_utils.workbook.io.write(path_core_1, wb)
 
-        with self.assertRaisesRegex(ValueError, "The model cannot be loaded because"):
+        with self.assertRaisesRegex(ValueError, "cannot be loaded because"):
             io.convert(path_core_1, path_seq_1, path_core_2, path_seq_2)
         env = EnvironmentVarGuard()
         env.set('CONFIG__DOT__wc_kb__DOT__io__DOT__strict', '0')
