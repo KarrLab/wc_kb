@@ -136,6 +136,8 @@ class NormalizeController(cement.Controller):
             (['--dest-seq'], dict(
                 default='', type=str,
                 help='Path to save normalized FASTA-formatted genome sequence for the knowledge base')),
+            (['--unprotected'], dict(action='store_true', default=False,
+                                      help='If set, do not protect the outputted workbook')),
         ]
 
     @cement.ex(hide=True)
@@ -143,9 +145,9 @@ class NormalizeController(cement.Controller):
         args = self.app.pargs
         kb = io.Reader().run(args.source_core, seq_path=args.source_seq)[core.KnowledgeBase][0]
         if args.dest_core or args.dest_seq:
-            io.Writer().run(args.dest_core, kb, seq_path=args.dest_seq, data_repo_metadata=False)
+            io.Writer().run(args.dest_core, kb, seq_path=args.dest_seq, data_repo_metadata=False, protected=(not args.unprotected))
         else:
-            io.Writer().run(args.source_core, kb, seq_path=args.source_seq, data_repo_metadata=False)
+            io.Writer().run(args.source_core, kb, seq_path=args.source_seq, data_repo_metadata=False, protected=(not args.unprotected))
 
 
 class ConvertController(cement.Controller):
@@ -163,12 +165,14 @@ class ConvertController(cement.Controller):
             (['source_seq'], dict(type=str, help='Path to FASTA-formatted genome sqeuence of the knowledge base')),
             (['dest_core'], dict(type=str, help='Path to save the converted core of the knowledge base')),
             (['dest_seq'], dict(type=str, help='Path to save the converted FASTA-formatted genome sequence of the knowledge base')),
+            (['--unprotected'], dict(action='store_true', default=False,
+                                      help='If set, do not protect the outputted workbook')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        io.convert(args.source_core, args.source_seq, args.dest_core, args.dest_seq)
+        io.convert(args.source_core, args.source_seq, args.dest_core, args.dest_seq, protected=(not args.unprotected))
 
 
 class CreateTemplateController(cement.Controller):
@@ -188,12 +192,14 @@ class CreateTemplateController(cement.Controller):
             (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
                                                     'the Git repo containing `path-core`'))),
+            (['--unprotected'], dict(action='store_true', default=False,
+                                      help='If set, do not protect the outputted workbook')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        io.create_template(args.path_core, args.path_seq, data_repo_metadata=args.data_repo_metadata)
+        io.create_template(args.path_core, args.path_seq, data_repo_metadata=args.data_repo_metadata, protected=(not args.unprotected))
 
 
 class UpdateVersionMetadataController(cement.Controller):
@@ -211,6 +217,8 @@ class UpdateVersionMetadataController(cement.Controller):
             (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
                                                     'the Git repo containing `path-core`'))),
+            (['--unprotected'], dict(action='store_true', default=False,
+                                      help='If set, do not protect the outputted workbook')),
         ]
 
     @cement.ex(hide=True)
@@ -218,7 +226,7 @@ class UpdateVersionMetadataController(cement.Controller):
         args = self.app.pargs
         kb = io.Reader().run(args.path_core, seq_path=args.path_seq)[core.KnowledgeBase][0]
         kb.wc_kb_version = wc_kb.__version__
-        io.Writer().run(args.path_core, kb, seq_path=args.path_seq, data_repo_metadata=args.data_repo_metadata)
+        io.Writer().run(args.path_core, kb, seq_path=args.path_seq, data_repo_metadata=args.data_repo_metadata, protected=(not args.unprotected))
 
 
 class App(cement.App):

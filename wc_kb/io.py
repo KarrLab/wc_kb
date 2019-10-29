@@ -80,7 +80,7 @@ class Writer(obj_tables.io.Writer):
             models=None, get_related=True, include_all_attributes=False, validate=True,
             title=None, description=None, keywords=None, version=None, language=None, creator=None,
             write_schema=False, write_toc=True,
-            extra_entries=0, data_repo_metadata=False, schema_package=None):
+            extra_entries=0, data_repo_metadata=False, schema_package=None, protected=True):
         """ Write knowledge base to file(s)
 
         Args:
@@ -111,6 +111,7 @@ class Writer(obj_tables.io.Writer):
             schema_package (:obj:`str`, optional): the package which defines the `obj_tables` schema
                 used by the file; if not :obj:`None`, try to write metadata information about the
                 the schema's Git repository: the repo must be current with origin
+            protected (:obj:`bool`, optional): if :obj:`True`, protect the worksheet
 
         Raises:
             :obj:`ValueError`: if any of the relationships with knowledge bases and cells are not set
@@ -163,7 +164,8 @@ class Writer(obj_tables.io.Writer):
                                 title=title, description=description, version=version, language=language,
                                 creator=creator,
                                 write_schema=write_schema, write_toc=write_toc, extra_entries=extra_entries,
-                                data_repo_metadata=data_repo_metadata, schema_package=schema_package)
+                                data_repo_metadata=data_repo_metadata, schema_package=schema_package,
+                                protected=protected)
 
         # reset sequence paths
         if seq_path and rewrite_seq_path:
@@ -391,7 +393,7 @@ class Reader(obj_tables.io.Reader):
         return objects
 
 
-def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True):
+def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True, protected=True):
     """ Convert among Excel (.xlsx), comma separated (.csv), and tab separated (.tsv) file formats
 
     Read a knowledge base from the `source` files(s) and write it to the `destination` files(s). A path to a
@@ -405,13 +407,15 @@ def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True)
         dest_seq (:obj:`str`): path to save the converted genome sequence of the knowledge base
         rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the converted
             core of the knowledge base will be updated to the path of the converted genome sequence
+        protected (:obj:`bool`, optional): if :obj:`True`, protect the worksheet
     """
     kb = Reader().run(source_core, seq_path=source_seq)[core.KnowledgeBase][0]
-    Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path, data_repo_metadata=False)
+    Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path, data_repo_metadata=False, 
+        protected=protected)
 
 
 def create_template(core_path, seq_path, write_schema=False, write_toc=True,
-                    extra_entries=10, data_repo_metadata=True):
+                    extra_entries=10, data_repo_metadata=True, protected=True):
     """ Create file with knowledge base template, including row and column headings
 
     Args:
@@ -422,10 +426,12 @@ def create_template(core_path, seq_path, write_schema=False, write_toc=True,
         extra_entries (:obj:`int`, optional): additional entries to display
         data_repo_metadata (:obj:`bool`, optional): if :obj:`True`, try to write metadata information
             about the file's Git repo
+        protected (:obj:`bool`, optional): if :obj:`True`, protect the worksheet
     """
     kb = core.KnowledgeBase(
         id='template', name='Template', version=wc_kb.__version__)
     Writer().run(core_path, kb, seq_path=seq_path,
                  write_schema=write_schema, write_toc=write_toc,
                  extra_entries=extra_entries,
-                 data_repo_metadata=data_repo_metadata)
+                 data_repo_metadata=data_repo_metadata,
+                 protected=protected)
