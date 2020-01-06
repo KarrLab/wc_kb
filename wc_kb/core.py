@@ -660,7 +660,7 @@ class Reference(obj_tables.Model):
     identifiers = IdentifierAttribute(related_name='references')
     comments = obj_tables.LongStringAttribute()
     type = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['WC:reference'].rchildren(),
+                                  terms = kbOnt['WC:reference'].subclasses(),
                                   default = kbOnt['WC:article'],
                                   none=True)
 
@@ -1429,7 +1429,7 @@ class MetaboliteSpeciesType(SpeciesType):
     """
     synonyms = obj_tables.LongStringAttribute()
     type = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['WC:metabolite'].rchildren(),
+                                  terms = kbOnt['WC:metabolite'].subclasses(),
                                   none = True)
 
     class Meta(obj_tables.Model.Meta):
@@ -1688,10 +1688,10 @@ class ComplexSpeciesType(SpeciesType):
 
     subunits = SubunitAttribute(related_name='complexes')
     type = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['WC:complex'].rchildren(),
+                                  terms = kbOnt['WC:complex'].subclasses(),
                                   none=True)
     formation_process  = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['WC:complexFormation'].rchildren(),
+                                  terms = kbOnt['WC:complexFormation'].subclasses(),
                                   none=True)
 
     class Meta(obj_tables.Model.Meta):
@@ -1872,7 +1872,7 @@ class Reaction(KnowledgeBaseObject):
     spontaneous = obj_tables.BooleanAttribute()
     parameters = obj_tables.OneToManyAttribute('Parameter', related_name='reactions')
     type = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['WC:reaction'].rchildren(),
+                                  terms = kbOnt['WC:reaction'].subclasses(),
                                   none=True)
 
     class Meta(obj_tables.Model.Meta):
@@ -1909,7 +1909,7 @@ class ChromosomeFeature(PolymerLocus):
     identifiers = IdentifierAttribute(related_name='chromosome_features')
     references = obj_tables.ManyToManyAttribute('Reference', related_name='chromosome_features')
     type = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['WC:chromosomeFeature'].rchildren(),
+                                  terms = kbOnt['WC:chromosomeFeature'].subclasses(),
                                   none=True)
 
     class Meta(obj_tables.Model.Meta):
@@ -2029,7 +2029,7 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     references = ManyToManyAttribute(Reference, related_name='properties')
     evidence = obj_tables.OneToManyAttribute(Evidence, related_name='properties')
     value_type = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                terms = kbOnt['WC:valueType'].rchildren(),
+                                terms = kbOnt['WC:valueType'].subclasses(),
                                 default = kbOnt['WC:float'],
                                 none=False)
 

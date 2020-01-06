@@ -37,7 +37,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     coordinate = obj_tables.IntegerAttribute()
     length = obj_tables.IntegerAttribute()
     type = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms=kbOnt['WC:RNA'].rchildren(),
+                                  terms=kbOnt['WC:RNA'].subclasses(),
                                   none=True)
 
     class Meta(obj_tables.Model.Meta):
@@ -150,7 +150,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
     unit = obj_tables.StringAttribute()
     type = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['WC:protein'].rchildren(),
+                                  terms = kbOnt['WC:protein'].subclasses(),
                                   none=True)
 
     class Meta(obj_tables.Model.Meta):
@@ -276,7 +276,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
     genes = obj_tables.OneToManyAttribute('GeneLocus', related_name='transcription_units')
     rnas = obj_tables.ManyToManyAttribute('RnaSpeciesType', related_name='transcription_units')
     #type = obj_tables.ontology.OntologyAttribute(kbOnt,
-    #                              terms = kbOnt['WC:gene'].rchildren(),
+    #                              terms = kbOnt['WC:gene'].subclasses(),
     #                              none=True)
 
     class Meta(obj_tables.Model.Meta):
@@ -326,7 +326,7 @@ class GeneLocus(core.PolymerLocus):
     homologs = obj_tables.LongStringAttribute()
     evidence = obj_tables.OneToManyAttribute(core.Evidence, related_name='genes')
     cog = obj_tables.ontology.OntologyAttribute(kbOnt,
-                                  terms = kbOnt['WC:COG'].rchildren(),
+                                  terms = kbOnt['WC:COG'].subclasses(),
                                   none=True)
 
     class Meta(obj_tables.Model.Meta):
