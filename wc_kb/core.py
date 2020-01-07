@@ -14,7 +14,8 @@ from natsort import natsorted, ns
 from math import ceil, floor, exp, log, log10, isnan
 from pyfaidx import Fasta
 from wc_utils.util import chem
-from wc_utils.util.chem.core import get_major_micro_species, OpenBabelUtils
+from wc_utils.util.chem.core import OpenBabelUtils
+from wc_utils.util.chem.marvin import get_major_micro_species
 from wc_utils.util.list import det_dedupe
 from wc_utils.util.units import unit_registry
 from wc_onto import onto as kbOnt
