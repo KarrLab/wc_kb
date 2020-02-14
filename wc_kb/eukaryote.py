@@ -565,6 +565,39 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
 
         return spliced_dna_seq.transcribe().translate(table=table, cds=cds)
 
+    def get_seq_and_start_codon(self, table=1, cds=True):
+        """ Get the 5' to 3' amino acid sequence and the start codon
+
+        Args:
+            table (:obj:`int`, optional): NCBI identifier for translation table
+                                        (default = standard table)
+            cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
+
+        Returns:
+            :obj:`Bio.Seq.Seq`: amino acid sequence
+            :obj:`Bio.Seq.Seq`: start codon
+        """
+        ordered_cds = sorted(self.coding_regions, key=lambda x: x.start)
+
+        dna_seq = self.transcript.gene.polymer.get_subseq(
+                    start=ordered_cds[0].start, end=ordered_cds[-1].end)
+
+        adjusted_cds = [(i.start - ordered_cds[0].start, i.end - ordered_cds[0].start + 1) \
+            for i in ordered_cds]
+
+        spliced_dna_seq = Bio.Seq.Seq('', alphabet=Bio.Alphabet.DNAAlphabet())
+        for i in adjusted_cds:
+            spliced_dna_seq += dna_seq[i[0]:i[1]]
+
+        if self.transcript.gene.strand == core.PolymerStrand.negative:
+            spliced_dna_seq = spliced_dna_seq.reverse_complement()
+
+        rna_seq = spliced_dna_seq.transcribe()
+        start_codon = rna_seq[:3]
+        protein_seq = rna_seq.translate(table=table, cds=cds)    
+
+        return protein_seq, start_codon    
+
     def get_empirical_formula(self, table=1, cds=True, seq_input=None):
         """ Get the empirical formula
 

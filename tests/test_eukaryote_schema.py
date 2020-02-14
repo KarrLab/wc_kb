@@ -266,6 +266,16 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(self.prot1.get_seq(), 'MKVLINKNEL')
         self.assertEqual(self.prot2.get_seq(), 'MKKFLLTPL')
 
+    def test_get_seq_and_start_codon(self):
+        # Default translation table used is 1 (standard)
+        seq, start_codon = self.prot1.get_seq_and_start_codon()
+        self.assertEqual(seq, 'MKVLINKNEL')
+        self.assertEqual(start_codon, 'AUG')
+
+        seq, start_codon = self.prot2.get_seq_and_start_codon()
+        self.assertEqual(seq, 'MKKFLLTPL')
+        self.assertEqual(start_codon, 'AUG')
+        
     def test_get_empirical_formula(self):
         # Default translation table used is 1 (standard)
         self.assertEqual(self.prot1.get_empirical_formula(),
