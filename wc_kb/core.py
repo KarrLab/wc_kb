@@ -46,9 +46,7 @@ from obj_tables.ontology import OntologyAttribute
 from wc_utils.util.ontology import are_terms_equivalent
 import os
 
-
-with open(pkg_resources.resource_filename('wc_kb', 'VERSION'), 'r') as file:
-    wc_kb_version = file.read().strip()
+from ._version import __version__ as wc_kb_version
 
 
 #####################
