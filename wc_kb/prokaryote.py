@@ -14,6 +14,7 @@ from wc_kb import core
 from wc_onto import onto as kbOnt
 from wc_utils.util import chem
 import obj_tables
+import obj_tables.sci.onto
 
 
 #####################
@@ -36,7 +37,7 @@ class RnaSpeciesType(core.PolymerSpeciesType):
     proteins = obj_tables.OneToManyAttribute('ProteinSpeciesType', related_name='rnas')
     coordinate = obj_tables.IntegerAttribute()
     length = obj_tables.IntegerAttribute()
-    type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms=kbOnt['WC:RNA'].subclasses(),
                                   none=True)
 
@@ -149,7 +150,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
     """
 
     unit = obj_tables.StringAttribute()
-    type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms = kbOnt['WC:protein'].subclasses(),
                                   none=True)
 
@@ -275,7 +276,7 @@ class TranscriptionUnitLocus(core.PolymerLocus):
     pribnow_end = obj_tables.IntegerAttribute()
     genes = obj_tables.OneToManyAttribute('GeneLocus', related_name='transcription_units')
     rnas = obj_tables.ManyToManyAttribute('RnaSpeciesType', related_name='transcription_units')
-    #type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    #type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
     #                              terms = kbOnt['WC:gene'].subclasses(),
     #                              none=True)
 
@@ -325,7 +326,7 @@ class GeneLocus(core.PolymerLocus):
     proteins = obj_tables.OneToOneAttribute(ProteinSpeciesType, related_name='gene')
     homologs = obj_tables.LongStringAttribute()
     evidence = obj_tables.OneToManyAttribute(core.Evidence, related_name='genes')
-    cog = obj_tables.ontology.OntologyAttribute(kbOnt,
+    cog = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms = kbOnt['WC:COG'].subclasses(),
                                   none=True)
 

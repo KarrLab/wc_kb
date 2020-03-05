@@ -11,12 +11,11 @@
 """
 
 from natsort import natsorted, ns
-from math import ceil, floor, exp, log, log10, isnan
+from math import floor
 from pyfaidx import Fasta
 from wc_utils.util import chem
 from wc_utils.util.chem.core import OpenBabelUtils
 from wc_utils.util.chem.marvin import get_major_micro_species
-from wc_utils.util.list import det_dedupe
 from wc_utils.util.units import unit_registry
 from wc_onto import onto as kbOnt
 import abc
@@ -24,25 +23,22 @@ import Bio.Alphabet
 import Bio.Seq
 import enum
 import math
-import obj_tables.abstract
 import obj_tables
-import obj_tables.units
+import obj_tables.abstract
+import obj_tables.sci.onto
+import obj_tables.sci.units
 import openbabel
-import pkg_resources
 import re
 import six
 import token
-from obj_tables import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute, PositiveIntegerAttribute,
-                       RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute, UrlAttribute,
+from obj_tables import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute,
+                       RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute,
                        OneToOneAttribute, ManyToOneAttribute, ManyToManyAttribute,
-                       InvalidModel, InvalidObject, InvalidAttribute, TableFormat)
-from obj_tables.expression import (ExpressionOneToOneAttribute, ExpressionManyToOneAttribute,
-                                  ExpressionStaticTermMeta, ExpressionDynamicTermMeta,
-                                  ExpressionExpressionTermMeta, Expression,
-                                  ParsedExpression, ParsedExpressionError)
+                       InvalidAttribute, TableFormat)
+from obj_tables.math.expression import (ManyToOneExpressionAttribute,
+                                  ExpressionExpressionTermMeta, Expression)
 from wc_utils.util.enumerate import CaseInsensitiveEnum
 from wc_utils.util.types import get_subclasses
-from obj_tables.ontology import OntologyAttribute
 from wc_utils.util.ontology import are_terms_equivalent
 import os
 
@@ -658,7 +654,7 @@ class Reference(obj_tables.Model):
     cell = obj_tables.ManyToOneAttribute(Cell, related_name='references')
     identifiers = IdentifierAttribute(related_name='references')
     comments = obj_tables.LongStringAttribute()
-    type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms = kbOnt['WC:reference'].subclasses(),
                                   default = kbOnt['WC:article'],
                                   none=True)
@@ -876,7 +872,7 @@ class Concentration(KnowledgeBaseObject):
     species = OneToOneSpeciesAttribute(related_name='concentrations')
     medium = obj_tables.StringAttribute()
     value = FloatAttribute(min=0)
-    units = obj_tables.units.UnitAttribute(unit_registry,
+    units = obj_tables.sci.units.UnitAttribute(unit_registry,
                           choices=(
                               unit_registry.parse_units('molecule'),
                               unit_registry.parse_units('mM'),
@@ -1342,9 +1338,9 @@ class Observable(KnowledgeBaseObject):
     """
 
     cell = ManyToOneAttribute(Cell, related_name='observables')
-    expression = ExpressionManyToOneAttribute(ObservableExpression, related_name='observable',
+    expression = ManyToOneExpressionAttribute(ObservableExpression, related_name='observable',
                                               min_related=1, min_related_rev=1)
-    units = obj_tables.units.UnitAttribute(unit_registry,
+    units = obj_tables.sci.units.UnitAttribute(unit_registry,
                           choices=(unit_registry.parse_units('molecule'),),
                           default=unit_registry.parse_units('molecule'))
     references = obj_tables.ManyToManyAttribute(Reference, related_name='observables')
@@ -1389,7 +1385,7 @@ class Parameter(KnowledgeBaseObject):
     cell = obj_tables.ManyToOneAttribute(Cell, related_name='parameters')
     value = FloatAttribute(min=0)
     error = FloatAttribute(min=0)
-    units = obj_tables.units.UnitAttribute(unit_registry, none=True)
+    units = obj_tables.sci.units.UnitAttribute(unit_registry, none=True)
     references = obj_tables.ManyToManyAttribute(Reference, related_name='parameters')
     evidence = obj_tables.OneToManyAttribute('Evidence', related_name='parameters')
     identifiers = IdentifierAttribute(related_name='parameters')
@@ -1427,7 +1423,7 @@ class MetaboliteSpeciesType(SpeciesType):
 
     """
     synonyms = obj_tables.LongStringAttribute()
-    type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms = kbOnt['WC:metabolite'].subclasses(),
                                   none = True)
 
@@ -1686,10 +1682,10 @@ class ComplexSpeciesType(SpeciesType):
     """
 
     subunits = SubunitAttribute(related_name='complexes')
-    type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms = kbOnt['WC:complex'].subclasses(),
                                   none=True)
-    formation_process  = obj_tables.ontology.OntologyAttribute(kbOnt,
+    formation_process  = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms = kbOnt['WC:complexFormation'].subclasses(),
                                   none=True)
 
@@ -1803,8 +1799,8 @@ class RateLaw(KnowledgeBaseObject):
         identifiers (:obj:`list` of :obj:`Identifier`): identifiers
     """
     reaction = ManyToOneAttribute('Reaction', related_name='rate_laws')
-    expression = ExpressionManyToOneAttribute(RateLawExpression, min_related=1, min_related_rev=1, related_name='rate_laws')
-    units = obj_tables.units.UnitAttribute(unit_registry,
+    expression = ManyToOneExpressionAttribute(RateLawExpression, min_related=1, min_related_rev=1, related_name='rate_laws')
+    units = obj_tables.sci.units.UnitAttribute(unit_registry,
                           choices=(unit_registry.parse_units('s^-1'),),
                           default=unit_registry.parse_units('s^-1'))
     references = obj_tables.ManyToManyAttribute(Reference, related_name='rate_laws')
@@ -1870,7 +1866,7 @@ class Reaction(KnowledgeBaseObject):
     coenzymes = obj_tables.ManyToManyAttribute(SpeciesType, related_name='reactions')
     spontaneous = obj_tables.BooleanAttribute()
     parameters = obj_tables.OneToManyAttribute('Parameter', related_name='reactions')
-    type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms = kbOnt['WC:reaction'].subclasses(),
                                   none=True)
 
@@ -1902,12 +1898,12 @@ class ChromosomeFeature(PolymerLocus):
     start = obj_tables.IntegerAttribute(min=0)
     end = obj_tables.IntegerAttribute(min=0)
     intensity = obj_tables.FloatAttribute(min=0)
-    unit = obj_tables.units.UnitAttribute(unit_registry, none=True)
+    unit = obj_tables.sci.units.UnitAttribute(unit_registry, none=True)
     polymer = obj_tables.ManyToOneAttribute('DnaSpeciesType', related_name='chromosome_features')
     evidence   = obj_tables.OneToManyAttribute('Evidence', related_name='chromosome_features')
     identifiers = IdentifierAttribute(related_name='chromosome_features')
     references = obj_tables.ManyToManyAttribute('Reference', related_name='chromosome_features')
-    type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                   terms = kbOnt['WC:chromosomeFeature'].subclasses(),
                                   none=True)
 
@@ -1954,7 +1950,7 @@ class Evidence(KnowledgeBaseObject):
     object   =  obj_tables.StringAttribute()
     property = obj_tables.StringAttribute()
     value = obj_tables.FloatAttribute()
-    units = obj_tables.units.UnitAttribute(unit_registry, none=True) # False allows None units
+    units = obj_tables.sci.units.UnitAttribute(unit_registry, none=True) # False allows None units
     identifiers = IdentifierAttribute(related_name='evidence')
     references = obj_tables.ManyToManyAttribute('Reference', related_name='evidence')
     experiment = obj_tables.ManyToOneAttribute('Experiment', related_name ='evidence')
@@ -1989,7 +1985,7 @@ class Experiment(KnowledgeBaseObject):
     genetic_variant = obj_tables.StringAttribute()
     external_media  = obj_tables.StringAttribute()
     temperature	= obj_tables.FloatAttribute()
-    temperature_units = obj_tables.units.UnitAttribute(unit_registry,
+    temperature_units = obj_tables.sci.units.UnitAttribute(unit_registry,
                         choices=(unit_registry.parse_units('F'),
                                  unit_registry.parse_units('C'),
                                  unit_registry.parse_units('K')),
@@ -2022,12 +2018,12 @@ class SpeciesTypeProperty(KnowledgeBaseObject):
     """
     species_type = ManyToOneAttribute(SpeciesType, related_name='properties') #Do we want min_related=1?
     property = obj_tables.StringAttribute()
-    units = obj_tables.units.UnitAttribute(unit_registry, none=True)
+    units = obj_tables.sci.units.UnitAttribute(unit_registry, none=True)
     value = obj_tables.LongStringAttribute()
     identifiers = IdentifierAttribute(related_name='properties')
     references = ManyToManyAttribute(Reference, related_name='properties')
     evidence = obj_tables.OneToManyAttribute(Evidence, related_name='properties')
-    value_type = obj_tables.ontology.OntologyAttribute(kbOnt,
+    value_type = obj_tables.sci.onto.OntoTermAttribute(kbOnt,
                                 terms = kbOnt['WC:valueType'].subclasses(),
                                 default = kbOnt['WC:float'],
                                 none=False)
