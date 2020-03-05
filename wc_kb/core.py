@@ -873,7 +873,7 @@ class Concentration(KnowledgeBaseObject):
     """
 
     cell = obj_tables.ManyToOneAttribute(Cell, related_name='concentrations')
-    species = OneToOneSpeciesAttribute(related_name='concentrations')
+    species = OneToOneSpeciesAttribute(related_name='concentration')
     medium = obj_tables.StringAttribute()
     value = FloatAttribute(min=0)
     units = obj_tables.units.UnitAttribute(unit_registry,
