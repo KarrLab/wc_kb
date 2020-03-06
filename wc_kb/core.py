@@ -29,7 +29,6 @@ import obj_tables.sci.onto
 import obj_tables.sci.units
 import openbabel
 import re
-import six
 import token
 from obj_tables import (BooleanAttribute, EnumAttribute, FloatAttribute, IntegerAttribute,
                        RegexAttribute, SlugAttribute, StringAttribute, LongStringAttribute,
@@ -685,7 +684,7 @@ class Compartment(KnowledgeBaseObject):
         attribute_order = ('id', 'name', 'volumetric_fraction', 'identifiers', 'references', 'comments')
 
 
-class SpeciesType(six.with_metaclass(obj_tables.abstract.AbstractModelMeta, KnowledgeBaseObject)):
+class SpeciesType(KnowledgeBaseObject, metaclass=obj_tables.abstract.AbstractModelMeta):
     """ Knowledge of a molecular species
 
     Attributes:
@@ -774,7 +773,7 @@ class Species(obj_tables.Model):
         """
         if isinstance(species_type, SpeciesType):
             species_type_id = species_type.get_primary_attribute()
-        elif isinstance(species_type, six.string_types):
+        elif isinstance(species_type, str):
             species_type_id = species_type
         else:
             raise ValueError(
@@ -782,7 +781,7 @@ class Species(obj_tables.Model):
 
         if isinstance(compartment, Compartment):
             compartment_id = compartment.get_primary_attribute()
-        elif isinstance(compartment, six.string_types):
+        elif isinstance(compartment, str):
             compartment_id = compartment
         else:
             raise ValueError(
