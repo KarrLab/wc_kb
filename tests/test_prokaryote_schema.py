@@ -196,7 +196,7 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     def setUp(self):
         # Mycoplasma Genintalium Genome
-        dna1 = core.DnaSpeciesType(id='chromosome', sequence_path='tests/fixtures/seq.fna')
+        dna1 = core.DnaSpeciesType(id='chromosome', sequence_path='tests/fixtures/prokaryote_seq.fna')
 
         cell1 = dna1.cell = core.Cell()
         cell1.knowledge_base = core.KnowledgeBase(

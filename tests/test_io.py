@@ -84,7 +84,7 @@ class TestIO(unittest.TestCase):
     def test_read_write_prokaryote(self):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
         core_path = os.path.join(fixtures, 'prokaryote_core.xlsx')
-        seq_path = os.path.join(fixtures, 'seq.fna')
+        seq_path = os.path.join(fixtures, 'prokaryote_seq.fna')
 
         reader = io.Reader()
         kb = reader.run(core_path, seq_path=seq_path)[core.KnowledgeBase][0]

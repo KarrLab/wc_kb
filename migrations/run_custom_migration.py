@@ -8,10 +8,8 @@
 
 import os.path
 import sys
-import warnings
-import wc_lang.io
 sys.path.insert(0, 'migrations')
-import migration_2019_10_10
+import migration_2020_03_09 as migration
 
 base_dir = os.path.expanduser('~/Documents')
 
@@ -43,4 +41,4 @@ for i_path, path in enumerate(paths):
     abs_path = os.path.join(base_dir, path['path'])
 
     # migrate
-    migration_2019_10_10.transform(abs_path, path['taxon'])
+    migration.transform(abs_path, path['taxon'])

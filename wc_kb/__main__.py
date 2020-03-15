@@ -43,13 +43,14 @@ class ValidateController(cement.Controller):
         arguments = [
             (['core_path'], dict(type=str, help='Path to knowledge base core')),
             (['seq_path'], dict(type=str, help='Path to FASTA-formatted genome sequence')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
         try:
-            io.Reader().run(args.core_path, seq_path=args.seq_path)
+            io.Reader().run(args.core_path, seq_path=args.seq_path, taxon=args.taxon)
             print('Knowledge base is valid')
         except ValueError as exception:
             raise SystemExit('Knowledge base is invalid: ' + str(exception))
@@ -69,6 +70,7 @@ class DifferenceController(cement.Controller):
             (['seq_path_1'], dict(type=str, help='Path to FASTA-formatted genome sequence for first knowledge base')),
             (['core_path_2'], dict(type=str, help='Path to core for second knowledge base')),
             (['seq_path_2'], dict(type=str, help='Path to FASTA-formatted genome sequence for second knowledge base')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
             (['--compare-files'], dict(dest='compare_files', default=False, action='store_true',
                                        help='If true, compare knowledge bases; otherwise compare files directly')),
             (['--compare-metadata-in-files'], dict(dest='compare_metadata_in_files', default=False, action='store_true',
@@ -89,8 +91,8 @@ class DifferenceController(cement.Controller):
             diff = kb1.difference(kb2)
 
         else:
-            kb1 = io.Reader().run(args.core_path_1, seq_path=args.seq_path_1)[core.KnowledgeBase][0]
-            kb2 = io.Reader().run(args.core_path_2, seq_path=args.seq_path_2)[core.KnowledgeBase][0]
+            kb1 = io.Reader().run(args.core_path_1, seq_path=args.seq_path_1, taxon=args.taxon)[core.KnowledgeBase][0]
+            kb2 = io.Reader().run(args.core_path_2, seq_path=args.seq_path_2, taxon=args.taxon)[core.KnowledgeBase][0]
             diff = kb1.difference(kb2)
 
         if diff:
@@ -136,18 +138,31 @@ class NormalizeController(cement.Controller):
             (['--dest-seq'], dict(
                 default='', type=str,
                 help='Path to save normalized FASTA-formatted genome sequence for the knowledge base')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
             (['--unprotected'], dict(action='store_true', default=False,
-                                      help='If set, do not protect the outputted workbook')),
+                                     help='If set, do not protect the outputted workbook')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        kb = io.Reader().run(args.source_core, seq_path=args.source_seq)[core.KnowledgeBase][0]
+        kb = io.Reader().run(args.source_core,
+                             seq_path=args.source_seq,
+                             taxon=args.taxon)[core.KnowledgeBase][0]
         if args.dest_core or args.dest_seq:
-            io.Writer().run(args.dest_core, kb, seq_path=args.dest_seq, data_repo_metadata=False, protected=(not args.unprotected))
+            io.Writer().run(args.dest_core,
+                            kb,
+                            seq_path=args.dest_seq,
+                            taxon=args.taxon,
+                            data_repo_metadata=False,
+                            protected=(not args.unprotected))
         else:
-            io.Writer().run(args.source_core, kb, seq_path=args.source_seq, data_repo_metadata=False, protected=(not args.unprotected))
+            io.Writer().run(args.source_core,
+                            kb,
+                            seq_path=args.source_seq,
+                            taxon=args.taxon,
+                            data_repo_metadata=False,
+                            protected=(not args.unprotected))
 
 
 class ConvertController(cement.Controller):
@@ -165,14 +180,18 @@ class ConvertController(cement.Controller):
             (['source_seq'], dict(type=str, help='Path to FASTA-formatted genome sqeuence of the knowledge base')),
             (['dest_core'], dict(type=str, help='Path to save the converted core of the knowledge base')),
             (['dest_seq'], dict(type=str, help='Path to save the converted FASTA-formatted genome sequence of the knowledge base')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
             (['--unprotected'], dict(action='store_true', default=False,
-                                      help='If set, do not protect the outputted workbook')),
+                                     help='If set, do not protect the outputted workbook')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        io.convert(args.source_core, args.source_seq, args.dest_core, args.dest_seq, protected=(not args.unprotected))
+        io.convert(args.source_core, args.source_seq,
+                   args.dest_core, args.dest_seq,
+                   taxon=args.taxon,
+                   protected=(not args.unprotected))
 
 
 class CreateTemplateController(cement.Controller):
@@ -192,14 +211,18 @@ class CreateTemplateController(cement.Controller):
             (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
                                                     'the Git repo containing `path-core`'))),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
             (['--unprotected'], dict(action='store_true', default=False,
-                                      help='If set, do not protect the outputted workbook')),
+                                     help='If set, do not protect the outputted workbook')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        io.create_template(args.path_core, args.path_seq, data_repo_metadata=args.data_repo_metadata, protected=(not args.unprotected))
+        io.create_template(args.path_core, args.path_seq,
+                           taxon=args.taxon,
+                           data_repo_metadata=args.data_repo_metadata,
+                           protected=(not args.unprotected))
 
 
 class UpdateVersionMetadataController(cement.Controller):
@@ -214,19 +237,27 @@ class UpdateVersionMetadataController(cement.Controller):
         arguments = [
             (['path_core'], dict(type=str, help='Path to the core of the knowledge base')),
             (['path_seq'], dict(type=str, help='Path to the FASTA-formatted genome sequence of a knowledge base')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
             (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
                                                     'the Git repo containing `path-core`'))),
             (['--unprotected'], dict(action='store_true', default=False,
-                                      help='If set, do not protect the outputted workbook')),
+                                     help='If set, do not protect the outputted workbook')),
         ]
 
     @cement.ex(hide=True)
     def _default(self):
         args = self.app.pargs
-        kb = io.Reader().run(args.path_core, seq_path=args.path_seq)[core.KnowledgeBase][0]
+        kb = io.Reader().run(args.path_core,
+                             seq_path=args.path_seq,
+                             taxon=args.taxon)[core.KnowledgeBase][0]
         kb.wc_kb_version = wc_kb.__version__
-        io.Writer().run(args.path_core, kb, seq_path=args.path_seq, data_repo_metadata=args.data_repo_metadata, protected=(not args.unprotected))
+        io.Writer().run(args.path_core,
+                        kb,
+                        seq_path=args.path_seq,
+                        taxon=args.taxon,
+                        data_repo_metadata=args.data_repo_metadata,
+                        protected=(not args.unprotected))
 
 
 class App(cement.App):

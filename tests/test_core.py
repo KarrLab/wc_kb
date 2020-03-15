@@ -31,7 +31,7 @@ class TestCore(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        records = Bio.SeqIO.parse('tests/fixtures/seq.fna', 'fasta')
+        records = Bio.SeqIO.parse('tests/fixtures/prokaryote_seq.fna', 'fasta')
         cls.chr_seq = next(records).seq
 
 

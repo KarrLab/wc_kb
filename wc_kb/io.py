@@ -159,7 +159,7 @@ class Writer(obj_tables.io.Writer):
             file.close()
 
         # export core
-        super(Writer, self).run(core_path, knowledge_base, models=models, get_related=get_related,
+        super(Writer, self).run(core_path, knowledge_base, schema_name='wc_kb.' + taxon, models=models, get_related=get_related,
                                 include_all_attributes=include_all_attributes, validate=validate,
                                 title=title, description=description, version=version, language=language,
                                 creator=creator,
@@ -316,7 +316,7 @@ class Reader(obj_tables.io.Reader):
             ignore_attribute_order = not config['strict']
 
         # read core objects from file
-        objects = super(Reader, self).run(core_path, models=models,
+        objects = super(Reader, self).run(core_path, schema_name='wc_kb.' + taxon, models=models,
                                           ignore_missing_models=ignore_missing_models,
                                           ignore_extra_models=ignore_extra_models,
                                           ignore_sheet_order=ignore_sheet_order,
@@ -393,7 +393,7 @@ class Reader(obj_tables.io.Reader):
         return objects
 
 
-def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True, protected=True):
+def convert(source_core, source_seq, dest_core, dest_seq, taxon='prokaryote', rewrite_seq_path=True, protected=True):
     """ Convert among Excel (.xlsx), comma separated (.csv), and tab separated (.tsv) file formats
 
     Read a knowledge base from the `source` files(s) and write it to the `destination` files(s). A path to a
@@ -405,22 +405,26 @@ def convert(source_core, source_seq, dest_core, dest_seq, rewrite_seq_path=True,
         source_seq (:obj:`str`): path to the genome sequence of the source knowledge base
         dest_core (:obj:`str`): path to save the converted core of the knowledge base
         dest_seq (:obj:`str`): path to save the converted genome sequence of the knowledge base
+        taxon (:obj:`str`): taxon
         rewrite_seq_path (:obj:`bool`, optional): if :obj:`True`, the path to genome sequence in the converted
             core of the knowledge base will be updated to the path of the converted genome sequence
         protected (:obj:`bool`, optional): if :obj:`True`, protect the worksheet
     """
-    kb = Reader().run(source_core, seq_path=source_seq)[core.KnowledgeBase][0]
-    Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path, data_repo_metadata=False, 
-        protected=protected)
+    kb = Reader().run(source_core, seq_path=source_seq, taxon=taxon)[core.KnowledgeBase][0]
+    Writer().run(dest_core, kb, seq_path=dest_seq, rewrite_seq_path=rewrite_seq_path,
+                 taxon=taxon,
+                 data_repo_metadata=False,
+                 protected=protected)
 
 
-def create_template(core_path, seq_path, write_schema=False, write_toc=True,
+def create_template(core_path, seq_path, taxon='prokaryote', write_schema=False, write_toc=True,
                     extra_entries=10, data_repo_metadata=True, protected=True):
     """ Create file with knowledge base template, including row and column headings
 
     Args:
         core_path (:obj:`str`): path to save template of core knowledge base
         seq_path (:obj:`str`): path to save genome sequence
+        taxon (:obj:`str`, optional): taxon
         write_schema (:obj:`bool`, optional): if :obj:`True`, include additional worksheet with schema
         write_toc (:obj:`bool`, optional): if :obj:`True`, include additional worksheet with table of contents
         extra_entries (:obj:`int`, optional): additional entries to display
@@ -431,6 +435,7 @@ def create_template(core_path, seq_path, write_schema=False, write_toc=True,
     kb = core.KnowledgeBase(
         id='template', name='Template', version=wc_kb.__version__)
     Writer().run(core_path, kb, seq_path=seq_path,
+                 taxon=taxon,
                  write_schema=write_schema, write_toc=write_toc,
                  extra_entries=extra_entries,
                  data_repo_metadata=data_repo_metadata,
