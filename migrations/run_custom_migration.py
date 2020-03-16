@@ -16,11 +16,12 @@ base_dir = os.path.expanduser('~/Documents')
 paths = [
     # wc_kb
     {'taxon': 'pro', 'path': 'wc_kb/tests/fixtures/prokaryote_core.xlsx'},
-    {'taxon': 'eu', 'path': 'wc_kb/tests/fixtures/eukaryote_core.xlsx'},
+    {'taxon': 'eu', 'path': 'wc_kb/tests/fixtures/eukaryote_core.xlsx'},    
 
     # h1_hesc
     {'taxon': 'eu', 'path': 'h1_hesc/h1_hesc/kb_gen/core.xlsx'},
     {'taxon': 'eu', 'path': 'h1_hesc/tests/code/fixtures/eukaryote_core.xlsx'},
+    {'taxon': 'eu', 'path': 'h1_hesc/h1_hesc/scaled_down_model/kb_core.xlsx'},
 
     # mycoplasma_pneumoniae
     {'taxon': 'pro', 'path': 'mycoplasma_pneumoniae/mycoplasma_pneumoniae/kb/mycoplasma_pneumoniae_kb.xlsx'},
