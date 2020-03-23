@@ -574,6 +574,7 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
             cds (:obj:`bool`, optional): True indicates the sequence is a complete CDS
 
         Returns:
+            :obj:`Bio.Seq.Seq`: coding RNA sequence that will be translated
             :obj:`Bio.Seq.Seq`: amino acid sequence
             :obj:`Bio.Seq.Seq`: start codon
         """
@@ -592,11 +593,11 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         if self.transcript.gene.strand == core.PolymerStrand.negative:
             spliced_dna_seq = spliced_dna_seq.reverse_complement()
 
-        rna_seq = spliced_dna_seq.transcribe()
-        start_codon = rna_seq[:3]
-        protein_seq = rna_seq.translate(table=table, cds=cds)    
+        coding_rna_seq = spliced_dna_seq.transcribe()
+        start_codon = coding_rna_seq[:3]
+        protein_seq = coding_rna_seq.translate(table=table, cds=cds)    
 
-        return protein_seq, start_codon    
+        return coding_rna_seq, protein_seq, start_codon    
 
     def get_empirical_formula(self, table=1, cds=True, seq_input=None):
         """ Get the empirical formula

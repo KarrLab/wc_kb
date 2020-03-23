@@ -268,12 +268,14 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
 
     def test_get_seq_and_start_codon(self):
         # Default translation table used is 1 (standard)
-        seq, start_codon = self.prot1.get_seq_and_start_codon()
-        self.assertEqual(seq, 'MKVLINKNEL')
+        coding_rna_seq, aa_seq, start_codon = self.prot1.get_seq_and_start_codon()
+        self.assertEqual(coding_rna_seq, 'AUGAARGUNCUCAUHAAYAARAAYGARCUCUAG')
+        self.assertEqual(aa_seq, 'MKVLINKNEL')
         self.assertEqual(start_codon, 'AUG')
 
-        seq, start_codon = self.prot2.get_seq_and_start_codon()
-        self.assertEqual(seq, 'MKKFLLTPL')
+        coding_rna_seq, aa_seq, start_codon = self.prot2.get_seq_and_start_codon()
+        self.assertEqual(coding_rna_seq, 'AUGAARAARUUYCUCCUCACNCCNCUCUAA')
+        self.assertEqual(aa_seq, 'MKKFLLTPL')
         self.assertEqual(start_codon, 'AUG')
         
     def test_get_empirical_formula(self):
