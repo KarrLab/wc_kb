@@ -1250,8 +1250,8 @@ class PolymerLocus(KnowledgeBaseObject):
                 :obj:`PolymerDirection`: direction (in ['forward', 'reverse'])
 
             Raises:
-                :obj::obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
-                :obj::obj:`Exception`: strand is not member of PolymerStrand
+                :obj:`ValueError`: start and end coordinate of chromosome feature can not be the same
+                :obj:`Exception`: strand is not member of PolymerStrand
         """
 
         if self.start < self.end:
