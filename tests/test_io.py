@@ -171,6 +171,9 @@ class TestIO(unittest.TestCase):
             self.assertEqual(data_repo_metadata.branch, 'master')
             self.assertEqual(len(data_repo_metadata.revision), 40)
 
+            # delete test repo
+            test_github_repo.delete_test_repo()
+
     def test_write_without_cell_relationships(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
         seq_path = os.path.join(self.dir, 'test_seq.fna')
