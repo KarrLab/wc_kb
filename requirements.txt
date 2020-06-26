@@ -1,5 +1,7 @@
 biopython
 cement >= 3.0.0
+configobj
+natsort
 obj_tables[sci]
 openbabel
 pyfaidx
