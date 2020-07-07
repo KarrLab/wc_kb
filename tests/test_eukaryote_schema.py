@@ -247,6 +247,13 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
             uniprot='P12345', cell=cell1, transcript=transcript2,
             coding_regions=[cds2_4, cds2_2, cds2_3])
 
+        gene3 = eukaryote.GeneLocus(polymer=dna1, start=70, end=75)
+        exon3 = eukaryote.GenericLocus(start=70, end=75)
+        transcript3 = eukaryote.TranscriptSpeciesType(gene=gene3, exons=[exon3])
+        cds3 = eukaryote.GenericLocus(start=70, end=75)
+        self.prot3 = eukaryote.ProteinSpeciesType(id='prot3', name='protein3',
+            uniprot='Q12121', transcript=transcript3, coding_regions=[cds3])
+
     def tearDown(self):
         shutil.rmtree(self.tmp_dirname)
 
@@ -277,6 +284,11 @@ class ProteinSpeciesTypeTestCase(unittest.TestCase):
         self.assertEqual(coding_rna_seq, 'AUGAARAARUUYCUCCUCACNCCNCUCUAA')
         self.assertEqual(aa_seq, 'MKKFLLTPL')
         self.assertEqual(start_codon, 'AUG')
+
+        coding_rna_seq, aa_seq, start_codon = self.prot3.get_seq_and_start_codon(cds=False)
+        self.assertEqual(coding_rna_seq, 'UAAUUU')
+        self.assertEqual(aa_seq, '*F')
+        self.assertEqual(start_codon, 'UUU')
         
     def test_get_empirical_formula(self):
         # Default translation table used is 1 (standard)

@@ -593,9 +593,16 @@ class ProteinSpeciesType(core.PolymerSpeciesType):
         if self.transcript.gene.strand == core.PolymerStrand.negative:
             spliced_dna_seq = spliced_dna_seq.reverse_complement()
 
-        coding_rna_seq = spliced_dna_seq.transcribe()
-        start_codon = coding_rna_seq[:3]
-        protein_seq = coding_rna_seq.translate(table=table, cds=cds)    
+        coding_rna_seq = spliced_dna_seq.transcribe()        
+        protein_seq = coding_rna_seq.translate(table=table, cds=cds)
+        
+        start_codon_index = 0
+        for aa_seq in protein_seq:
+            if aa_seq == '*':
+                start_codon_index += 3
+            else:
+                break     
+        start_codon = coding_rna_seq[start_codon_index : start_codon_index + 3]    
 
         return coding_rna_seq, protein_seq, start_codon    
 
