@@ -168,7 +168,7 @@ class TestIO(unittest.TestCase):
             objs_read = reader.run(core_path, seq_path=seq_path, read_metadata=True)
             data_repo_metadata = objs_read[utils.DataRepoMetadata][0]
             self.assertTrue(data_repo_metadata.url.startswith('https://github.com/'))
-            self.assertEqual(data_repo_metadata.branch, 'master')
+            self.assertEqual(data_repo_metadata.branch, 'main')
             self.assertEqual(len(data_repo_metadata.revision), 40)
 
             # delete test repo
