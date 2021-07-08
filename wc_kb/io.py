@@ -24,7 +24,6 @@ import os
 import shutil
 import wc_kb
 import wc_kb.config.core
-import wc_utils.cache
 import warnings
 
 PROKARYOTE_MODELS = (
@@ -242,7 +241,6 @@ class Writer(obj_tables.io.Writer):
 class Reader(obj_tables.io.Reader):
     """ Read knowledge base from file(s) """
 
-    # @wc_utils.cache.memoize(filename_args=[1, 2])
     def run(self, core_path,
             seq_path='', rewrite_seq_path=True, taxon='prokaryote',
             models=None, ignore_missing_models=None, ignore_extra_models=None, ignore_sheet_order=None,
