@@ -411,9 +411,3 @@ texinfo_documents = [
 # -- Google analytics ID --------------------------------------------------
 
 googleanalytics_id = 'UA-86340737-1'
-
-
-# -- if RTD, redirect to https://docs.karrlab.org  ------------------------
-
-addmetahtml_content = '<meta http-equiv="refresh" content="0; url=https://docs.karrlab.org/wc_kb" />'
-addmetahtml_enabled = os.getenv('READTHEDOCS', '') == 'True'
