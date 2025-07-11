@@ -41,7 +41,6 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx_fontawesome',
     'sphinxcontrib.addmetahtml',
-    'sphinxcontrib.bibtex',
     'sphinxcontrib.googleanalytics',
     'sphinxcontrib.spelling',
     'sphinxprettysearchresults',
