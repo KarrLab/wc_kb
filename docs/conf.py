@@ -42,7 +42,6 @@ extensions = [
     'sphinx_fontawesome',
     'sphinxcontrib.googleanalytics',
     'sphinxcontrib.spelling',
-    'sphinxprettysearchresults',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
