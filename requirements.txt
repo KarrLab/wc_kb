@@ -3,7 +3,7 @@ cement >= 3.0.0
 configobj
 natsort
 obj_tables[sci]
-openbabel < 3
+openbabel
 pyfaidx
 setuptools
 wc_utils[git, chem, protonation]
