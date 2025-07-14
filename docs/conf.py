@@ -21,13 +21,6 @@ import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
 
-#To cope with missing dependencies, specify the missing modules in the autodoc_mock_imports setting.
-#This value contains a list of modules to be mocked up. 
-#This is useful when some external dependencies are not met at build time and break the building process. 
-#You may only specify the root package of the dependencies themselves and omit the sub-modules:
-#
-autodoc_mock_imports = ['openbabel']
-
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -415,3 +408,21 @@ texinfo_documents = [
 # -- Google analytics ID --------------------------------------------------
 
 googleanalytics_id = 'UA-86340737-1'
+
+#To cope with missing dependencies, specify the missing modules in the autodoc_mock_imports setting.
+#This value contains a list of modules to be mocked up. 
+#This is useful when some external dependencies are not met at build time and break the building process. 
+#You may only specify the root package of the dependencies themselves and omit the sub-modules:
+#
+autodoc_mock_imports = [
+    'biopython', 
+    'cement', 
+    'configobj',
+    'natsort',
+    'obj_tables',
+    'openbabel',
+    'pyfaidx',
+    'setuptools',
+    'wc_utils',
+    'wc_onto'
+    ]
