@@ -6,8 +6,7 @@ Tools for building and describing knowledge bases for whole-cell models
 Contents
 --------
 
-.. automodule:: wc_kb.core
-   :members:
+.. autoclass:: wc_kb.core.KnowledgeBase
 
 .. toctree::
    :maxdepth: 3
