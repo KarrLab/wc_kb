@@ -31,7 +31,6 @@ sys.path.insert(0, os.path.abspath('..'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'autoapi.sphinx',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.coverage',
@@ -43,6 +42,7 @@ extensions = [
     'sphinx_fontawesome',
     'sphinxcontrib.googleanalytics',
     'sphinxcontrib.spelling',
+    'autoapi.extension',
 ]
 
 # Add paths that contain the source code to document.
