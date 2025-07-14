@@ -31,6 +31,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autoapi',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosectionlabel',
     'sphinx.ext.coverage',
@@ -43,6 +44,9 @@ extensions = [
     'sphinxcontrib.googleanalytics',
     'sphinxcontrib.spelling',
 ]
+
+# Add paths that contain the source code to document.
+autoapi_dirs = ['../wc_kb']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -408,22 +412,3 @@ texinfo_documents = [
 # -- Google analytics ID --------------------------------------------------
 
 googleanalytics_id = 'UA-86340737-1'
-
-#To cope with missing dependencies, specify the missing modules in the autodoc_mock_imports setting.
-#This value contains a list of modules to be mocked up. 
-#This is useful when some external dependencies are not met at build time and break the building process. 
-#You may only specify the root package of the dependencies themselves and omit the sub-modules:
-#
-autodoc_mock_imports = [
-    'Bio',
-    'biopython', 
-    'cement', 
-    'configobj',
-    'natsort',
-    'obj_tables',
-    'openbabel',
-    'pyfaidx',
-    'setuptools',
-    'wc_utils',
-    'wc_onto'
-    ]
