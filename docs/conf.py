@@ -415,6 +415,7 @@ googleanalytics_id = 'UA-86340737-1'
 #You may only specify the root package of the dependencies themselves and omit the sub-modules:
 #
 autodoc_mock_imports = [
+    'Bio',
     'biopython', 
     'cement', 
     'configobj',
