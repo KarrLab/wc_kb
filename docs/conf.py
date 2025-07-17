@@ -45,8 +45,10 @@ extensions = [
     'autoapi.extension',
 ]
 
+#Basic setup for AutoAPI
 # Add paths that contain the source code to document.
 autoapi_dirs = ['../wc_kb']
+autoapi_type = "python"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

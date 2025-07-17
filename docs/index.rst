@@ -11,5 +11,4 @@ Contents
    :numbered:
 
    installation.rst
-   API documentation <source/modules.rst>
    about.rst
