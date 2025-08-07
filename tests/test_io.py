@@ -354,16 +354,6 @@ class TestIO(unittest.TestCase):
         finally:
             core.KnowledgeBase.Meta.related_attributes.pop('test')
 
-    @unittest.skip('Assertions need to be uncommented')
-    def test_seq_path_consistency(self):
-        pass
-
-        #core_path = os.path.join(self.dir, 'core.xlsx')
-        #import pdb; pdb.set_trace()
-        #kb = io.Reader().run(core_path, seq_path=self.seq_path)[core.KnowledgeBase][0]
-        #core_path = os.path.join(self.dir, 'core2.xlsx')
-        #seq_path = os.path.join(self.dir, 'seq2.fna')
-
     def test_read_flat_list_of_objects(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
 
