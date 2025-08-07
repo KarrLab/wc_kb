@@ -43,7 +43,7 @@ class ValidateController(cement.Controller):
         arguments = [
             (['core_path'], dict(type=str, help='Path to knowledge base core')),
             (['seq_path'], dict(type=str, help='Path to FASTA-formatted genome sequence')),
-            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote")', default='eukaryote')),
         ]
 
     @cement.ex(hide=True)
@@ -70,7 +70,7 @@ class DifferenceController(cement.Controller):
             (['seq_path_1'], dict(type=str, help='Path to FASTA-formatted genome sequence for first knowledge base')),
             (['core_path_2'], dict(type=str, help='Path to core for second knowledge base')),
             (['seq_path_2'], dict(type=str, help='Path to FASTA-formatted genome sequence for second knowledge base')),
-            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote")', default='eukaryote')),
             (['--compare-files'], dict(dest='compare_files', default=False, action='store_true',
                                        help='If true, compare knowledge bases; otherwise compare files directly')),
             (['--compare-metadata-in-files'], dict(dest='compare_metadata_in_files', default=False, action='store_true',
@@ -138,7 +138,7 @@ class NormalizeController(cement.Controller):
             (['--dest-seq'], dict(
                 default='', type=str,
                 help='Path to save normalized FASTA-formatted genome sequence for the knowledge base')),
-            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote")', default='eukaryote')),
             (['--unprotected'], dict(action='store_true', default=False,
                                      help='If set, do not protect the outputted workbook')),
         ]
@@ -180,7 +180,7 @@ class ConvertController(cement.Controller):
             (['source_seq'], dict(type=str, help='Path to FASTA-formatted genome sqeuence of the knowledge base')),
             (['dest_core'], dict(type=str, help='Path to save the converted core of the knowledge base')),
             (['dest_seq'], dict(type=str, help='Path to save the converted FASTA-formatted genome sequence of the knowledge base')),
-            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote")', default='eukaryote')),
             (['--unprotected'], dict(action='store_true', default=False,
                                      help='If set, do not protect the outputted workbook')),
         ]
@@ -211,7 +211,7 @@ class CreateTemplateController(cement.Controller):
             (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
                                                     'the Git repo containing `path-core`'))),
-            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote")', default='eukaryote')),
             (['--unprotected'], dict(action='store_true', default=False,
                                      help='If set, do not protect the outputted workbook')),
         ]
@@ -237,7 +237,7 @@ class UpdateVersionMetadataController(cement.Controller):
         arguments = [
             (['path_core'], dict(type=str, help='Path to the core of the knowledge base')),
             (['path_seq'], dict(type=str, help='Path to the FASTA-formatted genome sequence of a knowledge base')),
-            (['--taxon'], dict(type=str, help='Taxon ("eukaryote", "prokaryote"', default='prokaryote')),
+            (['--taxon'], dict(type=str, help='Taxon ("eukaryote")', default='eukaryote')),
             (['--ignore-repo-metadata'], dict(dest='data_repo_metadata', default=True, action='store_false',
                                               help=('If set, do not set the Git repository metadata for the knowledge base from '
                                                     'the Git repo containing `path-core`'))),

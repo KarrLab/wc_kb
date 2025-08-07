@@ -9,7 +9,7 @@
 
 from obj_tables import utils
 from test.support import EnvironmentVarGuard
-from wc_kb import core, prokaryote
+from wc_kb import core, eukaryote
 from wc_kb import io
 from wc_utils.util.git import GitHubRepoForTests
 import Bio.Seq
@@ -47,16 +47,7 @@ class TestIO(unittest.TestCase):
                 seq += bases[random.randint(0, 3)]
             dna_seqs.append(Bio.SeqRecord.SeqRecord(
                 Bio.Seq.Seq(seq), dna.id))
-
-            for i_trn in range(5):
-                trn = prokaryote.TranscriptionUnitLocus(id='tu_{}_{}'.format(i_chr + 1, i_trn + 1))
-                trn.type = random.choice(['WC:mRNA', 'WC:sRNA', 'WC:tRNA', 'WC:rRNA', 'WC:intergenic', 'WC:mixed'])
-                trn.cell = cell
-                dna.loci.append(trn)
-                trn.start = random.randint(100, 200)
-                trn.end = ((trn.start + random.randint(1, 200) - 1) % seq_len) + 1
-                trn.strand = core.PolymerStrand.positive
-
+            
         with open(self.seq_path, 'w') as file:
             writer = Bio.SeqIO.FastaIO.FastaWriter(
                 file, wrap=70, record2title=lambda record: record.id)
@@ -80,25 +71,6 @@ class TestIO(unittest.TestCase):
 
         self.assertTrue(self.kb.is_equal(kb))
         self.assertTrue(filecmp.cmp(self.seq_path, seq_path, shallow=False))
-
-    def test_read_write_prokaryote(self):
-        fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
-        core_path = os.path.join(fixtures, 'prokaryote_core.xlsx')
-        seq_path = os.path.join(fixtures, 'prokaryote_seq.fna')
-
-        reader = io.Reader()
-        kb = reader.run(core_path, seq_path=seq_path)[core.KnowledgeBase][0]
-
-        tmp_core_path = os.path.join(self.dir, 'tmp_core.xlsx')
-        tmp_seq_path = os.path.join(self.dir, 'tmp_seq.fna')
-
-        writer = io.Writer()
-        writer.run(tmp_core_path, kb, seq_path=tmp_seq_path, data_repo_metadata=False)
-
-        tmp_kb = reader.run(tmp_core_path, seq_path)[core.KnowledgeBase][0]
-
-        self.assertTrue(kb.is_equal(tmp_kb))
-        self.assertTrue(filecmp.cmp(tmp_seq_path, seq_path, shallow=False))
 
     def test_read_write_eukaryote(self):
         fixtures = os.path.join(os.path.dirname(__file__), 'fixtures')
@@ -184,9 +156,9 @@ class TestIO(unittest.TestCase):
         dna = core.DnaSpeciesType(id='chr_x', sequence_path=seq_path)
         self.kb.cell.species_types.append(dna)
 
-        trn = prokaryote.TranscriptionUnitLocus(id='tu_x_0')
-        dna.loci.append(trn)
-        trn.cell = None
+        gene = eukaryote.GeneLocus(id='gene_0')
+        dna.loci.append(gene)
+        gene.cell = None
 
         writer = io.Writer()
         with self.assertRaisesRegex(ValueError, 'must be set to the instance of `Cell`'):
@@ -218,7 +190,7 @@ class TestIO(unittest.TestCase):
 
     def test_reader_no_kb(self):
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_tables.io.WorkbookWriter().run(core_path, [], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [], models=io.EUKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -227,7 +199,7 @@ class TestIO(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
             io.Reader().run(core_path, seq_path=seq_path)
 
-        obj_tables.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [core.Cell(id='cell')], models=io.EUKARYOTE_MODELS, include_all_attributes=False)
         with self.assertRaisesRegex(ValueError, 'should define one knowledge base'):
             io.Reader().run(core_path, seq_path=seq_path)
 
@@ -236,7 +208,7 @@ class TestIO(unittest.TestCase):
         kb2 = core.KnowledgeBase(id='kb2', name='kb2', version='0.0.1')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_tables.io.WorkbookWriter().run(core_path, [kb1, kb2], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [kb1, kb2], models=io.EUKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -250,7 +222,7 @@ class TestIO(unittest.TestCase):
         dna = core.DnaSpeciesType(id='chr')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_tables.io.WorkbookWriter().run(core_path, [kb, dna], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [kb, dna], models=io.EUKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:
@@ -264,7 +236,7 @@ class TestIO(unittest.TestCase):
         cell2 = core.Cell(id='cell2', name='cell2')
 
         core_path = os.path.join(self.dir, 'core.xlsx')
-        obj_tables.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], models=io.PROKARYOTE_MODELS, include_all_attributes=False)
+        obj_tables.io.WorkbookWriter().run(core_path, [kb, cell1, cell2], models=io.EUKARYOTE_MODELS, include_all_attributes=False)
 
         seq_path = os.path.join(self.dir, 'test_seq.fna')
         with open(seq_path, 'w') as file:

@@ -14,7 +14,6 @@ Supported file types:
 
 from . import core
 from . import eukaryote
-from . import prokaryote
 from . import util
 from wc_utils.util.string import indent_forest
 import Bio.SeqIO
@@ -25,28 +24,6 @@ import shutil
 import wc_kb
 import wc_kb.config.core
 import warnings
-
-PROKARYOTE_MODELS = (
-    core.KnowledgeBase,
-    core.Cell,
-    core.Compartment,
-    core.DnaSpeciesType,
-    core.ChromosomeFeature,
-    prokaryote.TranscriptionUnitLocus,
-    prokaryote.GeneLocus,
-    prokaryote.RnaSpeciesType,
-    prokaryote.ProteinSpeciesType,
-    core.ComplexSpeciesType,
-    core.MetaboliteSpeciesType,
-    core.SpeciesTypeProperty,
-    core.Concentration,
-    core.Observable,
-    core.Reaction,
-    core.RateLaw,
-    core.Parameter,
-    core.Evidence,
-    core.Experiment,
-    core.Reference)
 
 EUKARYOTE_MODELS = (
     core.KnowledgeBase,
@@ -75,7 +52,7 @@ class Writer(obj_tables.io.Writer):
     """ Write knowledge base to file(s) """
 
     def run(self, core_path, knowledge_base,
-            seq_path=None, rewrite_seq_path=True, taxon='prokaryote',
+            seq_path=None, rewrite_seq_path=True, taxon='eukaryote',
             models=None, get_related=True, include_all_attributes=False, validate=True,
             title=None, description=None, keywords=None, version=None, language=None, creator=None,
             write_schema=False, write_toc=True,
@@ -119,9 +96,7 @@ class Writer(obj_tables.io.Writer):
             self.validate_implicit_relationships()
             self.validate_implicit_relationships_are_set(knowledge_base)
 
-        if taxon == 'prokaryote':
-            models = PROKARYOTE_MODELS
-        elif taxon == 'eukaryote':
+        if taxon == 'eukaryote':
             models = EUKARYOTE_MODELS
 
         # default metadata for exported file
@@ -242,7 +217,7 @@ class Reader(obj_tables.io.Reader):
     """ Read knowledge base from file(s) """
 
     def run(self, core_path,
-            seq_path='', rewrite_seq_path=True, taxon='prokaryote',
+            seq_path='', rewrite_seq_path=True, taxon='eukaryote',
             models=None, ignore_missing_models=None, ignore_extra_models=None, ignore_sheet_order=None,
             include_all_attributes=False, ignore_missing_attributes=None, ignore_extra_attributes=None, ignore_attribute_order=None,
             group_objects_by_model=True, validate=True, read_metadata=False):
@@ -287,9 +262,7 @@ class Reader(obj_tables.io.Reader):
         if issubclass(self.get_reader(core_path), obj_tables.io.WorkbookReader):
             Writer.validate_implicit_relationships()
 
-        if taxon == 'prokaryote':
-            models = PROKARYOTE_MODELS
-        elif taxon == 'eukaryote':
+        if taxon == 'eukaryote':
             models = EUKARYOTE_MODELS
         else:
             raise ValueError('Unsupported taxon "{}"'.format(taxon))
@@ -391,7 +364,7 @@ class Reader(obj_tables.io.Reader):
         return objects
 
 
-def convert(source_core, source_seq, dest_core, dest_seq, taxon='prokaryote', rewrite_seq_path=True, protected=True):
+def convert(source_core, source_seq, dest_core, dest_seq, taxon='eukaryote', rewrite_seq_path=True, protected=True):
     """ Convert among Excel (.xlsx), comma separated (.csv), and tab separated (.tsv) file formats
 
     Read a knowledge base from the `source` files(s) and write it to the `destination` files(s). A path to a
@@ -415,7 +388,7 @@ def convert(source_core, source_seq, dest_core, dest_seq, taxon='prokaryote', re
                  protected=protected)
 
 
-def create_template(core_path, seq_path, taxon='prokaryote', write_schema=False, write_toc=True,
+def create_template(core_path, seq_path, taxon='eukaryote', write_schema=False, write_toc=True,
                     extra_entries=10, data_repo_metadata=True, protected=True):
     """ Create file with knowledge base template, including row and column headings
 

@@ -35,5 +35,4 @@ from .core import (KnowledgeBaseObject,
 
 from . import io
 from . import util
-from . import prokaryote
 from . import eukaryote
